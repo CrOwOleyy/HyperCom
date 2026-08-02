@@ -1,0 +1,36 @@
+# CMake generated Testfile for 
+# Source directory: C:/Users/youne/delivery/Hypercom/tests
+# Build directory: C:/Users/youne/delivery/Hypercom/build-win/tests
+# 
+# This file includes the relevant testing commands required for 
+# testing this directory and lists subdirectories to be tested as well.
+if(CTEST_CONFIGURATION_TYPE MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
+  add_test([=[protocol_parsing_test]=] "C:/Users/youne/delivery/Hypercom/build-win/bin/Debug/protocol_parsing_test.exe")
+  set_tests_properties([=[protocol_parsing_test]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;14;add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;17;hypercom_add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;0;")
+elseif(CTEST_CONFIGURATION_TYPE MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee])$")
+  add_test([=[protocol_parsing_test]=] "C:/Users/youne/delivery/Hypercom/build-win/bin/Release/protocol_parsing_test.exe")
+  set_tests_properties([=[protocol_parsing_test]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;14;add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;17;hypercom_add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;0;")
+elseif(CTEST_CONFIGURATION_TYPE MATCHES "^([Mm][Ii][Nn][Ss][Ii][Zz][Ee][Rr][Ee][Ll])$")
+  add_test([=[protocol_parsing_test]=] "C:/Users/youne/delivery/Hypercom/build-win/bin/MinSizeRel/protocol_parsing_test.exe")
+  set_tests_properties([=[protocol_parsing_test]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;14;add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;17;hypercom_add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;0;")
+elseif(CTEST_CONFIGURATION_TYPE MATCHES "^([Rr][Ee][Ll][Ww][Ii][Tt][Hh][Dd][Ee][Bb][Ii][Nn][Ff][Oo])$")
+  add_test([=[protocol_parsing_test]=] "C:/Users/youne/delivery/Hypercom/build-win/bin/RelWithDebInfo/protocol_parsing_test.exe")
+  set_tests_properties([=[protocol_parsing_test]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;14;add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;17;hypercom_add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;0;")
+else()
+  add_test([=[protocol_parsing_test]=] NOT_AVAILABLE)
+endif()
+if(CTEST_CONFIGURATION_TYPE MATCHES "^([Dd][Ee][Bb][Uu][Gg])$")
+  add_test([=[crypto_round_trip_test]=] "C:/Users/youne/delivery/Hypercom/build-win/bin/Debug/crypto_round_trip_test.exe")
+  set_tests_properties([=[crypto_round_trip_test]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;14;add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;18;hypercom_add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;0;")
+elseif(CTEST_CONFIGURATION_TYPE MATCHES "^([Rr][Ee][Ll][Ee][Aa][Ss][Ee])$")
+  add_test([=[crypto_round_trip_test]=] "C:/Users/youne/delivery/Hypercom/build-win/bin/Release/crypto_round_trip_test.exe")
+  set_tests_properties([=[crypto_round_trip_test]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;14;add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;18;hypercom_add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;0;")
+elseif(CTEST_CONFIGURATION_TYPE MATCHES "^([Mm][Ii][Nn][Ss][Ii][Zz][Ee][Rr][Ee][Ll])$")
+  add_test([=[crypto_round_trip_test]=] "C:/Users/youne/delivery/Hypercom/build-win/bin/MinSizeRel/crypto_round_trip_test.exe")
+  set_tests_properties([=[crypto_round_trip_test]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;14;add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;18;hypercom_add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;0;")
+elseif(CTEST_CONFIGURATION_TYPE MATCHES "^([Rr][Ee][Ll][Ww][Ii][Tt][Hh][Dd][Ee][Bb][Ii][Nn][Ff][Oo])$")
+  add_test([=[crypto_round_trip_test]=] "C:/Users/youne/delivery/Hypercom/build-win/bin/RelWithDebInfo/crypto_round_trip_test.exe")
+  set_tests_properties([=[crypto_round_trip_test]=] PROPERTIES  _BACKTRACE_TRIPLES "C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;14;add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;18;hypercom_add_test;C:/Users/youne/delivery/Hypercom/tests/CMakeLists.txt;0;")
+else()
+  add_test([=[crypto_round_trip_test]=] NOT_AVAILABLE)
+endif()

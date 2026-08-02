@@ -1,0 +1,69 @@
+---
+# Norme Hypercom — voir BRIEF.md §11.
+# Encode mécaniquement les règles L4, G7 et G8.
+# La règle L6 (aucune ligne vide dans un corps de fonction) n'est PAS exprimable
+# ici : clang-format ne sait pas distinguer l'intérieur d'une fonction du reste
+# du fichier. Elle se vérifie à la relecture.
+Language: Cpp
+BasedOnStyle: LLVM
+Standard: c++20
+
+ColumnLimit: 80
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+
+# --- Règle L4 : position des accolades -------------------------------------
+# Définition de fonction  -> accolade ouvrante seule sur sa ligne.
+# Tout le reste           -> accolade ouvrante en fin de ligne.
+# else / catch / while du do -> sur la ligne de l'accolade fermante.
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterFunction: true
+  AfterClass: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterEnum: false
+  AfterNamespace: false
+  AfterExternBlock: false
+  AfterControlStatement: Never
+  AfterCaseLabel: false
+  BeforeElse: false
+  BeforeCatch: false
+  BeforeWhile: false
+  BeforeLambdaBody: false
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+
+# --- Règles G7 / G8 / L6 : espaces et lignes vides --------------------------
+MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: false
+EmptyLineBeforeAccessModifier: LogicalBlock
+
+# --- Règle F4 : rien ne doit masquer la longueur réelle d'une fonction ------
+AllowShortFunctionsOnASingleLine: None
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortLambdasOnASingleLine: All
+
+# --- Pointeurs et références ------------------------------------------------
+DerivePointerAlignment: false
+PointerAlignment: Right
+ReferenceAlignment: Right
+
+# --- Divers -----------------------------------------------------------------
+IndentCaseLabels: true
+NamespaceIndentation: None
+FixNamespaceComments: true
+AlwaysBreakTemplateDeclarations: Yes
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: NextLine
+Cpp11BracedListStyle: true
+SpaceAfterCStyleCast: true
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup

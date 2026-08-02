@@ -1,0 +1,51 @@
+add_executable(hypercom_server
+    config/config_parser.cpp
+    config/config_validator.cpp
+    db/database_handle.cpp
+    db/comment_repository.cpp
+    db/dm_repository.cpp
+    db/forum_repository.cpp
+    db/migration_runner.cpp
+    db/motd_repository.cpp
+    db/post_repository.cpp
+    db/prekey_repository.cpp
+    db/profile_repository.cpp
+    db/sql_binder.cpp
+    db/sql_column_reader.cpp
+    db/sql_statement.cpp
+    db/sqlite_deleters.cpp
+    db/top8_repository.cpp
+    db/user_repository.cpp
+    db/friend_repository.cpp
+    handlers/account_handler.cpp
+    handlers/connection_processor.cpp
+    handlers/content_handler.cpp
+    handlers/dm_handler.cpp
+    handlers/forum_handler.cpp
+    handlers/profile_handler.cpp
+    handlers/request_router.cpp
+    handlers/response_builder.cpp
+    handlers/session_guard.cpp
+    handlers/session_handler.cpp
+    handlers/social_handler.cpp
+    net/connection_registry.cpp
+    net/connection_socket.cpp
+    net/event_loop.cpp
+    net/noise_channel.cpp
+    net/rate_limiter.cpp
+    net/server_runtime.cpp
+    net/server_static_key.cpp
+    net/tcp_listener.cpp
+    net/unique_descriptor.cpp
+    server_main.cpp)
+
+target_include_directories(hypercom_server PRIVATE "${CMAKE_SOURCE_DIR}")
+target_link_libraries(hypercom_server PRIVATE
+    hypercom_common
+    hypercom::sqlite3)
+if(WIN32)
+    target_link_libraries(hypercom_server PRIVATE ws2_32)
+endif()
+
+hypercom_apply_executable_hardening(hypercom_server)
+hypercom_apply_sanitizers(hypercom_server)

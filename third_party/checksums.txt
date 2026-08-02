@@ -1,0 +1,23 @@
+# Empreintes SHA-256 des archives tierces, épinglées à la main.
+#
+# Format :  <nom-de-fichier>  <sha256>
+#
+# scripts/fetch_third_party.sh REFUSE d'installer une archive absente de ce
+# fichier. Au premier téléchargement il affiche l'empreinte calculée et l'URL
+# officielle où la vérifier ; c'est à vous de comparer, une fois, puis d'ajouter
+# la ligne ici. Aucune valeur n'est pré-remplie : une empreinte que personne n'a
+# vérifiée ne protège de rien, elle donne juste l'illusion de le faire.
+#
+# Sources de vérification :
+#   libsodium  https://download.libsodium.org/libsodium/releases/
+#              (signatures minisign, clé publique sur libsodium.org)
+#   sqlite     https://www.sqlite.org/download.html
+#   imgui      https://github.com/ocornut/imgui/releases
+#
+# Exemple une fois rempli :
+#   libsodium-1.0.20.tar.gz  <64 caractères hexadécimaux>
+
+imgui-v1.91.5.tar.gz  2aa2d169c569368439e5d5667e0796d09ca5cc6432965ce082e516937d7db254
+libsodium-1.0.20-stable-msvc.zip  ebaa204fdfcedc51dc1ee1bbd03c8d552a14b3372f87f94e44c71a8533f77df4
+sqlite-amalgamation-3470000.zip  2842fddbb1cc33f66c7da998a57535f14a6bfee159676a07bb4bf3e59375d93e
+glfw-3.4.bin.WIN64.zip  54efa829400f2a0537f742b2b3bdd74e437bb4f2f048e4b7d3c5557d11a611e6
