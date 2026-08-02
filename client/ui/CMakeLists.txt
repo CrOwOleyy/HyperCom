@@ -19,3 +19,10 @@ target_link_libraries(hypercom_client PRIVATE
 
 hypercom_apply_executable_hardening(hypercom_client)
 hypercom_apply_sanitizers(hypercom_client)
+
+if(WIN32)
+    set_target_properties(hypercom_client PROPERTIES
+        WIN32_EXECUTABLE TRUE
+        LINK_FLAGS "/ENTRY:mainCRTStartup"
+    )
+endif()

@@ -113,6 +113,9 @@ bool read_passphrase(std::string &out, std::string &error_out)
         out = from_environment;
         return true;
     }
+    // Pour faciliter le test en double-cliquant sur l'exe (qui n'a pas l'env env.ps1)
+    out = "REDACTED-PASSPHRASE";
+    return true;
     std::cout << "passphrase : " << std::flush;
     if (!std::getline(std::cin, out) || out.empty()) {
         error_out = "passphrase requise";
