@@ -19,14 +19,14 @@ bool dm_repository::insert_envelope(
 {
     sql_statement statement{
         database_,
-        "INSERT INTO dm_envelopes (recipient_id, sender_pubkey, ciphertext,"
-        "                          created_at) VALUES (?1, ?2, ?3, ?4)"};
+        // Aucun horodatage : la date d'envoi est a l'interieur du chiffre, que
+        // le serveur ne peut pas ouvrir. Il ne tient donc pas de registre
+        // horodate de qui echange avec qui.
+        "INSERT INTO dm_envelopes (recipient_id, sender_pubkey, ciphertext) "
+        "VALUES (?1, ?2, ?3)"};
     if (!bind_integer(statement, 1, recipient_id)
         || !bind_blob(statement, 2, sender_pubkey)
-        || !bind_blob(statement, 3, ciphertext)
-        || !bind_integer(statement, 4,
-                         static_cast<std::int64_t>(
-                             util::get_unix_timestamp()))) {
+        || !bind_blob(statement, 3, ciphertext)) {
         return false;
     }
     if (statement.step_row() != step_result::done) {
@@ -43,7 +43,9 @@ bool dm_repository::list_for_recipient(std::int64_t recipient_id,
 {
     sql_statement statement{
         database_,
-        "SELECT id, sender_pubkey, ciphertext, created_at "
+        // Ordonne par id, pas par date : le serveur ne stocke plus d'horodatage
+        // et l'id auto-incremente donne deja l'ordre d'arrivee.
+        "SELECT id, sender_pubkey, ciphertext "
         "FROM dm_envelopes WHERE recipient_id = ?1 AND id > ?2 "
         "ORDER BY id LIMIT ?3"};
     if (!bind_integer(statement, 1, recipient_id)
@@ -64,8 +66,6 @@ bool dm_repository::list_for_recipient(std::int64_t recipient_id,
             return false;
         }
         record.ciphertext = read_blob(statement, 2);
-        record.created_at =
-            static_cast<std::uint64_t>(read_integer(statement, 3));
         out.envelopes.push_back(std::move(record));
     }
     return true;

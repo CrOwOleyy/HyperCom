@@ -1,7 +1,7 @@
 #pragma once
 
 #include "server/handlers/handler_context.hpp"
-#include "server/net/rate_limiter.hpp"
+#include "server/net/rate_tracker.hpp"
 
 namespace hypercom::server {
 
@@ -13,6 +13,6 @@ namespace hypercom::server {
 // rattrape pas, et deviner ou reprendre est le genre de code qui finit
 // exploite.
 [[nodiscard]] bool process_connection_input(handler_context &context,
-                                            rate_limiter const &limiter);
+                                            rate_policy &policy);
 
 } // namespace hypercom::server

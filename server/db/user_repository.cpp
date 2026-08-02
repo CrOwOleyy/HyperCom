@@ -1,6 +1,5 @@
 #include "server/db/user_repository.hpp"
 
-#include "common/util/unix_clock.hpp"
 #include "server/db/sql_binder.hpp"
 #include "server/db/sql_column_reader.hpp"
 #include "server/db/sql_statement.hpp"
@@ -8,8 +7,7 @@
 namespace hypercom::server {
 namespace {
 
-constexpr char const *SELECT_COLUMNS =
-    "SELECT id, pubkey, handle, created_at, last_seen FROM users ";
+constexpr char const *SELECT_COLUMNS = "SELECT id, pubkey, handle FROM users ";
 
 [[nodiscard]] bool read_user_row(sql_statement const &statement, user_row &out)
 {
@@ -18,8 +16,6 @@ constexpr char const *SELECT_COLUMNS =
         return false;
     }
     out.handle = read_text(statement, 2);
-    out.created_at = static_cast<std::uint64_t>(read_integer(statement, 3));
-    out.last_seen = static_cast<std::uint64_t>(read_integer(statement, 4));
     return true;
 }
 
@@ -61,14 +57,11 @@ bool user_repository::create_user(proto::wire_public_key const &pubkey,
                                   std::string_view handle,
                                   std::int64_t &out_id)
 {
+    // Ni date de creation ni date de connexion : un compte, c'est une cle
+    // publique et un pseudo, rien d'autre.
     sql_statement statement{
-        database_,
-        "INSERT INTO users (pubkey, handle, created_at, last_seen) "
-        "VALUES (?1, ?2, ?3, ?3)"};
-    if (!bind_blob(statement, 1, pubkey) || !bind_text(statement, 2, handle)
-        || !bind_integer(statement, 3,
-                         static_cast<std::int64_t>(
-                             util::get_unix_timestamp()))) {
+        database_, "INSERT INTO users (pubkey, handle) VALUES (?1, ?2)"};
+    if (!bind_blob(statement, 1, pubkey) || !bind_text(statement, 2, handle)) {
         return false;
     }
     // Un pseudo deja pris fait echouer la contrainte UNIQUE : c'est la base
@@ -78,18 +71,6 @@ bool user_repository::create_user(proto::wire_public_key const &pubkey,
     }
     out_id = database_.get_last_insert_id();
     return true;
-}
-
-bool user_repository::update_last_seen(std::int64_t id,
-                                       std::uint64_t timestamp)
-{
-    sql_statement statement{database_,
-                            "UPDATE users SET last_seen = ?2 WHERE id = ?1"};
-    if (!bind_integer(statement, 1, id)
-        || !bind_integer(statement, 2, static_cast<std::int64_t>(timestamp))) {
-        return false;
-    }
-    return statement.step_row() == step_result::done;
 }
 
 } // namespace hypercom::server

@@ -23,9 +23,9 @@ namespace {
     session.phase = session_phase::authenticated;
     session.user_id = user.id;
     session.handle = user.handle;
-    user_repository users{context.database};
-    static_cast<void>(
-        users.update_last_seen(user.id, util::get_unix_timestamp()));
+    // Aucune ecriture en base a l'authentification : enregistrer « untel s'est
+    // connecte a telle heure » serait un journal de presence, et il serait
+    // conserve avec le disque.
     proto::auth_accepted accepted;
     accepted.user_id = static_cast<std::uint64_t>(user.id);
     accepted.handle = user.handle;

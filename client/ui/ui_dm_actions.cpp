@@ -82,11 +82,12 @@ void refresh_inbox(cli_context &context, ui_state &state)
     for (proto::dm_envelope_record const &envelope : response.envelopes) {
         decrypted_message entry;
         util::encode_hex(envelope.sender_pubkey, entry.sender_hex);
-        entry.received_at = envelope.created_at;
         std::string reason;
+        // La date vient du chiffre, pas du serveur : elle est donc absente si
+        // le message n'a pas pu etre ouvert.
         entry.readable = open_direct_message(context.identity,
                                              envelope.ciphertext, entry.text,
-                                             reason);
+                                             entry.received_at, reason);
         if (!entry.readable) {
             entry.text = reason;
         } else {

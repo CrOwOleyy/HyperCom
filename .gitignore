@@ -58,3 +58,5 @@ keys/
 third_party/*
 !third_party/README.md
 !third_party/checksums.txt
+run/
+*.sock

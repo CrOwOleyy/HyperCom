@@ -10,16 +10,55 @@
 #include "common/crypto/secure_memory.hpp"
 #include "common/crypto/signature_verifier.hpp"
 #include "common/crypto/x25519_exchange.hpp"
+#include "common/protocol/byte_reader.hpp"
+#include "common/protocol/byte_writer.hpp"
 #include "common/protocol/prekey_publish_message.hpp"
+#include "common/protocol/text_field_codec.hpp"
+#include "common/util/unix_clock.hpp"
 
 namespace hypercom::client {
 namespace {
 
 constexpr std::string_view PREKEY_DERIVATION_INFO = "hypercom-prekey-derive-v1";
+constexpr std::uint8_t DM_PAYLOAD_VERSION = 1;
 
 [[nodiscard]] std::span<std::uint8_t const> as_bytes(std::string_view text)
 {
     return {reinterpret_cast<std::uint8_t const *>(text.data()), text.size()};
+}
+
+// Contenu chiffre d'un message : [u8 version][u64 date d'envoi][texte].
+//
+// La date est A L'INTERIEUR du chiffre, pas dans une colonne de la base. Le
+// serveur stocke donc une enveloppe dont il ignore jusqu'a la date -- il ne
+// peut plus tenir de registre horodate de qui echange avec qui.
+void build_dm_payload(std::uint64_t sent_at, std::string_view text,
+                      std::vector<std::uint8_t> &out)
+{
+    proto::byte_writer writer{out};
+    writer.write_integer(DM_PAYLOAD_VERSION);
+    writer.write_integer(sent_at);
+    writer.write_fixed_bytes(as_bytes(text));
+}
+
+[[nodiscard]] bool parse_dm_payload(std::span<std::uint8_t const> payload,
+                                    std::uint64_t &sent_at_out,
+                                    std::string &text_out)
+{
+    proto::byte_reader reader{payload};
+    std::uint8_t version = 0;
+    if (!reader.read_integer(version) || version != DM_PAYLOAD_VERSION
+        || !reader.read_integer(sent_at_out)) {
+        return false;
+    }
+    std::vector<std::uint8_t> remaining(reader.count_remaining_bytes());
+    if (!reader.read_fixed_bytes(remaining)) {
+        return false;
+    }
+    text_out.assign(remaining.begin(), remaining.end());
+    // Le texte vient d'un pair, pas du serveur : il se valide comme tout ce
+    // qui arrive de l'exterieur.
+    return proto::validate_text_field(text_out);
 }
 
 // Une cle de message unique suffit : chaque envoi cree une nouvelle cle
@@ -95,8 +134,9 @@ bool seal_direct_message(crypto::identity_keypair const &sender,
         header.sender_identity = sender.get_public_key();
         header.sender_ephemeral = ephemeral_public;
         header.counter = 0;
-        succeeded = crypto::seal_dm_envelope(header, message_key,
-                                             as_bytes(text), out);
+        std::vector<std::uint8_t> payload;
+        build_dm_payload(util::get_unix_timestamp(), text, payload);
+        succeeded = crypto::seal_dm_envelope(header, message_key, payload, out);
     }
     crypto::wipe_bytes(message_key);
     if (!succeeded) {
@@ -107,7 +147,8 @@ bool seal_direct_message(crypto::identity_keypair const &sender,
 
 bool open_direct_message(crypto::identity_keypair const &recipient,
                          std::span<std::uint8_t const> envelope,
-                         std::string &text_out, std::string &error_out)
+                         std::string &text_out, std::uint64_t &sent_at_out,
+                         std::string &error_out)
 {
     crypto::dm_envelope_header header;
     if (!crypto::parse_dm_envelope_header(envelope, header)) {
@@ -141,7 +182,10 @@ bool open_direct_message(crypto::identity_keypair const &recipient,
                     "quelqu'un d'autre";
         return false;
     }
-    text_out.assign(plaintext.begin(), plaintext.end());
+    if (!parse_dm_payload(plaintext, sent_at_out, text_out)) {
+        error_out = "contenu du message illisible";
+        return false;
+    }
     return true;
 }
 

@@ -19,6 +19,11 @@ public:
 
     [[nodiscard]] bool publish_motd(std::string_view body);
 
+    // Desactive l'annonce en cours sans en publier de nouvelle. Les anciennes
+    // lignes restent en base : elles servent d'historique des annonces, et
+    // rien n'y est nominatif.
+    [[nodiscard]] bool clear_active_motd();
+
 private:
     database_handle &database_;
 };

@@ -1,4 +1,39 @@
 
+## Administrer le serveur
+
+Le serveur ouvre un socket local (`run/hypercom-admin.sock` par défaut) sur
+lequel `hypercom_adminctl` envoie des commandes. Pas de C++ à écrire, pas de
+SQL à taper.
+
+hypercom_adminctl help
+hypercom_adminctl stats
+hypercom_adminctl sessions
+hypercom_adminctl sessions close 12
+hypercom_adminctl motd set "maintenance samedi 14h"
+hypercom_adminctl motd clear
+hypercom_adminctl backup sauvegardes/hypercom.db
+
+Si le socket n'est pas au chemin par défaut :
+
+hypercom_adminctl --socket /var/run/hypercom-admin.sock stats
+
+Détails et garanties de sécurité : docs/ADMIN.md §7.
+
+## Lancer les tests
+
+Après chaque modification, recompiler puis lancer la suite :
+
+cmake --build build/windows --config RelWithDebInfo -j
+ctest --test-dir build/windows -C RelWithDebInfo --output-on-failure
+
+Trois suites : `protocol_parsing_test` (parseur), `crypto_round_trip_test`
+(handshake, DM chiffrés, keystore), `noise_official_vectors_test` (comparaison
+octet par octet à un vecteur de test officiel du protocole Noise).
+
+Un test seul, pour voir le détail :
+
+build\windows\bin\RelWithDebInfo\noise_official_vectors_test.exe
+
 ## Sur Windows (PowerShell)
 
 ### 1. Installer les dépendances

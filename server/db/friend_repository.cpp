@@ -18,15 +18,12 @@ bool friend_repository::replace_friendship(std::int64_t user_id,
 {
     sql_statement statement{
         database_,
-        "INSERT INTO friends (user_id, friend_id, status, created_at) "
-        "VALUES (?1, ?2, ?3, ?4) "
+        "INSERT INTO friends (user_id, friend_id, status) "
+        "VALUES (?1, ?2, ?3) "
         "ON CONFLICT(user_id, friend_id) DO UPDATE SET status = excluded.status"};
     if (!bind_integer(statement, 1, user_id)
         || !bind_integer(statement, 2, friend_id)
-        || !bind_integer(statement, 3, static_cast<std::int64_t>(status))
-        || !bind_integer(statement, 4,
-                         static_cast<std::int64_t>(
-                             util::get_unix_timestamp()))) {
+        || !bind_integer(statement, 3, static_cast<std::int64_t>(status))) {
         return false;
     }
     return statement.step_row() == step_result::done;
@@ -38,12 +35,11 @@ bool friend_repository::list_friends(std::int64_t user_id,
 {
     sql_statement statement{
         database_,
-        "SELECT u.pubkey, u.handle, COALESCE(p.display_name, ''), f.status,"
-        "       f.created_at "
+        "SELECT u.pubkey, u.handle, COALESCE(p.display_name, ''), f.status "
         "FROM friends f "
         "JOIN users u ON u.id = f.friend_id "
         "LEFT JOIN profiles p ON p.user_id = u.id "
-        "WHERE f.user_id = ?1 ORDER BY f.created_at DESC LIMIT ?2"};
+        "WHERE f.user_id = ?1 ORDER BY u.handle LIMIT ?2"};
     if (!bind_integer(statement, 1, user_id)
         || !bind_integer(statement, 2, limit)) {
         return false;
@@ -58,8 +54,6 @@ bool friend_repository::list_friends(std::int64_t user_id,
         record.display_name = read_text(statement, 2);
         record.status = static_cast<proto::friendship_status>(
             read_integer(statement, 3));
-        record.created_at =
-            static_cast<std::uint64_t>(read_integer(statement, 4));
         out.push_back(std::move(record));
     }
     return true;

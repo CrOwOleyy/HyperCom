@@ -48,7 +48,7 @@ bool top8_repository::list_slots(std::int64_t user_id,
     sql_statement statement{
         database_,
         "SELECT t.slot, u.pubkey, u.handle, COALESCE(p.display_name, ''),"
-        "       COALESCE(f.status, 1), COALESCE(f.created_at, 0) "
+        "       COALESCE(f.status, 1) "
         "FROM top8 t "
         "JOIN users u ON u.id = t.friend_id "
         "LEFT JOIN profiles p ON p.user_id = u.id "
@@ -73,8 +73,6 @@ bool top8_repository::list_slots(std::int64_t user_id,
         record.display_name = read_text(statement, 3);
         record.status = static_cast<proto::friendship_status>(
             read_integer(statement, 4));
-        record.created_at =
-            static_cast<std::uint64_t>(read_integer(statement, 5));
         out.details.push_back(std::move(record));
     }
     return true;

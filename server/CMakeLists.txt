@@ -1,7 +1,18 @@
 add_executable(hypercom_server
+    admin/admin_backup_command.cpp
+    admin/admin_command.cpp
+    admin/admin_dispatcher.cpp
+    admin/admin_listener.cpp
+    admin/admin_motd_command.cpp
+    admin/admin_service.cpp
+    admin/admin_session_command.cpp
+    admin/admin_stats_command.cpp
+    admin/admin_text_format.cpp
     config/config_parser.cpp
     config/config_validator.cpp
+    db/database_backup.cpp
     db/database_handle.cpp
+    db/stats_repository.cpp
     db/comment_repository.cpp
     db/dm_repository.cpp
     db/forum_repository.cpp
@@ -33,6 +44,7 @@ add_executable(hypercom_server
     net/event_loop.cpp
     net/noise_channel.cpp
     net/rate_limiter.cpp
+    net/rate_tracker.cpp
     net/server_runtime.cpp
     net/server_static_key.cpp
     net/tcp_listener.cpp

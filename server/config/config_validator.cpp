@@ -52,7 +52,8 @@ void check_limits(limits_config const &limits,
 } // namespace
 
 bool validate_config(server_config const &config,
-                     std::vector<std::string> &problems)
+                     std::vector<std::string> &problems,
+                     std::vector<std::string> &warnings)
 {
     if (!config.clearnet.enabled && !config.onion.enabled) {
         problems.emplace_back(
@@ -68,11 +69,12 @@ bool validate_config(server_config const &config,
         problems.emplace_back("[paths] server_key est requis");
     }
     if (config.logging.log_peer_addresses) {
-        // Pas une erreur, mais ca ne doit pas passer inapercu.
-        problems.emplace_back(
-            "AVERTISSEMENT [logging] log_peer_addresses=true : le serveur va "
-            "journaliser des adresses IP, contrairement au defaut du projet. "
-            "Retirer ce reglage pour revenir au comportement non surveille.");
+        // Un avertissement, pas une erreur : l'administrateur a le droit
+        // d'activer ce reglage, il doit juste savoir ce qu'il fait.
+        warnings.emplace_back(
+            "[logging] log_peer_addresses=true : le serveur va journaliser des "
+            "adresses IP, contrairement au defaut du projet. Retirer ce "
+            "reglage pour revenir au comportement non surveille.");
     }
     return problems.empty();
 }

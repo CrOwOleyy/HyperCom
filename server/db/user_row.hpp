@@ -17,8 +17,6 @@ struct user_row {
     std::int64_t id = 0;
     proto::wire_public_key pubkey{};
     std::string handle;
-    std::uint64_t created_at = 0;
-    std::uint64_t last_seen = 0;
 };
 
 } // namespace hypercom::server

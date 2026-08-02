@@ -3,6 +3,16 @@ target_link_libraries(hypercom_keygen PRIVATE hypercom_common)
 hypercom_apply_executable_hardening(hypercom_keygen)
 hypercom_apply_sanitizers(hypercom_keygen)
 
+# Client de la CLI d'administration. Il ne lie ni la crypto ni sqlite : ce
+# n'est qu'un tuyau vers le socket Unix, toute la logique est cote serveur.
+add_executable(hypercom_adminctl adminctl/adminctl_main.cpp)
+target_include_directories(hypercom_adminctl PRIVATE "${CMAKE_SOURCE_DIR}")
+if(WIN32)
+    target_link_libraries(hypercom_adminctl PRIVATE ws2_32)
+endif()
+hypercom_apply_executable_hardening(hypercom_adminctl)
+hypercom_apply_sanitizers(hypercom_adminctl)
+
 # Harnais de fuzzing : libFuzzer, donc clang uniquement.
 #
 # Il ne lie QUE hypercom_protocol, sans libsodium ni sqlite. Ce n'est pas une

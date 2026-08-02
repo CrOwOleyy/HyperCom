@@ -42,9 +42,11 @@ namespace hypercom::client {
     std::string_view text, std::vector<std::uint8_t> &out,
     std::string &error_out);
 
+// sent_at_out vient de l'INTERIEUR du chiffre : le serveur ne connait pas la
+// date d'envoi, seul le destinataire la retrouve en dechiffrant.
 [[nodiscard]] bool open_direct_message(
     crypto::identity_keypair const &recipient,
     std::span<std::uint8_t const> envelope, std::string &text_out,
-    std::string &error_out);
+    std::uint64_t &sent_at_out, std::string &error_out);
 
 } // namespace hypercom::client

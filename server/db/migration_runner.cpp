@@ -116,7 +116,12 @@ struct migration_file {
         // Tout ou rien : une migration a moitie appliquee laisserait une base
         // dont plus personne ne connait l'etat.
         static_cast<void>(database.execute_script("ROLLBACK", ignored));
-        error_out = file.name + " : " + error_out;
+        // Le message brut de sqlite dit quelle contrainte a saute, jamais quoi
+        // faire ensuite. Le renvoi vers la documentation evite au collaborateur
+        // d'avoir a deviner -- c'est lui qui exploite le serveur, pas nous.
+        error_out = file.name + " : " + error_out
+                    + "\n  La base n'a pas ete modifiee. Voir docs/ADMIN.md, "
+                      "section « Migrations », pour resoudre puis relancer.";
         return false;
     }
     return database.execute_script("COMMIT", error_out);

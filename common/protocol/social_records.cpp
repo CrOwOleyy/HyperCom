@@ -29,8 +29,6 @@ void profile_record::write_to(byte_writer &writer) const
     write_text_field(writer, bio);
     write_text_field(writer, theme_json);
     write_text_field(writer, banner_reference);
-    writer.write_integer(created_at);
-    writer.write_integer(last_seen);
 }
 
 bool profile_record::read_from(byte_reader &reader)
@@ -40,9 +38,7 @@ bool profile_record::read_from(byte_reader &reader)
         && read_text_field(reader, display_name, MAX_DISPLAY_NAME_LENGTH)
         && read_text_field(reader, bio, MAX_BIO_LENGTH)
         && read_text_field(reader, theme_json, MAX_THEME_JSON_LENGTH)
-        && read_text_field(reader, banner_reference, MAX_BLOB_REFERENCE_LENGTH)
-        && reader.read_integer(created_at)
-        && reader.read_integer(last_seen);
+        && read_text_field(reader, banner_reference, MAX_BLOB_REFERENCE_LENGTH);
 }
 
 void friend_record::write_to(byte_writer &writer) const
@@ -51,7 +47,6 @@ void friend_record::write_to(byte_writer &writer) const
     write_text_field(writer, handle);
     write_text_field(writer, display_name);
     writer.write_integer(static_cast<std::uint8_t>(status));
-    writer.write_integer(created_at);
 }
 
 bool friend_record::read_from(byte_reader &reader)
@@ -59,8 +54,7 @@ bool friend_record::read_from(byte_reader &reader)
     return reader.read_fixed_bytes(pubkey)
         && read_text_field(reader, handle, MAX_HANDLE_LENGTH)
         && read_text_field(reader, display_name, MAX_DISPLAY_NAME_LENGTH)
-        && read_friendship_status(reader, status)
-        && reader.read_integer(created_at);
+        && read_friendship_status(reader, status);
 }
 
 } // namespace hypercom::proto

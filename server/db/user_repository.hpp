@@ -24,8 +24,10 @@ public:
                                    std::string_view handle,
                                    std::int64_t &out_id);
 
-    [[nodiscard]] bool update_last_seen(std::int64_t id,
-                                        std::uint64_t timestamp);
+    // Il n'existe deliberement PAS de update_last_seen : enregistrer la
+    // derniere connexion revient a tenir un journal de presence, et il etait
+    // meme lisible par tout le monde via profile_get. Voir la migration
+    // 0003_remove_last_seen.sql.
 
 private:
     database_handle &database_;

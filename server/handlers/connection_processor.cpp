@@ -31,7 +31,7 @@ constexpr std::size_t MAX_NOISE_MESSAGE_SIZE =
 }
 
 [[nodiscard]] bool dispatch_application_frame(handler_context &context,
-                                              rate_limiter const &limiter,
+                                              rate_policy &policy,
                                               std::span<std::uint8_t const> frame)
 {
     proto::frame_header header{};
@@ -45,8 +45,10 @@ constexpr std::size_t MAX_NOISE_MESSAGE_SIZE =
     }
     session_state &session = context.connection.session;
     std::uint64_t const now = util::get_unix_timestamp();
-    if (!limiter.register_event(now, session.requests_in_window,
-                                session.rate_window_start)) {
+    // L'adresse d'abord : elle couvre aussi les sessions pas encore
+    // enregistrees, qui n'ont pas d'identite a plafonner.
+    if (!allow_address_request(policy, session.peer_address, now)
+        || !allow_identity_request(policy, session.user_id, now)) {
         return send_status_error(context.connection,
                                  proto::error_code::rate_limited);
     }
@@ -57,8 +59,7 @@ constexpr std::size_t MAX_NOISE_MESSAGE_SIZE =
 
 } // namespace
 
-bool process_connection_input(handler_context &context,
-                              rate_limiter const &limiter)
+bool process_connection_input(handler_context &context, rate_policy &policy)
 {
     client_connection &connection = context.connection;
     if (!connection.socket.read_available(connection.input_buffer)) {
@@ -82,7 +83,7 @@ bool process_connection_input(handler_context &context,
         if (!connection.channel.open_message(message, frame)) {
             return false;
         }
-        if (!dispatch_application_frame(context, limiter, frame)) {
+        if (!dispatch_application_frame(context, policy, frame)) {
             return false;
         }
     }

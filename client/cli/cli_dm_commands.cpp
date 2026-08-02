@@ -140,8 +140,9 @@ bool run_dm_fetch(cli_context &context, std::string &error_out)
         util::encode_hex(envelope.sender_pubkey, sender);
         std::string text;
         std::string failure;
+        std::uint64_t sent_at = 0;
         if (open_direct_message(context.identity, envelope.ciphertext, text,
-                                failure)) {
+                                sent_at, failure)) {
             std::cout << "  de " << sender.substr(0, 16) << "... : " << text
                       << '\n';
             acknowledgement.envelope_ids.push_back(envelope.id);

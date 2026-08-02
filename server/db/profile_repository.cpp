@@ -43,7 +43,7 @@ bool profile_repository::find_by_pubkey(proto::wire_public_key const &pubkey,
         database_,
         "SELECT u.pubkey, u.handle, COALESCE(p.display_name, ''),"
         "       COALESCE(p.bio, ''), COALESCE(p.theme_json, ''),"
-        "       COALESCE(p.banner_ref, ''), u.created_at, u.last_seen "
+        "       COALESCE(p.banner_ref, '') "
         "FROM users u LEFT JOIN profiles p ON p.user_id = u.id "
         "WHERE u.pubkey = ?1"};
     if (!bind_blob(statement, 1, pubkey)
@@ -58,8 +58,6 @@ bool profile_repository::find_by_pubkey(proto::wire_public_key const &pubkey,
     out.bio = read_text(statement, 3);
     out.theme_json = read_text(statement, 4);
     out.banner_reference = read_text(statement, 5);
-    out.created_at = static_cast<std::uint64_t>(read_integer(statement, 6));
-    out.last_seen = static_cast<std::uint64_t>(read_integer(statement, 7));
     return true;
 }
 

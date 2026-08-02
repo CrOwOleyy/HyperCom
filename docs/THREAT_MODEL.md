@@ -28,18 +28,45 @@ pourrait changer, c'est une absence.
 | Compromission future de la clé de chaîne | Cliquet symétrique : les messages passés restent illisibles. |
 | Injection SQL | Requêtes préparées exclusivement, aucune concaténation. |
 | Trame hostile | Parseur borné, plafonds vérifiés avant allocation, fuzzé. |
+| Admin traçant la présence des utilisateurs | La CLI d'admin ne peut pas lister qui est en ligne : `sessions` ne montre ni pseudo ni adresse, et ce n'est pas réglable. |
+| **N'importe qui** traçant la présence d'un autre | Aucune date de dernière connexion n'est stockée ni servie. La colonne `last_seen` a été supprimée du schéma et du protocole. |
+| Serveur datant les échanges privés | L'horodatage vit **dans** le chiffré. Le serveur ne sait plus quand un message a été envoyé, seulement dans quel ordre les enveloppes sont arrivées. |
+| Corrélation par âge de compte ou de relation | `users.created_at` et `friends.created_at` supprimées : ni date d'inscription, ni chronologie des liens sociaux. |
+| Usurpation par la casse du pseudo | Unicité `COLLATE NOCASE` : `younes`, `Younes` et `YOUNES` sont le même pseudo. |
+| Contournement de la limite de débit par reconnexion | Les compteurs sont partagés entre connexions, pas remis à zéro à chacune. |
 
 ## 3. Ce qui n'est PAS protégé — limites assumées
 
 ### 3.1 Les métadonnées de routage
 
-**Le serveur voit qui écrit à qui, et quand.** Il stocke `recipient_id`,
-`sender_pubkey` et un horodatage.
+**Le serveur voit qui écrit à qui.** Il stocke `recipient_id` et
+`sender_pubkey` — sans eux, il ne saurait pas à qui remettre l'enveloppe.
 
-Masquer cela demanderait un mix-net ou des boîtes aveugles, hors périmètre v1.
-C'est la limite la plus importante de ce modèle, et elle doit être dite
-franchement aux utilisateurs : le contenu est protégé, le graphe social ne
-l'est pas.
+Il ne sait en revanche **plus quand** : l'horodatage est passé à l'intérieur du
+chiffré, et l'ordre d'arrivée (`id`) est tout ce qui reste. Un serveur saisi
+révèle donc le graphe des échanges, pas leur chronologie.
+
+Masquer le graphe lui-même demanderait un mix-net ou des boîtes aveugles, hors
+périmètre v1. C'est la limite la plus importante de ce modèle, et elle doit
+être dite franchement aux utilisateurs.
+
+### 3.1 bis Ce que le serveur détient réellement d'une personne
+
+Après un usage complet (inscription, forum, post, commentaire, ami, message
+privé), voici l'intégralité de ce que contient la base :
+
+```
+users        id, pubkey, handle
+friends      user_id, friend_id, status
+top8         user_id, slot, friend_id
+profiles     user_id, display_name, bio, theme_json, banner_ref
+dm_envelopes id, recipient_id, sender_pubkey, ciphertext
+```
+
+Aucune date sur aucune de ces lignes. Les seuls horodatages qui subsistent
+portent sur du **contenu public** — `posts`, `comments`, `forums` — où ils sont
+de toute façon visibles de quiconque lit le fil, et sur `motd`, qui est une
+annonce d'administration.
 
 ### 3.2 Pas de confidentialité persistante future
 
@@ -67,10 +94,16 @@ Le code de `common/crypto/noise_*` est une implémentation maison d'un protocole
 libsodium. Le risque résiduel est une erreur dans l'enchaînement des étapes,
 pas dans les primitives.
 
-**À faire, et non fait à ce jour** : valider contre les vecteurs de test
-officiels du projet Noise. Les tests actuels vérifient le round-trip complet
-dans les deux sens et le refus d'une clé mal épinglée, ce qui attrape les
-erreurs grossières mais pas une divergence subtile avec la spécification.
+**Fait** : `tests/noise_official_vectors_test.cpp` rejoue le handshake avec les
+clés fixes d'un vecteur officiel (source noise-c, `Noise_NK_25519_ChaChaPoly_
+SHA256`, sans PSK) et compare chaque octet — messages de handshake, hachage
+final, clés de transport, quatre messages de transport — à la référence.
+
+Ce test couvre un angle mort que le round-trip ne couvre pas : un bug présent
+à l'identique côté client et côté serveur (mauvais ordre de `mix_hash`, par
+exemple) resterait invisible à deux parties qui se parlent entre elles mais se
+trompent de la même façon. Comparer à une référence externe est le seul moyen
+de l'attraper.
 
 ### 3.6 Le premier contact avec la clé du serveur
 
@@ -108,11 +141,11 @@ un forum lisible seulement par son auteur n'est pas un forum.
 | Requêtes préparées exclusivement | **fait** |
 | Aucune globale mutable (G4) | **fait**, y compris l'arrêt par `signalfd` plutôt qu'un drapeau global |
 | Pas de journalisation d'IP par défaut | **fait** |
+| Vecteurs de test officiels Noise | **fait**, `tests/noise_official_vectors_test.cpp` |
 | Purge automatique des journaux | **configurée, non appliquée** — `retention_days` est lu mais aucune rotation n'est implémentée |
 | Abandon des privilèges après bind | **non fait** |
 | seccomp-bpf + espaces de noms | **non fait** |
 | Unité systemd durcie | **non fait** |
-| Vecteurs de test officiels Noise | **non fait** |
 
-Les quatre dernières lignes relèvent du déploiement et du domaine du
-collaborateur (BRIEF.md §10).
+Les trois dernières lignes relèvent du déploiement et du domaine du
+collaborateur.

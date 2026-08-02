@@ -20,9 +20,9 @@ enum class session_phase {
 // un journal sans passer par logger::redact_peer_address. Elle n'est ecrite
 // nulle part sur disque.
 //
-// Les compteurs de debit vivent ici plutot que dans une table globale : c'est
-// impose par G4, et ca a un effet secondaire heureux -- ils disparaissent avec
-// la connexion, sans laisser d'historique par identite.
+// Les compteurs de debit ne sont PAS ici : une limite qui repart a zero a
+// chaque connexion ne limite rien. Ils vivent dans rate_tracker, partages
+// entre connexions.
 struct session_state {
     session_phase phase = session_phase::awaiting_handshake;
     proto::wire_public_key announced_pubkey{};
@@ -32,8 +32,6 @@ struct session_state {
     std::string peer_address;
     std::uint64_t connected_at = 0;
     std::uint64_t last_activity_at = 0;
-    std::uint32_t requests_in_window = 0;
-    std::uint64_t rate_window_start = 0;
 };
 
 } // namespace hypercom::server

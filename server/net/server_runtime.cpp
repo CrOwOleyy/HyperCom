@@ -57,8 +57,10 @@ server_runtime::server_runtime(server_config const &config,
                 config.limits.max_connections_per_address,
                 {},
                 {}},
-      limiter_{config.limits.requests_per_minute_per_identity},
-      signal_descriptor_{}
+      address_limiter_{config.limits.requests_per_minute_per_address},
+      identity_limiter_{config.limits.requests_per_minute_per_identity},
+      rate_tracker_{}, admin_{},
+      started_at_{util::get_unix_timestamp()}, signal_descriptor_{}
 {
 }
 
@@ -83,6 +85,10 @@ bool server_runtime::start_listeners(std::string &error_out)
         && !loop_.watch_descriptor(onion_listener_.get_descriptor(), false,
                                    false)) {
         error_out = "listener onion non enregistrable";
+        return false;
+    }
+    if (!open_admin_service(admin_, config_.paths.admin_socket_path, loop_,
+                            error_out)) {
         return false;
     }
 #if !defined(_WIN32)
@@ -135,8 +141,9 @@ void server_runtime::service_connection(int descriptor, std::uint32_t events)
         return;
     }
     handler_context context{config_, logger_, database_, *connection};
+    rate_policy policy{address_limiter_, identity_limiter_, rate_tracker_};
     if ((events & EPOLLIN) != 0
-        && !process_connection_input(context, limiter_)) {
+        && !process_connection_input(context, policy)) {
         close_connection(descriptor);
         return;
     }
@@ -152,6 +159,36 @@ void server_runtime::service_connection(int descriptor, std::uint32_t events)
     }
 }
 
+void server_runtime::dispatch_event(int descriptor, std::uint32_t events)
+{
+    if (descriptor == clearnet_listener_.get_descriptor()) {
+        accept_pending_connections(clearnet_listener_);
+        return;
+    }
+    if (descriptor == onion_listener_.get_descriptor()) {
+        accept_pending_connections(onion_listener_);
+        return;
+    }
+    if (descriptor == admin_.listener.get_descriptor()) {
+        accept_admin_connections(admin_, loop_);
+        return;
+    }
+    if (owns_admin_descriptor(admin_, descriptor)) {
+        admin_context context{config_, logger_, database_, registry_,
+                              started_at_};
+        std::vector<int> close_requests;
+        service_admin_connection(admin_, loop_, descriptor, context,
+                                 close_requests);
+        // Les fermetures demandees par `sessions close` sont appliquees ici,
+        // une fois le parcours du registre termine.
+        for (int const target : close_requests) {
+            close_connection(target);
+        }
+        return;
+    }
+    service_connection(descriptor, events);
+}
+
 void server_runtime::close_connection(int descriptor)
 {
     loop_.forget_descriptor(descriptor);
@@ -160,10 +197,15 @@ void server_runtime::close_connection(int descriptor)
 
 void server_runtime::sweep_expired_connections()
 {
-    for (int const descriptor : collect_expired_descriptors(
-             registry_, util::get_unix_timestamp(), config_.limits)) {
+    std::uint64_t const now = util::get_unix_timestamp();
+    for (int const descriptor :
+         collect_expired_descriptors(registry_, now, config_.limits)) {
         close_connection(descriptor);
     }
+    // Meme balayage pour les fenetres de debit : sans ca, les deux tables
+    // grossiraient indefiniment et celle des adresses deviendrait un
+    // historique.
+    forget_expired_windows(rate_tracker_, now);
 }
 
 bool server_runtime::run_until_stopped(std::string &error_out)
@@ -182,13 +224,7 @@ bool server_runtime::run_until_stopped(std::string &error_out)
                                     "signal recu, arret du serveur");
                 return true;
             }
-            if (descriptor == clearnet_listener_.get_descriptor()) {
-                accept_pending_connections(clearnet_listener_);
-            } else if (descriptor == onion_listener_.get_descriptor()) {
-                accept_pending_connections(onion_listener_);
-            } else {
-                service_connection(descriptor, event.events);
-            }
+            dispatch_event(descriptor, event.events);
         }
         std::uint64_t const now = util::get_unix_timestamp();
         if (now != last_sweep) {

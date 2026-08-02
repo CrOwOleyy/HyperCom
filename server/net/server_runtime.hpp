@@ -4,11 +4,12 @@
 
 #include "common/crypto/key_types.hpp"
 #include "common/util/logger.hpp"
+#include "server/admin/admin_service.hpp"
 #include "server/config/server_config.hpp"
 #include "server/db/database_handle.hpp"
 #include "server/net/connection_registry.hpp"
 #include "server/net/event_loop.hpp"
-#include "server/net/rate_limiter.hpp"
+#include "server/net/rate_tracker.hpp"
 #include "server/net/tcp_listener.hpp"
 
 namespace hypercom::server {
@@ -32,6 +33,10 @@ public:
     [[nodiscard]] bool run_until_stopped(std::string &error_out);
 
 private:
+    // Aiguille un descripteur vers son proprietaire : listener clearnet,
+    // listener onion, socket d'admin, ou connexion client.
+    void dispatch_event(int descriptor, std::uint32_t events);
+
     void accept_pending_connections(tcp_listener const &listener);
 
     void service_connection(int descriptor, std::uint32_t events);
@@ -49,7 +54,11 @@ private:
     tcp_listener onion_listener_;
     event_loop loop_;
     connection_registry registry_;
-    rate_limiter limiter_;
+    rate_limiter address_limiter_;
+    rate_limiter identity_limiter_;
+    rate_tracker rate_tracker_;
+    admin_service admin_;
+    std::uint64_t started_at_;
     unique_descriptor signal_descriptor_;
 };
 

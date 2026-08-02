@@ -29,7 +29,14 @@ constexpr int EXIT_RUNTIME_ERROR = 3;
         return false;
     }
     std::vector<std::string> problems;
-    if (!server::validate_config(out, problems)) {
+    std::vector<std::string> warnings;
+    bool const accepted = server::validate_config(out, problems, warnings);
+    // Les avertissements s'affichent meme quand la configuration est refusee :
+    // ils peuvent expliquer l'erreur qui suit.
+    for (std::string const &warning : warnings) {
+        std::cerr << "AVERTISSEMENT " << warning << '\n';
+    }
+    if (!accepted) {
         std::cerr << "configuration refusee : " << path << '\n';
         for (std::string const &problem : problems) {
             std::cerr << "  " << problem << '\n';

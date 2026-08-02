@@ -53,4 +53,11 @@ bool motd_repository::publish_motd(std::string_view body)
            && succeeded;
 }
 
+bool motd_repository::clear_active_motd()
+{
+    std::string error;
+    return database_.execute_script(
+        "UPDATE motd SET active = 0 WHERE active = 1", error);
+}
+
 } // namespace hypercom::server

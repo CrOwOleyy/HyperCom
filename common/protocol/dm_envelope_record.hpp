@@ -17,11 +17,13 @@ namespace hypercom::proto {
 //
 // Limite connue : il voit quand meme qui ecrit a qui, et quand. La masquer
 // demanderait un mix-net -- hors perimetre v1, voir docs/THREAT_MODEL.md.
+// Pas d'horodatage : la date d'envoi vit a l'interieur du chiffre, donc le
+// serveur ne tient aucun registre horodate des echanges. Le client la retrouve
+// en dechiffrant.
 struct dm_envelope_record {
     std::uint64_t id = 0;
     wire_public_key sender_pubkey{};
     std::vector<std::uint8_t> ciphertext;
-    std::uint64_t created_at = 0;
 
     void write_to(byte_writer &writer) const;
 

@@ -19,8 +19,9 @@ struct profile_record {
     std::string bio;
     std::string theme_json;
     std::string banner_reference;
-    std::uint64_t created_at = 0;
-    std::uint64_t last_seen = 0;
+    // Ni last_seen, ni created_at : le serveur n'enregistre ni la derniere
+    // connexion ni l'age d'un compte, et le protocole ne prevoit donc aucun
+    // champ pour les transporter. Voir les migrations 0003 et 0004.
 
     void write_to(byte_writer &writer) const;
 
@@ -38,7 +39,6 @@ struct friend_record {
     std::string handle;
     std::string display_name;
     friendship_status status = friendship_status::requested;
-    std::uint64_t created_at = 0;
 
     void write_to(byte_writer &writer) const;
 
