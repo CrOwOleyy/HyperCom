@@ -10,6 +10,26 @@ Les trois seules dépendances autorisées par le brief (§15) :
 | **libsodium** | toute la cryptographie | `third_party/libsodium/{include,lib}` |
 | **SQLite** | stockage, amalgamation compilée dans le binaire | `third_party/sqlite3/sqlite3.{c,h}` |
 | **Dear ImGui** | UI du client natif | `third_party/imgui/` |
+| **miniaudio** | thème d'accueil (MP3), client graphique seul | `third_party/miniaudio/miniaudio.h` |
+
+## La quatrième dépendance : miniaudio
+
+Elle sort des trois autorisées par le brief, donc voici la justification.
+
+Sortir un MP3 sur une carte son demande un décodeur **et** un backend par
+plateforme (WASAPI, ALSA, CoreAudio). L'alternative maison représentait
+plusieurs milliers de lignes de code plateforme à auditer, pour un jingle de
+douze secondes. miniaudio tient en un seul en-tête du domaine public.
+
+Son périmètre est strictement borné :
+
+- seul `hypercom_client` la lie — ni le serveur, ni le client CLI, ni `common` ;
+- son absence ne casse rien. CMake compile alors `audio_player_silent.cpp` à la
+  place, et l'intro se déroule à l'identique, simplement sans musique.
+
+```bash
+git clone --depth 1 https://github.com/mackron/miniaudio third_party/miniaudio
+```
 
 ## Récupération
 

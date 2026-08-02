@@ -158,9 +158,9 @@ void rebuild_scaled_font(ui_scale_state &state)
     state.font_rebuild_needed = false;
 }
 
-void draw_zoom_controls(ui_scale_state &state)
+void draw_zoom_controls(ui_scale_state &state, ui_state &ui_state_ref)
 {
-    ImGui::TextDisabled("Zoom");
+    ImGui::TextDisabled("%s", tr("zoom_label", ui_state_ref.current_lang));
     ImGui::SameLine();
     if (ImGui::SmallButton("-")) {
         state.user_zoom = clamp_user_zoom(state.user_zoom - USER_ZOOM_STEP);
@@ -175,10 +175,6 @@ void draw_zoom_controls(ui_scale_state &state)
         state.font_rebuild_needed = true;
     }
     ImGui::SameLine();
-    if (ImGui::SmallButton("100%")) {
-        state.user_zoom = 1.0f;
-        state.font_rebuild_needed = true;
-    }
 }
 
 } // namespace hypercom::client

@@ -4,7 +4,8 @@
 
 #include <string>
 
-#include "client/ui/pale_green_theme.hpp"
+#include "client/ui/i18n.hpp"
+#include "client/ui/aero_theme.hpp"
 #include "client/ui/ui_actions.hpp"
 
 namespace hypercom::client {
@@ -31,20 +32,19 @@ void draw_auth_modal(cli_context &context, ui_state &state, float scale)
     ImGui::Begin("creation_compte_modal", nullptr, card_flags);
 
     ImGui::Spacing();
-    ImGui::TextColored(PALE_GREEN_ACCENT, "BIENVENUE SUR HYPERCOM");
+    ImGui::TextColored(AERO_ACCENT, "%s", tr("auth_welcome", state.current_lang));
     ImGui::Separator();
     ImGui::Spacing();
 
-    ImGui::TextWrapped(
-        "Votre clé publique n'a pas encore de compte sur ce serveur.");
-    ImGui::PushStyleColor(ImGuiCol_Text, PALE_GREEN_INK_MUTED);
-    ImGui::TextWrapped("Choisissez un pseudo pour vous enregistrer et accéder au réseau social.");
+    ImGui::TextWrapped("%s", tr("auth_desc_1", state.current_lang));
+    ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK_MUTED);
+    ImGui::TextWrapped("%s", tr("auth_desc_2", state.current_lang));
     ImGui::PopStyleColor();
 
     ImGui::Spacing();
     ImGui::Spacing();
 
-    draw_section_heading("PSEUDO DE COMPTE");
+    draw_section_heading(tr("auth_handle_heading", state.current_lang));
 
     bool const submit_pressed =
         ImGui::InputText("##registration_handle",
@@ -52,29 +52,31 @@ void draw_auth_modal(cli_context &context, ui_state &state, float scale)
                          sizeof(state.registration_handle_input),
                          ImGuiInputTextFlags_EnterReturnsTrue);
 
-    ImGui::TextDisabled(
-        "3 à 32 caractères (lettres, chiffres, tiret, souligné)");
+    ImGui::TextDisabled("%s", tr("auth_handle_hint", state.current_lang));
 
     ImGui::Spacing();
 
     if (!state.status_message.empty()) {
-        ImVec4 const color = state.status_is_error ? PALE_GREEN_ALERT
-                                                   : PALE_GREEN_ACCENT;
+        ImVec4 const color = state.status_is_error ? AERO_ALERT
+                                                   : AERO_ACCENT;
         ImGui::PushStyleColor(ImGuiCol_Text, color);
         ImGui::TextWrapped("%s", state.status_message.c_str());
         ImGui::PopStyleColor();
         ImGui::Spacing();
     }
 
-    if (ImGui::Button("S'inscrire et se connecter", ImVec2{-1.0f, 40.0f * scale})
+    if (ImGui::Button(tr("auth_btn_register", state.current_lang), ImVec2{-1.0f, 40.0f * scale})
         || submit_pressed) {
         std::string const handle_str = state.registration_handle_input;
         std::string failure;
         if (context.session.register_handle(handle_str, failure)) {
             state.registered = true;
             state.handle = context.session.get_handle();
-            state.status_message = "Compte créé avec succès !";
+            state.status_message = tr("auth_success", state.current_lang);
             state.status_is_error = false;
+            // Seul endroit qui leve ce drapeau : la sequence d'accueil ne se
+            // joue qu'a la creation du compte, jamais aux connexions suivantes.
+            state.intro_requested = true;
             refresh_forum_list(context, state);
         } else {
             state.status_message = failure;

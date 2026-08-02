@@ -26,6 +26,35 @@ hgui
 hgui --identity compte2.key
 
 
+## La séquence d'accueil
+
+Elle ne se joue **qu'à la création d'un compte**, jamais aux connexions
+suivantes. Pour la revoir sans créer de compte jetable :
+
+hgui --replay-intro
+
+Ou en repartant d'une identité neuve — attention, le fichier ne doit pas déjà
+exister, sinon le compte est déjà enregistré et l'intro ne se déclenche pas :
+
+hgui --identity compte_neuf.key
+
+Déroulé, calé sur la durée réelle de `menu.mp3` (~12,5 s) :
+
+| Moment | Ce qui se passe |
+|---|---|
+| 0 → 6 s | Carte de verre centrée, « Bienvenue dans l'espace HyperCom. » |
+| 6 s → fin | Les trois colonnes remontent l'une après l'autre, en bulles |
+| ensuite | Interface normale, plus aucune animation |
+
+Remplacer `menu.mp3` recale l'animation tout seul : la durée est lue dans le
+fichier. CMake le recopie à côté de l'exécutable à chaque build.
+
+Pas de son ? Ce n'est jamais bloquant — l'intro se déroule à l'identique sur
+l'horloge. Le client affiche la raison au démarrage :
+
+    intro : musique, duree retenue 12.5268 s
+
+
 
 ## Sur Linux / WSL
 

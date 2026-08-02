@@ -89,6 +89,39 @@ function(hypercom_require_sqlite3)
         "apt install libsqlite3-dev")
 endfunction()
 
+# miniaudio : lecture du theme d'accueil, client graphique uniquement.
+#
+# QUATRIEME DEPENDANCE, hors des trois autorisees par BRIEF.md 15.
+# Justification : sortir un MP3 sur une carte son demande soit une
+# bibliotheque, soit un decodeur maison doublé de deux backends plateforme
+# (WASAPI, ALSA). miniaudio tient en un seul en-tete du domaine public, ne
+# touche que hypercom_client, et son absence ne casse rien -- le client se
+# construit alors avec audio_player_silent.cpp et l'intro se joue sans son.
+function(hypercom_try_miniaudio out_found)
+    set(miniaudio_header "${HYPERCOM_THIRD_PARTY_DIR}/miniaudio/miniaudio.h")
+    if(NOT EXISTS "${miniaudio_header}")
+        message(STATUS
+            "hypercom: audio desactive -- third_party/miniaudio absent. "
+            "L'interface fonctionne, l'intro se joue sans musique.")
+        set(${out_found} FALSE PARENT_SCOPE)
+        return()
+    endif()
+    if(NOT TARGET hypercom::miniaudio)
+        add_library(hypercom_miniaudio STATIC
+            "${CMAKE_SOURCE_DIR}/client/ui/miniaudio_implementation.c")
+        target_include_directories(hypercom_miniaudio PUBLIC
+            "${HYPERCOM_THIRD_PARTY_DIR}/miniaudio")
+        hypercom_silence_third_party(hypercom_miniaudio)
+        if(UNIX AND NOT APPLE)
+            find_package(Threads REQUIRED)
+            target_link_libraries(hypercom_miniaudio PUBLIC
+                Threads::Threads ${CMAKE_DL_LIBS} m)
+        endif()
+        add_library(hypercom::miniaudio ALIAS hypercom_miniaudio)
+    endif()
+    set(${out_found} TRUE PARENT_SCOPE)
+endfunction()
+
 # ImGui est optionnel : son absence desactive seulement le client graphique,
 # elle ne doit jamais casser la construction du serveur ni du client CLI.
 #

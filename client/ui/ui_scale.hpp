@@ -1,5 +1,7 @@
 #pragma once
 
+#include "client/ui/ui_state.hpp"
+
 struct GLFWwindow;
 
 namespace hypercom::client {
@@ -47,6 +49,6 @@ void detect_display_scale(GLFWwindow *window, ui_scale_state &state);
 // A n'appeler QU'ENTRE deux images, jamais entre NewFrame et Render.
 void rebuild_scaled_font(ui_scale_state &state);
 
-void draw_zoom_controls(ui_scale_state &state);
+void draw_zoom_controls(ui_scale_state &state, ui_state &ui_state_ref);
 
 } // namespace hypercom::client

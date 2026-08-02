@@ -14,6 +14,10 @@ struct cli_options {
     std::string identity_path = "hypercom_identity.key";
     std::string command;
     std::vector<std::string> arguments;
+    // Client graphique uniquement : rejoue la sequence d'accueil sur un compte
+    // deja existant. Sert a regler l'animation sans creer un compte jetable a
+    // chaque essai. Le client CLI ignore ce drapeau.
+    bool replay_intro = false;
 };
 
 [[nodiscard]] bool parse_cli_options(int argc, char **argv, cli_options &out,

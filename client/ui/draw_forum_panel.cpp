@@ -3,7 +3,8 @@
 #include <imgui.h>
 
 #include "client/net/message_exchange.hpp"
-#include "client/ui/pale_green_theme.hpp"
+#include "client/ui/i18n.hpp"
+#include "client/ui/aero_theme.hpp"
 #include "client/ui/ui_actions.hpp"
 #include "common/protocol/forum_create_message.hpp"
 
@@ -12,11 +13,12 @@ namespace {
 
 void draw_forum_creator(cli_context &context, ui_state &state)
 {
-    ImGui::InputText("Nom", state.forum_name_input,
+    draw_section_heading(tr("forum_create_heading", state.current_lang));
+    ImGui::InputText(tr("forum_create_name", state.current_lang), state.forum_name_input,
                      sizeof(state.forum_name_input));
-    ImGui::InputText("Description", state.forum_description_input,
+    ImGui::InputText(tr("forum_create_desc", state.current_lang), state.forum_description_input,
                      sizeof(state.forum_description_input));
-    if (!ImGui::Button("Créer ce forum")) {
+    if (!ImGui::Button(tr("forum_create_btn", state.current_lang))) {
         return;
     }
     proto::forum_create_request request;
@@ -44,8 +46,8 @@ void draw_forum_creator(cli_context &context, ui_state &state)
 
 void draw_forum_list(cli_context &context, ui_state &state, float list_height)
 {
-    draw_section_heading("FORUMS");
-    if (ImGui::Button("Actualiser")) {
+    draw_section_heading(tr("forum_heading", state.current_lang));
+    if (ImGui::Button(tr("forum_btn_refresh", state.current_lang))) {
         refresh_forum_list(context, state);
     }
     ImGui::BeginChild("forum_list", ImVec2{0.0f, list_height}, true);
@@ -65,9 +67,9 @@ void draw_forum_list(cli_context &context, ui_state &state, float list_height)
 
 void draw_post_list(cli_context &context, ui_state &state, float list_height)
 {
-    draw_section_heading("FIL");
+    draw_section_heading(tr("thread_list_heading", state.current_lang));
     if (state.selected_forum_id == 0) {
-        ImGui::TextDisabled("Choisir un forum");
+        ImGui::TextDisabled("%s", tr("thread_list_empty", state.current_lang));
         return;
     }
     ImGui::BeginChild("post_list", ImVec2{0.0f, list_height}, true);
@@ -86,17 +88,17 @@ void draw_post_composer(cli_context &context, ui_state &state, float input_heigh
     if (state.selected_forum_id == 0) {
         return;
     }
-    draw_section_heading("PUBLIER");
-    ImGui::InputText("titre", state.post_title_input,
+    draw_section_heading(tr("thread_create_heading", state.current_lang));
+    ImGui::InputText(tr("thread_create_title", state.current_lang), state.post_title_input,
                      sizeof(state.post_title_input));
-    ImGui::InputTextMultiline("corps", state.post_body_input,
+    ImGui::InputTextMultiline(tr("thread_create_body", state.current_lang), state.post_body_input,
                               sizeof(state.post_body_input),
                               ImVec2{0.0f, input_height});
-    if (ImGui::Button("publier")) {
+    if (ImGui::Button(tr("thread_create_btn", state.current_lang))) {
         submit_post(context, state);
     }
     ImGui::SameLine();
-    ImGui::TextDisabled("texte et liens uniquement");
+    ImGui::TextDisabled("%s", tr("thread_create_hint", state.current_lang));
 }
 
 void draw_forum_column(cli_context &context, ui_state &state, float column_width)

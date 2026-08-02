@@ -40,7 +40,8 @@ void print_cli_usage()
            "  --host <adresse>       defaut 127.0.0.1\n"
            "  --port <port>          defaut 7717\n"
            "  --server-key <hex>     cle statique du serveur, 64 caracteres\n"
-           "  --identity <chemin>    fichier de cle privee chiffree\n\n"
+           "  --identity <chemin>    fichier de cle privee chiffree\n"
+           "  --replay-intro         (client graphique) rejoue l'accueil\n\n"
            "Commandes :\n"
            "  register <pseudo>\n"
            "  whoami\n"
@@ -88,6 +89,8 @@ bool parse_cli_options(int argc, char **argv, cli_options &out,
                             error_out)) {
                 return false;
             }
+        } else if (argument == "--replay-intro") {
+            out.replay_intro = true;
         } else if (out.command.empty()) {
             out.command = argument;
         } else {

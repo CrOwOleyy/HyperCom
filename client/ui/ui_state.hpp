@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "client/ui/i18n.hpp"
 #include "common/protocol/content_records.hpp"
 #include "common/protocol/dm_envelope_record.hpp"
 #include "common/protocol/forum_record.hpp"
@@ -29,6 +30,7 @@ struct decrypted_message {
 // est en mode immediat : chaque image relit cet etat et le redessine, il n'y a
 // donc rien a synchroniser entre un modele et une vue.
 struct ui_state {
+    language current_lang = language::french;
     bool connected = false;
     bool registered = false;
     std::string handle;
@@ -36,6 +38,10 @@ struct ui_state {
     std::string server_key_hex;
     std::string status_message;
     bool status_is_error = false;
+    // Leve une seule fois, par draw_auth_modal, juste apres la creation du
+    // compte. gui_main le consomme pour lancer la musique et la sequence
+    // d'accueil : une connexion ordinaire ne declenche donc rien.
+    bool intro_requested = false;
 
     std::vector<proto::forum_record> forums;
     std::uint64_t selected_forum_id = 0;
