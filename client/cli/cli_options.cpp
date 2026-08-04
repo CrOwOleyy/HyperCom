@@ -116,9 +116,11 @@ bool read_passphrase(std::string &out, std::string &error_out)
         out = from_environment;
         return true;
     }
-    // Pour faciliter le test en double-cliquant sur l'exe (qui n'a pas l'env env.ps1)
-    out = "REDACTED-PASSPHRASE";
-    return true;
+    // Aucune valeur de repli ici. Une passphrase codee en dur se retrouve dans
+    // chaque binaire distribue, donc dans les mains de tout le monde : le
+    // keystore Argon2id ne protegerait plus rien. Le client graphique n'a pas
+    // de console et echouera ici -- c'est voulu, il passe par
+    // HYPERCOM_PASSPHRASE et report_startup_failure le dit.
     std::cout << "passphrase : " << std::flush;
     if (!std::getline(std::cin, out) || out.empty()) {
         error_out = "passphrase requise";

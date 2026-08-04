@@ -9,8 +9,10 @@ namespace hypercom::client {
 struct cli_options {
     std::string host = "127.0.0.1";
     std::uint16_t port = 7717;
-    std::string server_key_hex =
-        "REDACTED-SERVER-KEY";
+    // Vide par defaut, et c'est essentiel : epingler une cle par defaut ferait
+    // silencieusement confiance au serveur de celui qui a compile le binaire.
+    // La validation exige --server-key, ce qui force un choix explicite.
+    std::string server_key_hex;
     std::string identity_path = "hypercom_identity.key";
     std::string command;
     std::vector<std::string> arguments;
