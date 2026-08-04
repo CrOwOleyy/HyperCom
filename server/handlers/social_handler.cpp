@@ -121,10 +121,19 @@ bool handle_top8_get_request(handler_context &context,
     if (!require_registered_session(context)) {
         return true;
     }
-    static_cast<void>(reader);
+    proto::top8_get_request request;
+    if (!request.read_from(reader)) {
+        return false;
+    }
+    user_repository users{context.database};
+    user_row target;
+    if (!users.find_by_pubkey(request.target_pubkey, target)) {
+        return send_status_error(context.connection,
+                                 proto::error_code::not_found);
+    }
     top8_repository slots{context.database};
     proto::top8_response response;
-    if (!slots.list_slots(context.connection.session.user_id, response)) {
+    if (!slots.list_slots(target.id, response)) {
         return send_status_error(context.connection,
                                  proto::error_code::internal_error);
     }

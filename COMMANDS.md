@@ -1,4 +1,13 @@
 
+## Configuration locale
+
+`env.ps1` (Windows) et `env.sh` (Linux/WSL) ne sont pas versionnés : ils
+contiennent votre passphrase locale et la clé publique de votre serveur.
+Première utilisation :
+
+cp env.example.ps1 env.ps1   # ou env.example.sh -> env.sh
+# puis éditer env.ps1 / env.sh avec vos propres valeurs
+
 ## Administrer le serveur
 
 Le serveur ouvre un socket local (`run/hypercom-admin.sock` par défaut) sur

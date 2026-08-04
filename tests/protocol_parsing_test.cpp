@@ -96,12 +96,12 @@ void check_frame_codec(tests::test_report &report)
 
 void check_handle_validation(tests::test_report &report)
 {
-    HYPERCOM_CHECK(report, proto::validate_handle("younes"));
+    HYPERCOM_CHECK(report, proto::validate_handle("alice"));
     HYPERCOM_CHECK(report, proto::validate_handle("a_b-1"));
     HYPERCOM_CHECK(report, !proto::validate_handle("ab"));
     HYPERCOM_CHECK(report, !proto::validate_handle("1abc"));
-    // Majuscules autorisées (ex: "Younes")
-    HYPERCOM_CHECK(report, proto::validate_handle("Younes"));
+    // Majuscules autorisées (ex: "Alice")
+    HYPERCOM_CHECK(report, proto::validate_handle("Alice"));
     // Homoglyphe cyrillique refuse par la restriction ASCII.
     HYPERCOM_CHECK(report, !proto::validate_handle("\xD1\x83ounes"));
 }

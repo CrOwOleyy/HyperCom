@@ -24,6 +24,7 @@ add_executable(hypercom_cli
     cli/cli_forum_commands.cpp
     cli/cli_options.cpp
     cli/cli_social_commands.cpp
+    cli/cli_top8_commands.cpp
     cli_main.cpp)
 target_link_libraries(hypercom_cli PRIVATE hypercom_client_core)
 hypercom_apply_executable_hardening(hypercom_cli)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -9,8 +10,16 @@
 #include "common/protocol/dm_envelope_record.hpp"
 #include "common/protocol/forum_record.hpp"
 #include "common/protocol/social_records.hpp"
+#include "common/protocol/top8_message.hpp"
 
 namespace hypercom::client {
+
+// Deux onglets pour la colonne laterale : messages prives, ou social (amis,
+// profils consultes, top 8). Evite d'empiler les trois dans le meme espace.
+enum class side_panel_tab {
+    direct_messages,
+    social,
+};
 
 // Un message prive deja dechiffre, tel qu'il s'affiche.
 //
@@ -53,8 +62,17 @@ struct ui_state {
     std::vector<proto::comment_record> comments;
     bool thread_truncated = false;
 
+    side_panel_tab active_side_tab = side_panel_tab::direct_messages;
+
     std::vector<proto::friend_record> friends;
     proto::profile_record viewed_profile;
+    std::array<proto::wire_public_key, proto::TOP8_SLOT_COUNT>
+        viewed_top8_slots{};
+    std::vector<proto::friend_record> viewed_top8_details;
+
+    std::array<proto::wire_public_key, proto::TOP8_SLOT_COUNT>
+        own_top8_slots{};
+    std::vector<proto::friend_record> own_top8_details;
 
     std::vector<decrypted_message> inbox;
     std::string dm_recipient_hex;
@@ -71,6 +89,7 @@ struct ui_state {
     char dm_recipient_input[80] = {};
     char dm_text_input[2048] = {};
     char registration_handle_input[64] = {};
+    char friend_add_input[80] = {};
 };
 
 } // namespace hypercom::client

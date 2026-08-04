@@ -23,6 +23,17 @@ struct top8_set_request {
     [[nodiscard]] bool read_from(byte_reader &reader);
 };
 
+// Cible dont on consulte le top 8. Sans ce champ, le message ne peut
+// renvoyer que le sien propre -- ce qui viderait le concept de son sens
+// social : voir le top 8 des autres, pas seulement geree le sien.
+struct top8_get_request {
+    wire_public_key target_pubkey{};
+
+    void write_to(byte_writer &writer) const;
+
+    [[nodiscard]] bool read_from(byte_reader &reader);
+};
+
 struct top8_response {
     std::array<wire_public_key, TOP8_SLOT_COUNT> slots{};
     std::vector<friend_record> details;

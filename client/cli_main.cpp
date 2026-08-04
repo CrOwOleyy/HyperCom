@@ -8,6 +8,7 @@
 #include "client/cli/cli_forum_commands.hpp"
 #include "client/cli/cli_options.hpp"
 #include "client/cli/cli_social_commands.hpp"
+#include "client/cli/cli_top8_commands.hpp"
 #include "client/keystore/identity_store.hpp"
 #include "common/crypto/sodium_runtime.hpp"
 #include "common/util/hex_codec.hpp"
@@ -93,6 +94,12 @@ using namespace hypercom;
     }
     if (command == "prekey-publish") {
         return client::run_prekey_publish(context, error_out);
+    }
+    if (command == "top8-set") {
+        return client::run_top8_set(context, arguments, error_out);
+    }
+    if (command == "top8-get") {
+        return client::run_top8_get(context, arguments, error_out);
     }
     if (command == "dm-send") {
         return client::run_dm_send(context, arguments, error_out);

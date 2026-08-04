@@ -53,6 +53,8 @@ Thumbs.db
 *.log
 logs/
 hypercom.conf
+env.ps1
+env.sh
 *.key
 *.pem
 keys/

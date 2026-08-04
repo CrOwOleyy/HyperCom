@@ -12,6 +12,7 @@ add_executable(hypercom_client
     draw_auth_modal.cpp
     draw_dm_panel.cpp
     draw_forum_panel.cpp
+    draw_social_panel.cpp
     draw_thread_panel.cpp
     draw_welcome_overlay.cpp
     gui_main.cpp
@@ -21,6 +22,7 @@ add_executable(hypercom_client
     ui_actions.cpp
     ui_dm_actions.cpp
     ui_scale.cpp
+    ui_social_actions.cpp
     "${CMAKE_SOURCE_DIR}/client/cli/cli_options.cpp")
 
 # Une seule des deux implementations d'audio_player est compilee. gui_main n'a

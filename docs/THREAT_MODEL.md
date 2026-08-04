@@ -32,7 +32,7 @@ pourrait changer, c'est une absence.
 | **N'importe qui** traçant la présence d'un autre | Aucune date de dernière connexion n'est stockée ni servie. La colonne `last_seen` a été supprimée du schéma et du protocole. |
 | Serveur datant les échanges privés | L'horodatage vit **dans** le chiffré. Le serveur ne sait plus quand un message a été envoyé, seulement dans quel ordre les enveloppes sont arrivées. |
 | Corrélation par âge de compte ou de relation | `users.created_at` et `friends.created_at` supprimées : ni date d'inscription, ni chronologie des liens sociaux. |
-| Usurpation par la casse du pseudo | Unicité `COLLATE NOCASE` : `younes`, `Younes` et `YOUNES` sont le même pseudo. |
+| Usurpation par la casse du pseudo | Unicité `COLLATE NOCASE` : `alice`, `Alice` et `ALICE` sont le même pseudo. |
 | Contournement de la limite de débit par reconnexion | Les compteurs sont partagés entre connexions, pas remis à zéro à chacune. |
 | Serveur recousant deux connexions d'une même personne | Aucun jeton de reprise n'existe. Une reconnexion est un handshake Noise neuf, avec une clé éphémère neuve. Voir PROTOCOL.md §9. |
 | Sessions mortes s'accumulant après une coupure | Keepalive TCP réglé des deux côtés (240 s de détection), sans délai d'inactivité applicatif qui obligerait à mesurer l'activité de chacun. |

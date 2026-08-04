@@ -22,7 +22,7 @@ struct register_request {
 // ASCII restreint : lettres, chiffres, tiret, souligne. Entre 3 et
 // MAX_HANDLE_LENGTH caracteres, sans commencer par un chiffre.
 //
-// La restriction sert a bloquer les homoglyphes. Un "younes" ecrit en
+// La restriction sert a bloquer les homoglyphes. Un "alice" ecrit en
 // cyrillique s'affiche pareil mais designe un autre compte, et ici personne
 // n'est la pour arbitrer une usurpation.
 [[nodiscard]] bool validate_handle(std::string_view handle);

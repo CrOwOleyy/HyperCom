@@ -85,7 +85,7 @@ void check_auth_signature_messages(tests::test_report &report)
     HYPERCOM_CHECK(report, decoded.signature == original.signature);
     proto::auth_accepted accepted;
     accepted.user_id = 42;
-    accepted.handle = "younes";
+    accepted.handle = "alice";
     accepted.server_time = 1754300001ULL;
     std::vector<std::uint8_t> accepted_buffer;
     proto::byte_writer accepted_writer{accepted_buffer};

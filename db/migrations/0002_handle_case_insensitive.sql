@@ -1,7 +1,7 @@
 -- Unicite des pseudos insensible a la casse.
 --
 -- Le probleme corrige : la contrainte UNIQUE d'origine utilise la collation
--- BINARY de SQLite, donc "younes", "Younes" et "YOUNES" etaient trois comptes
+-- BINARY de SQLite, donc "alice", "Alice" et "ALICE" etaient trois comptes
 -- distincts, avec trois cles differentes et des noms visuellement identiques.
 -- Sur un reseau sans moderation, personne n'est la pour arbitrer une
 -- usurpation : il faut donc qu'elle soit impossible, pas arbitrable.
@@ -10,7 +10,7 @@
 -- validate_handle n'accepte deja que de l'ASCII restreint, precisement pour
 -- fermer la porte aux homoglyphes Unicode.
 --
--- La casse choisie a l'inscription reste affichee telle quelle -- "Younes"
+-- La casse choisie a l'inscription reste affichee telle quelle -- "Alice"
 -- s'affiche avec sa majuscule. Seule la REinscription d'une variante devient
 -- impossible.
 --

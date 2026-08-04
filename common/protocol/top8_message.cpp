@@ -37,6 +37,16 @@ bool top8_set_request::read_from(byte_reader &reader)
     return read_slot_array(reader, slots);
 }
 
+void top8_get_request::write_to(byte_writer &writer) const
+{
+    writer.write_fixed_bytes(target_pubkey);
+}
+
+bool top8_get_request::read_from(byte_reader &reader)
+{
+    return reader.read_fixed_bytes(target_pubkey);
+}
+
 void top8_response::write_to(byte_writer &writer) const
 {
     write_slot_array(writer, slots);

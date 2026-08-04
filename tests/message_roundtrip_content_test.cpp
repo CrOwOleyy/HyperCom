@@ -35,7 +35,7 @@ void fill_pattern(std::span<std::uint8_t> bytes, std::uint8_t seed)
     record.name = "general";
     record.description = "Le forum par defaut.";
     fill_pattern(record.founder_pubkey, 0x11);
-    record.founder_handle = "younes";
+    record.founder_handle = "alice";
     record.theme_json = "{\"aero\":true}";
     record.created_at = 1754300000ULL;
     record.post_count = 3;
@@ -48,7 +48,7 @@ void fill_pattern(std::span<std::uint8_t> bytes, std::uint8_t seed)
     record.id = id;
     record.forum_id = 1;
     fill_pattern(record.author_pubkey, 0x22);
-    record.author_handle = "younes";
+    record.author_handle = "alice";
     record.title = "Premier post";
     record.body = "Corps du post avec un\tsaut de ligne.\n";
     record.created_at = 1754300001ULL;

@@ -5,6 +5,7 @@
 #include "client/net/message_exchange.hpp"
 #include "client/ui/aero_theme.hpp"
 #include "client/ui/connection_guard.hpp"
+#include "client/ui/draw_social_panel.hpp"
 #include "client/ui/i18n.hpp"
 #include "client/ui/ui_dm_actions.hpp"
 #include "common/protocol/profile_set_message.hpp"
@@ -113,7 +114,28 @@ void draw_side_column(cli_context &context, ui_state &state, float column_width)
 
     draw_identity_panel(context, state, input_h);
     ImGui::Spacing();
-    draw_dm_panel(context, state, inbox_h, input_h);
+
+    bool const dm_active =
+        state.active_side_tab == side_panel_tab::direct_messages;
+    if (dm_active) {
+        ImGui::TextDisabled("%s", tr("social_tab_dm", state.current_lang));
+    } else if (ImGui::SmallButton(tr("social_tab_dm", state.current_lang))) {
+        state.active_side_tab = side_panel_tab::direct_messages;
+    }
+    ImGui::SameLine();
+    if (!dm_active) {
+        ImGui::TextDisabled("%s", tr("social_tab_social", state.current_lang));
+    } else if (ImGui::SmallButton(
+                   tr("social_tab_social", state.current_lang))) {
+        state.active_side_tab = side_panel_tab::social;
+    }
+    ImGui::Spacing();
+
+    if (dm_active) {
+        draw_dm_panel(context, state, inbox_h, input_h);
+    } else {
+        draw_social_panel(context, state, std::max(220.0f, avail_h * 0.6f));
+    }
     ImGui::EndChild();
 }
 

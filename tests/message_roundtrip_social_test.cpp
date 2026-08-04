@@ -46,7 +46,7 @@ void fill_pattern(std::span<std::uint8_t> bytes, std::uint8_t seed)
 void check_account_messages(tests::test_report &report)
 {
     proto::register_request registration;
-    registration.handle = "younes";
+    registration.handle = "alice";
     std::vector<std::uint8_t> buffer;
     proto::byte_writer writer{buffer};
     registration.write_to(writer);
@@ -122,7 +122,7 @@ void check_profile_messages(tests::test_report &report)
     HYPERCOM_CHECK(report,
                    decoded_request.target_pubkey == request.target_pubkey);
     proto::profile_set_request settings;
-    settings.display_name = "Younes";
+    settings.display_name = "Alice";
     settings.bio = "Administrateur.";
     settings.theme_json = "{\"aero\":true}";
     settings.banner_reference = "blob:0011223344";
