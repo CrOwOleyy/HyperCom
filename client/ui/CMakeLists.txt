@@ -8,6 +8,7 @@ add_executable(hypercom_client
     aero_decorations.cpp
     aero_theme.cpp
     bubble_reveal.cpp
+    connection_guard.cpp
     draw_auth_modal.cpp
     draw_dm_panel.cpp
     draw_forum_panel.cpp

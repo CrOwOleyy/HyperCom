@@ -21,6 +21,34 @@ namespace {
 
 constexpr int LISTEN_BACKLOG = 128;
 
+// Le protocole n'a pas de timeout applicatif : une session reste ouverte tant
+// que le pair est la. Le keepalive TCP est donc le SEUL mecanisme qui recupere
+// une connexion dont le pair a disparu sans FIN (coupure reseau, crash, sortie
+// de portee Tor). Sans reglage, Linux attend deux heures avant la premiere
+// sonde, ce qui laisserait s'accumuler des sessions mortes.
+constexpr int KEEPALIVE_IDLE_SECONDS = 120;
+constexpr int KEEPALIVE_INTERVAL_SECONDS = 30;
+constexpr int KEEPALIVE_PROBE_COUNT = 4;
+
+void enable_keepalive(int descriptor)
+{
+    int const enable = 1;
+    static_cast<void>(::setsockopt(descriptor, SOL_SOCKET, SO_KEEPALIVE,
+                                   reinterpret_cast<char const *>(&enable),
+                                   sizeof(enable)));
+#if !defined(_WIN32)
+    int const idle = KEEPALIVE_IDLE_SECONDS;
+    int const interval = KEEPALIVE_INTERVAL_SECONDS;
+    int const probes = KEEPALIVE_PROBE_COUNT;
+    static_cast<void>(::setsockopt(descriptor, IPPROTO_TCP, TCP_KEEPIDLE,
+                                   &idle, sizeof(idle)));
+    static_cast<void>(::setsockopt(descriptor, IPPROTO_TCP, TCP_KEEPINTVL,
+                                   &interval, sizeof(interval)));
+    static_cast<void>(::setsockopt(descriptor, IPPROTO_TCP, TCP_KEEPCNT,
+                                   &probes, sizeof(probes)));
+#endif
+}
+
 #if defined(_WIN32)
 [[nodiscard]] bool start_windows_sockets()
 {
@@ -118,6 +146,7 @@ int tcp_listener::accept_connection(std::string &peer_address) const
     static_cast<void>(::setsockopt(accepted, IPPROTO_TCP, TCP_NODELAY,
                                    reinterpret_cast<char const *>(&enable),
                                    sizeof(enable)));
+    enable_keepalive(accepted);
     char text[INET_ADDRSTRLEN] = {};
     if (::inet_ntop(AF_INET, &remote.sin_addr, text, sizeof(text)) != nullptr) {
         peer_address = text;

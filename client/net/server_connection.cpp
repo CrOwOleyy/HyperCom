@@ -18,8 +18,9 @@ constexpr int MAX_RECEIVE_ATTEMPTS = 50;
 
 server_connection::server_connection(
     crypto::x25519_public_key const &server_static_public)
-    : socket_{}, handshake_{server_static_public}, transport_{},
-      input_buffer_{}, open_{false}
+    : socket_{}, server_static_public_{server_static_public},
+      handshake_{server_static_public}, transport_{}, input_buffer_{},
+      open_{false}
 {
 }
 
@@ -95,6 +96,13 @@ bool server_connection::open_session(std::string const &host,
                                      std::uint16_t port,
                                      std::string &error_out)
 {
+    // Rien de la session precedente ne survit : handshake neuf, canal neuf,
+    // tampon vide. Reutiliser le moindre etat rendrait la reconnexion
+    // correlable a la connexion d'avant.
+    open_ = false;
+    transport_.reset();
+    input_buffer_.clear();
+    handshake_ = crypto::noise_handshake_initiator{server_static_public_};
     if (!socket_.connect_to_host(host, port, error_out)) {
         return false;
     }

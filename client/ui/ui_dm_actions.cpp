@@ -4,6 +4,7 @@
 
 #include "client/dm/dm_courier.hpp"
 #include "client/net/message_exchange.hpp"
+#include "client/ui/connection_guard.hpp"
 #include "common/protocol/dm_ack_message.hpp"
 #include "common/protocol/dm_fetch_message.hpp"
 #include "common/protocol/dm_send_message.hpp"
@@ -36,6 +37,9 @@ void report_failure(ui_state &state, std::string const &message)
 
 void publish_own_prekey(cli_context &context, ui_state &state)
 {
+    if (!ensure_connected(context, state)) {
+        return;
+    }
     proto::prekey_publish_request request;
     crypto::x25519_secret_key prekey_secret{};
     if (!derive_local_prekey(context.identity, request.prekey,
@@ -67,6 +71,9 @@ void publish_own_prekey(cli_context &context, ui_state &state)
 
 void refresh_inbox(cli_context &context, ui_state &state)
 {
+    if (!ensure_connected(context, state)) {
+        return;
+    }
     proto::dm_fetch_request request;
     std::string failure;
     proto::dm_list_response response;
@@ -110,6 +117,9 @@ void refresh_inbox(cli_context &context, ui_state &state)
 
 void submit_direct_message(cli_context &context, ui_state &state)
 {
+    if (!ensure_connected(context, state)) {
+        return;
+    }
     proto::dm_send_request request;
     if (!parse_public_key(state.dm_recipient_input,
                           request.recipient_pubkey)) {

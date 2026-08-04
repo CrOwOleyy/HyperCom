@@ -36,6 +36,8 @@ struct ui_state {
     std::string handle;
     std::string identity_hex;
     std::string server_key_hex;
+    std::string server_host;
+    std::uint16_t server_port = 0;
     std::string status_message;
     bool status_is_error = false;
     // Leve une seule fois, par draw_auth_modal, juste apres la creation du

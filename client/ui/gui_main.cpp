@@ -304,7 +304,9 @@ int main(int argc, char **argv)
               << " px)\n"
               << std::flush;
     client::ui_state state;
-    state.connected = true;
+    state.connected = connection.is_open();
+    state.server_host = options.host;
+    state.server_port = options.port;
     state.registered = is_registered;
     // Creer son compte par argument de ligne de commande reste une creation de
     // compte : meme accueil que par la fenetre d'inscription. --replay-intro

@@ -60,6 +60,15 @@ std::vector<int> collect_expired_descriptors(
         session_state const &session = entry.second->session;
         bool const handshaking =
             session.phase != session_phase::authenticated;
+        // idle_timeout_seconds == 0 signifie desactive : une session
+        // authentifiee reste ouverte tant que le pair est la, seul le
+        // keepalive TCP recupere une connexion vraiment morte (BRIEF.md 9,
+        // "pas de timeout applicatif"). Le handshake, lui, reste borne : une
+        // connexion qui ne finit jamais son Noise est le cout d'attaque le
+        // plus bas qui soit.
+        if (!handshaking && limits.idle_timeout_seconds == 0) {
+            continue;
+        }
         std::uint64_t const budget =
             handshaking ? limits.handshake_timeout_seconds
                         : limits.idle_timeout_seconds;

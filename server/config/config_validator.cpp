@@ -41,12 +41,18 @@ void check_limits(limits_config const &limits,
     if (limits.max_frame_size < proto::FRAME_HEADER_SIZE + 1) {
         problems.emplace_back("[limits] max_frame_size est trop petit");
     }
-    if (limits.handshake_timeout_seconds == 0
-        || limits.idle_timeout_seconds == 0) {
+    // Le handshake reste borne dans tous les cas : une connexion qui ne le
+    // termine jamais est la fuite de descripteur la moins chere a provoquer.
+    if (limits.handshake_timeout_seconds == 0) {
         problems.emplace_back(
-            "[limits] les delais d'expiration ne peuvent pas etre nuls : "
-            "une socket sans timeout est une fuite de descripteur");
+            "[limits] handshake_timeout_seconds ne peut pas etre nul : une "
+            "socket qui ne finit jamais son handshake est une fuite de "
+            "descripteur");
     }
+    // idle_timeout_seconds == 0 est valide et signifie desactive : le
+    // protocole n'a pas de timeout applicatif par choix (BRIEF.md 9), seul le
+    // keepalive TCP recupere une session authentifiee dont le pair a
+    // disparu.
 }
 
 } // namespace

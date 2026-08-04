@@ -1,6 +1,7 @@
 #include "client/ui/ui_actions.hpp"
 
 #include "client/net/message_exchange.hpp"
+#include "client/ui/connection_guard.hpp"
 #include "common/protocol/comment_create_message.hpp"
 #include "common/protocol/forum_list_message.hpp"
 #include "common/protocol/post_create_message.hpp"
@@ -26,6 +27,9 @@ void report_success(ui_state &state, std::string message)
 
 void refresh_forum_list(cli_context &context, ui_state &state)
 {
+    if (!ensure_connected(context, state)) {
+        return;
+    }
     proto::forum_list_request request;
     std::string failure;
     proto::forum_list_response response;
@@ -43,6 +47,9 @@ void refresh_forum_list(cli_context &context, ui_state &state)
 void refresh_post_list(cli_context &context, ui_state &state)
 {
     if (state.selected_forum_id == 0) {
+        return;
+    }
+    if (!ensure_connected(context, state)) {
         return;
     }
     proto::post_list_request request;
@@ -64,6 +71,9 @@ void refresh_post_list(cli_context &context, ui_state &state)
 void open_thread(cli_context &context, ui_state &state,
                  std::uint64_t post_id)
 {
+    if (!ensure_connected(context, state)) {
+        return;
+    }
     proto::thread_fetch_request request;
     request.post_id = post_id;
     std::string failure;
@@ -85,6 +95,9 @@ void open_thread(cli_context &context, ui_state &state,
 
 void submit_post(cli_context &context, ui_state &state)
 {
+    if (!ensure_connected(context, state)) {
+        return;
+    }
     proto::post_create_request request;
     request.forum_id = state.selected_forum_id;
     request.title = state.post_title_input;
@@ -112,6 +125,9 @@ void submit_post(cli_context &context, ui_state &state)
 void submit_comment(cli_context &context, ui_state &state,
                     std::uint64_t parent_comment_id)
 {
+    if (!ensure_connected(context, state)) {
+        return;
+    }
     proto::comment_create_request request;
     request.post_id = state.selected_post_id;
     request.parent_comment_id = parent_comment_id;

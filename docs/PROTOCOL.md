@@ -132,3 +132,115 @@ même.
 Volontairement grossiers. `unknown_user` et `invalid_signature` répondent tous
 deux `authentication_failed` : un code trop précis renseignerait un attaquant
 sur l'état interne du serveur.
+
+Un code d'erreur n'est jamais destiné à être lu par un humain — c'est le rôle
+du champ `detail`, qui peut changer sans préavis. Brancher la logique du client
+sur `detail` plutôt que sur `code` est une erreur.
+
+Trois erreurs sont **fatales à la connexion**, parce qu'un flux désynchronisé
+ne se rattrape pas : `malformed_frame`, une longueur annoncée au-delà du
+plafond, et un échec de déchiffrement. Dans ces trois cas la connexion est
+fermée, jamais reprise.
+
+## 9. Cycle de vie d'une connexion
+
+### Durée de vie
+
+**Aucun délai d'inactivité applicatif.** Une session reste ouverte tant que le
+pair est là. C'est cohérent avec le reste : un délai côté serveur obligerait à
+mesurer l'activité de chacun, donc à en tenir un registre.
+
+Le maintien de la connexion repose entièrement sur le **keepalive TCP**, activé
+des deux côtés avec le même réglage (`server/net/tcp_listener.cpp` et
+`client/net/tcp_client_socket.cpp`) :
+
+| Paramètre | Valeur | Effet |
+|---|---|---|
+| `SO_KEEPALIVE` | activé | sondes automatiques |
+| `TCP_KEEPIDLE` | 120 s | délai avant la première sonde |
+| `TCP_KEEPINTVL` | 30 s | intervalle entre deux sondes |
+| `TCP_KEEPCNT` | 4 | sondes avant abandon |
+
+Un pair disparu sans `FIN` — coupure réseau, plantage, sortie de portée Tor —
+est donc détecté en 240 s environ. Sans ce réglage, Linux attendrait deux
+heures, et les sessions mortes s'accumuleraient.
+
+Les deux bouts sondent à la même cadence, délibérément : sinon c'est toujours
+le même côté qui déclare la connexion morte.
+
+### Fermeture
+
+**`FIN` TCP, sans message d'adieu.** Il n'existe pas de message `close` dans le
+protocole. Un adieu explicite n'apporterait rien — il n'est pas fiable de toute
+façon, puisqu'une coupure brutale ne l'envoie jamais — et le client doit savoir
+encaisser une disparition sans préavis dans tous les cas.
+
+### Reconnexion — re-handshake complet
+
+Une reconnexion est une **session entièrement neuve** : nouveau handshake
+Noise avec une clé éphémère fraîche, puis nouveau défi-réponse.
+
+**Aucun jeton de reprise n'existe.** C'est un choix, pas un oubli : un jeton de
+session serait précisément ce qui permettrait au serveur de recoudre deux
+connexions d'une même personne, donc de reconstituer une continuité de présence
+que le reste de l'architecture s'applique à ne pas produire (voir
+THREAT_MODEL.md §2, lignes sur la présence et `last_seen`).
+
+La contrepartie assumée est le coût : un handshake et une signature à chaque
+reprise. À l'échelle visée — quelques centaines d'utilisateurs — c'est
+négligeable.
+
+Côté code, `server_connection::open_session` **est** la reconnexion : la
+rappeler sur une connexion tombée remet à zéro le handshake, le canal et le
+tampon d'entrée avant de repartir. Rien de la session précédente ne survit.
+`tests/reconnection_test.cpp` vérifie ce cycle sur un même objet.
+
+> Ce chemin ne concerne que les clients qui vivent longtemps, c'est-à-dire le
+> client graphique. La CLI relance un processus par commande et refait donc un
+> handshake complet de toute façon.
+
+### Ce que le client doit resynchroniser après une reprise
+
+Le serveur ne mémorise pas où en était le client. C'est au client de rattraper,
+et le protocole est fait pour que ce soit possible sans état côté serveur :
+
+| Données | Comment |
+|---|---|
+| messages privés | `DM_FETCH` avec `since_id` = dernière enveloppe reçue |
+| posts et fils | `POST_LIST` / `THREAD_FETCH`, pagination par `offset` |
+| MOTD | repoussé par le serveur à chaque connexion |
+
+## 10. Versionnage et évolution
+
+`PROTOCOL_VERSION` vaut 1. Elle circule dans `hello_request` et
+`auth_challenge`.
+
+**Règle : ce qui n'est pas reconnu est rejeté.** Pas de tolérance, pas de
+champs ignorés silencieusement. Un décodeur qui accepte ce qu'il ne comprend
+pas est un décodeur dont on ne sait plus ce qu'il accepte.
+
+Le rejet s'applique à trois niveaux, indépendamment :
+
+1. **Version** — un `hello_request` dont la version diffère reçoit
+   `unsupported_version` et n'ouvre pas de session
+   (`server/handlers/session_handler.cpp`).
+2. **Octet de type inconnu** — refusé par `decode_frame_header`, avant qu'un
+   handler ne le voie.
+3. **Type connu mais inattendu** — une réponse serveur émise par un client, ou
+   un message de blob réservé à la v2, reçoit `not_implemented`
+   (`server/handlers/request_router.cpp`).
+
+### Faire évoluer un message
+
+Les valeurs de `message_type` sont **figées** : elles font partie du format de
+fil et ne se renumérotent pas. La plage `0x6*` est déjà réservée aux blobs de
+la v2 pour cette raison.
+
+Un champ ne s'ajoute donc **pas** à un message existant — un client v1 lirait
+les champs suivants décalés. Pour étendre : créer un nouveau type de message
+dans une valeur libre de la famille. Les deux versions coexistent, et un client
+v1 rejette proprement ce qu'il ne connaît pas.
+
+C'est plus verbeux qu'un format auto-descriptif, et c'est le but : le décodeur
+reste une lecture séquentielle de champs à positions connues, sans branche
+conditionnelle pilotée par la donnée reçue.

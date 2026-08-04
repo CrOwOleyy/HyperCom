@@ -3,6 +3,7 @@
 #include <imgui.h>
 
 #include "client/net/message_exchange.hpp"
+#include "client/ui/connection_guard.hpp"
 #include "client/ui/i18n.hpp"
 #include "client/ui/aero_theme.hpp"
 #include "client/ui/ui_actions.hpp"
@@ -19,6 +20,9 @@ void draw_forum_creator(cli_context &context, ui_state &state)
     ImGui::InputText(tr("forum_create_desc", state.current_lang), state.forum_description_input,
                      sizeof(state.forum_description_input));
     if (!ImGui::Button(tr("forum_create_btn", state.current_lang))) {
+        return;
+    }
+    if (!ensure_connected(context, state)) {
         return;
     }
     proto::forum_create_request request;

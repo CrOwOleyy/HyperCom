@@ -26,9 +26,29 @@ Après chaque modification, recompiler puis lancer la suite :
 cmake --build build/windows --config RelWithDebInfo -j
 ctest --test-dir build/windows -C RelWithDebInfo --output-on-failure
 
-Trois suites : `protocol_parsing_test` (parseur), `crypto_round_trip_test`
-(handshake, DM chiffrés, keystore), `noise_official_vectors_test` (comparaison
-octet par octet à un vecteur de test officiel du protocole Noise).
+Huit suites :
+
+| Suite | Ce qu'elle couvre |
+|---|---|
+| `protocol_parsing_test` | bornes du lecteur, plafonds, validation UTF-8, cadrage |
+| `crypto_round_trip_test` | handshake, DM chiffrés, keystore |
+| `noise_official_vectors_test` | comparaison octet par octet à un vecteur officiel Noise |
+| `message_roundtrip_session_test` | messages de session : hello, auth, ping, MOTD, status |
+| `message_roundtrip_content_test` | forums, posts, commentaires, fils |
+| `message_roundtrip_social_test` | compte, prekeys, profils, amis, top 8, DM |
+| `fuzz_corpus_replay_test` | rejeu du corpus de fuzzing, sans libFuzzer |
+| `reconnection_test` | re-handshake complet sur un même objet (POSIX seulement) |
+
+Sous sanitizers :
+
+cmake -S . -B build-asan -DHYPERCOM_SANITIZER=address,undefined
+cmake --build build-asan -j
+ctest --test-dir build-asan --output-on-failure
+
+TSAN se lance dans un répertoire séparé (incompatible avec ASAN). Sous WSL, il
+faut désactiver l'ASLR, sinon il refuse de démarrer :
+
+setarch -R ctest --test-dir build-tsan --output-on-failure
 
 Un test seul, pour voir le détail :
 

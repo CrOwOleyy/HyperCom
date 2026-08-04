@@ -24,7 +24,10 @@ struct limits_config {
     std::uint32_t max_connections_per_address = 8;
     std::uint32_t max_frame_size = 1024 * 1024;
     std::uint32_t handshake_timeout_seconds = 10;
-    std::uint32_t idle_timeout_seconds = 300;
+    // 0 = desactive : pas de timeout applicatif sur une session authentifiee,
+    // conformement au choix du projet (BRIEF.md 9). Seul le keepalive TCP
+    // recupere une connexion dont le pair a reellement disparu.
+    std::uint32_t idle_timeout_seconds = 0;
     std::uint32_t requests_per_minute_per_address = 240;
     std::uint32_t requests_per_minute_per_identity = 600;
 };

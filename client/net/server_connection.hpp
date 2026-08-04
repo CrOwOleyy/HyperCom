@@ -27,6 +27,11 @@ public:
     explicit server_connection(
         crypto::x25519_public_key const &server_static_public);
 
+    // Sert aussi de reconnexion : rappeler open_session sur une connexion
+    // tombee repart d'un handshake Noise complet, avec une cle ephemere
+    // fraiche. Aucun jeton de reprise n'est conserve d'une session a l'autre,
+    // et le serveur n'a donc rien qui permette de recoudre deux connexions.
+    // La contrepartie assumee est qu'il faut refaire le defi-reponse.
     [[nodiscard]] bool open_session(std::string const &host,
                                     std::uint16_t port,
                                     std::string &error_out);
@@ -47,6 +52,7 @@ private:
                                          std::string &error_out);
 
     tcp_client_socket socket_;
+    crypto::x25519_public_key server_static_public_;
     crypto::noise_handshake_initiator handshake_;
     std::optional<crypto::noise_transport> transport_;
     std::vector<std::uint8_t> input_buffer_;

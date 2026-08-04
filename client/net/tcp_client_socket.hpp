@@ -19,6 +19,10 @@ public:
 
     ~tcp_client_socket();
 
+    // Reconnectable : un appel sur une socket deja ouverte ferme la precedente
+    // avant de recommencer. C'est ce qui permet la reconnexion par
+    // re-handshake complet sans exposer de methode de fermeture publique, que
+    // la regle O3 ne laisserait pas passer.
     [[nodiscard]] bool connect_to_host(std::string const &host,
                                        std::uint16_t port,
                                        std::string &error_out);
@@ -32,6 +36,8 @@ public:
                                          bool &received_any);
 
 private:
+    void close_handle();
+
     // Type large volontaire : SOCKET fait 64 bits sous Windows, int sous POSIX.
     std::intptr_t handle_;
 };

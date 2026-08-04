@@ -4,6 +4,7 @@
 
 #include "client/net/message_exchange.hpp"
 #include "client/ui/aero_theme.hpp"
+#include "client/ui/connection_guard.hpp"
 #include "client/ui/i18n.hpp"
 #include "client/ui/ui_dm_actions.hpp"
 #include "common/protocol/profile_set_message.hpp"
@@ -19,6 +20,9 @@ void draw_profile_editor(cli_context &context, ui_state &state, float bio_height
     ImGui::InputTextMultiline(tr("profile_bio", state.current_lang), state.bio_input, sizeof(state.bio_input),
                               ImVec2{0.0f, bio_height});
     if (!ImGui::Button(tr("profile_btn_save", state.current_lang))) {
+        return;
+    }
+    if (!ensure_connected(context, state)) {
         return;
     }
     proto::profile_set_request request;

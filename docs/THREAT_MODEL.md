@@ -34,6 +34,8 @@ pourrait changer, c'est une absence.
 | Corrélation par âge de compte ou de relation | `users.created_at` et `friends.created_at` supprimées : ni date d'inscription, ni chronologie des liens sociaux. |
 | Usurpation par la casse du pseudo | Unicité `COLLATE NOCASE` : `younes`, `Younes` et `YOUNES` sont le même pseudo. |
 | Contournement de la limite de débit par reconnexion | Les compteurs sont partagés entre connexions, pas remis à zéro à chacune. |
+| Serveur recousant deux connexions d'une même personne | Aucun jeton de reprise n'existe. Une reconnexion est un handshake Noise neuf, avec une clé éphémère neuve. Voir PROTOCOL.md §9. |
+| Sessions mortes s'accumulant après une coupure | Keepalive TCP réglé des deux côtés (240 s de détection), sans délai d'inactivité applicatif qui obligerait à mesurer l'activité de chacun. |
 
 ## 3. Ce qui n'est PAS protégé — limites assumées
 
@@ -137,7 +139,10 @@ un forum lisible seulement par son auteur n'est pas un forum.
 | `-Wall -Wextra -Werror`, stack protector, RELRO, PIE | **fait**, appliqué à toutes les cibles |
 | Cibles ASAN / UBSAN / TSAN | **fait**, `-DHYPERCOM_SANITIZER=...` |
 | Suite de tests passant sous ASAN+UBSAN | **fait** |
-| Harnais de fuzzing du parseur | **fait**, campagne continue à mettre en place |
+| Harnais de fuzzing du parseur | **fait**, couvre les 36 décodeurs. Campagne continue à mettre en place : libFuzzer exige clang, absent de l'environnement actuel |
+| Rejeu du corpus de fuzzing dans la suite | **fait**, `tests/fuzz_corpus_replay_test.cpp` rejoue les cas limites connus sous gcc et sous sanitizers, sans libFuzzer |
+| Aller-retour de tous les messages | **fait**, trois suites `message_roundtrip_*` : chaque message encodé puis décodé, avec vérification qu'il ne reste aucun octet — seule façon de détecter un décalage de champ silencieux |
+| Reconnexion sans jeton de reprise | **fait**, `tests/reconnection_test.cpp`, validé aussi sous TSAN |
 | Requêtes préparées exclusivement | **fait** |
 | Aucune globale mutable (G4) | **fait**, y compris l'arrêt par `signalfd` plutôt qu'un drapeau global |
 | Pas de journalisation d'IP par défaut | **fait** |

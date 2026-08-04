@@ -9,6 +9,8 @@
 #else
 #include <cerrno>
 #include <netdb.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -20,6 +22,13 @@ namespace {
 constexpr std::size_t READ_CHUNK_SIZE = 16 * 1024;
 constexpr int RECEIVE_TIMEOUT_MILLISECONDS = 200;
 constexpr std::intptr_t INVALID_HANDLE = -1;
+
+// Memes valeurs que le serveur (server/net/tcp_listener.cpp) : les deux bouts
+// doivent sonder a la meme cadence, sinon c'est toujours le meme cote qui
+// declare la connexion morte.
+constexpr int KEEPALIVE_IDLE_SECONDS = 120;
+constexpr int KEEPALIVE_INTERVAL_SECONDS = 30;
+constexpr int KEEPALIVE_PROBE_COUNT = 4;
 
 #if defined(_WIN32)
 [[nodiscard]] bool start_windows_sockets()
@@ -45,6 +54,28 @@ void apply_receive_timeout(std::intptr_t handle)
 #endif
 }
 
+// Pendant client du reglage serveur : sans timeout applicatif, le keepalive
+// est ce qui evite au client de rester bloque sur un serveur devenu injoignable
+// sans avoir ferme proprement.
+void apply_keepalive(std::intptr_t handle)
+{
+    int const enable = 1;
+#if defined(_WIN32)
+    setsockopt(static_cast<SOCKET>(handle), SOL_SOCKET, SO_KEEPALIVE,
+               reinterpret_cast<char const *>(&enable), sizeof(enable));
+#else
+    int const descriptor = static_cast<int>(handle);
+    setsockopt(descriptor, SOL_SOCKET, SO_KEEPALIVE, &enable, sizeof(enable));
+    int const idle = KEEPALIVE_IDLE_SECONDS;
+    int const interval = KEEPALIVE_INTERVAL_SECONDS;
+    int const probes = KEEPALIVE_PROBE_COUNT;
+    setsockopt(descriptor, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle));
+    setsockopt(descriptor, IPPROTO_TCP, TCP_KEEPINTVL, &interval,
+               sizeof(interval));
+    setsockopt(descriptor, IPPROTO_TCP, TCP_KEEPCNT, &probes, sizeof(probes));
+#endif
+}
+
 [[nodiscard]] bool is_timeout_error()
 {
 #if defined(_WIN32)
@@ -64,22 +95,32 @@ tcp_client_socket::tcp_client_socket() : handle_{INVALID_HANDLE}
 #endif
 }
 
+void tcp_client_socket::close_handle()
+{
+    if (handle_ == INVALID_HANDLE) {
+        return;
+    }
+#if defined(_WIN32)
+    closesocket(static_cast<SOCKET>(handle_));
+#else
+    ::close(static_cast<int>(handle_));
+#endif
+    handle_ = INVALID_HANDLE;
+}
+
 tcp_client_socket::~tcp_client_socket()
 {
-    if (handle_ != INVALID_HANDLE) {
+    close_handle();
 #if defined(_WIN32)
-        closesocket(static_cast<SOCKET>(handle_));
-        WSACleanup();
-#else
-        ::close(static_cast<int>(handle_));
+    WSACleanup();
 #endif
-    }
 }
 
 bool tcp_client_socket::connect_to_host(std::string const &host,
                                         std::uint16_t port,
                                         std::string &error_out)
 {
+    close_handle();
     addrinfo hints{};
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -107,6 +148,7 @@ bool tcp_client_socket::connect_to_host(std::string const &host,
             == 0) {
             handle_ = attempt;
             apply_receive_timeout(handle_);
+            apply_keepalive(handle_);
             freeaddrinfo(resolved);
             return true;
         }

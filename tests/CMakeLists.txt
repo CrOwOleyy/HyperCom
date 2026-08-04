@@ -20,3 +20,24 @@ endfunction()
 hypercom_add_test(protocol_parsing_test)
 hypercom_add_test(crypto_round_trip_test)
 hypercom_add_test(noise_official_vectors_test noise_vector_replay.cpp)
+hypercom_add_test(message_roundtrip_session_test)
+hypercom_add_test(message_roundtrip_content_test)
+hypercom_add_test(message_roundtrip_social_test)
+
+# Rejeu du corpus de fuzzing : reutilise le point d'entree libFuzzer sans
+# libFuzzer, pour que les cas limites connus tournent aussi sous gcc.
+hypercom_add_test(fuzz_corpus_replay_test
+    "${CMAKE_SOURCE_DIR}/tools/fuzz/fuzz_protocol_frame.cpp")
+target_compile_definitions(fuzz_corpus_replay_test PRIVATE
+    "HYPERCOM_FUZZ_CORPUS_DIR=\"${CMAKE_SOURCE_DIR}/tools/fuzz/corpus\"")
+
+# Reconnexion : exerce le vrai server_connection contre un repondeur Noise sur
+# la boucle locale. Le repondeur de test utilise les sockets POSIX -- le
+# serveur du projet se developpe sous WSL2, doubler ce module pour Winsock
+# n'apporterait rien.
+if(NOT WIN32)
+    hypercom_add_test(reconnection_test loopback_noise_server.cpp)
+    find_package(Threads REQUIRED)
+    target_link_libraries(reconnection_test PRIVATE
+        hypercom_client_core Threads::Threads)
+endif()
