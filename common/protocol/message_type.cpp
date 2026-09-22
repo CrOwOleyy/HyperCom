@@ -31,6 +31,8 @@ bool is_known_message_type(std::uint8_t raw_type)
         case message_type::thread_response:
         case message_type::comment_create_request:
         case message_type::comment_info_response:
+        case message_type::post_delete_request:
+        case message_type::comment_delete_request:
         case message_type::profile_get_request:
         case message_type::profile_response:
         case message_type::profile_set_request:
@@ -47,6 +49,8 @@ bool is_known_message_type(std::uint8_t raw_type)
         case message_type::blob_announce_request:
         case message_type::blob_locate_request:
         case message_type::blob_peers_response:
+        case message_type::report_post_request:
+        case message_type::report_account_request:
             return true;
     }
     return false;

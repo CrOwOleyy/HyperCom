@@ -40,6 +40,8 @@ enum class message_type : std::uint8_t {
     thread_response = 0x35,
     comment_create_request = 0x36,
     comment_info_response = 0x37,
+    post_delete_request = 0x38,
+    comment_delete_request = 0x39,
 
     // Social -- 0x4*
     profile_get_request = 0x40,
@@ -63,6 +65,13 @@ enum class message_type : std::uint8_t {
     blob_announce_request = 0x60,
     blob_locate_request = 0x61,
     blob_peers_response = 0x62,
+
+    // Signalement -- 0x7*. Un canal de reception, pas un outil de moderation
+    // (BRIEF.md 13) : le serveur enregistre le signalement, il ne juge rien.
+    // Un DM ne se signale jamais par son contenu, qui reste illisible -- seul
+    // le compte de l'expediteur l'est, via report_account_request.
+    report_post_request = 0x70,
+    report_account_request = 0x71,
 };
 
 // Un type inconnu est rejete avant d'atteindre un handler : le routeur ne
