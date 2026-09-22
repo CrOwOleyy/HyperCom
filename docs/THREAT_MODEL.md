@@ -58,17 +58,31 @@ Après un usage complet (inscription, forum, post, commentaire, ami, message
 privé), voici l'intégralité de ce que contient la base :
 
 ```
-users        id, pubkey, handle
+users        id, pubkey, handle, banned
 friends      user_id, friend_id, status
 top8         user_id, slot, friend_id
 profiles     user_id, display_name, bio, theme_json, banner_ref
 dm_envelopes id, recipient_id, sender_pubkey, ciphertext
+reports      id, kind, post_id, target_pubkey, reporter_id, reason, created_at
 ```
 
-Aucune date sur aucune de ces lignes. Les seuls horodatages qui subsistent
-portent sur du **contenu public** — `posts`, `comments`, `forums` — où ils sont
-de toute façon visibles de quiconque lit le fil, et sur `motd`, qui est une
-annonce d'administration.
+Aucune date sur aucune de ces lignes, sauf `reports` : un signalement porte
+nécessairement un horodatage, sinon l'admin ne peut pas savoir quand il traite
+une file. Les autres horodatages qui subsistent portent sur du **contenu
+public** — `posts`, `comments`, `forums` — où ils sont de toute façon visibles
+de quiconque lit le fil, et sur `motd`, qui est une annonce d'administration.
+
+`reports` est une exception délibérée à « pas de dates » : signaler quelque
+chose révèle forcément qui a signalé quoi et quand (BRIEF.md 13). C'est un
+choix assumé, pas un oubli — le dispositif de signalement est une obligation
+légale, pas une fonctionnalité de surveillance déguisée, et son contenu
+n'est lisible que par l'admin sur le socket local, jamais par le réseau.
+
+**Hors base, dans le journal seulement, si `log_peer_addresses=true` :** une
+ligne par connexion clearnet acceptée, adresse + horodatage. Jamais pour le
+`.onion`, quel que soit ce réglage — Tor relaie en boucle locale, il n'y a
+structurellement pas de vraie IP à voir côté serveur. Rien n'est écrit par
+défaut.
 
 ### 3.2 Pas de confidentialité persistante future
 
@@ -113,10 +127,18 @@ L'épinglage ne protège que si la clé arrive par un canal de confiance. Si un
 utilisateur la récupère depuis le serveur lui-même, ou depuis un site que
 l'attaquant contrôle, l'épinglage ne protège de rien.
 
-### 3.7 Aucune modération
+### 3.7 Aucune modération — sauf l'exception légale
 
 C'est le point du projet, mais c'est aussi une exposition. Le filtrage vit dans
-le client de chacun. Voir aussi BRIEF.md §13 sur les contraintes juridiques.
+le client de chacun.
+
+Une exception unique existe : `reports`/`ban` sur le socket d'administration
+local (BRIEF.md 13, 15). Elle ne change rien à ce qu'un client peut faire —
+aucun message du protocole réseau ne permet d'effacer le contenu de
+quelqu'un d'autre, seul son propre contenu reste supprimable. Ce que ça
+change : un administrateur qui a la main sur la machine peut désormais bannir
+un compte ou supprimer un post spécifiquement signalé, en réaction à une
+obligation légale précise, jamais par jugement éditorial général.
 
 ### 3.8 Contenu des posts
 
