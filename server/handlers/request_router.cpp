@@ -1,10 +1,12 @@
 #include "server/handlers/request_router.hpp"
 
 #include "server/handlers/account_handler.hpp"
+#include "server/handlers/content_delete_handler.hpp"
 #include "server/handlers/content_handler.hpp"
 #include "server/handlers/dm_handler.hpp"
 #include "server/handlers/forum_handler.hpp"
 #include "server/handlers/profile_handler.hpp"
+#include "server/handlers/report_handler.hpp"
 #include "server/handlers/response_builder.hpp"
 #include "server/handlers/session_handler.hpp"
 #include "server/handlers/social_handler.hpp"
@@ -58,6 +60,10 @@ using proto::message_type;
             return handle_thread_fetch_request(context, reader);
         case message_type::comment_create_request:
             return handle_comment_create_request(context, reader);
+        case message_type::post_delete_request:
+            return handle_post_delete_request(context, reader);
+        case message_type::comment_delete_request:
+            return handle_comment_delete_request(context, reader);
         default:
             handled = false;
             return true;
@@ -111,6 +117,23 @@ using proto::message_type;
     }
 }
 
+[[nodiscard]] bool route_report_family(handler_context &context,
+                                       message_type type,
+                                       proto::byte_reader &reader,
+                                       bool &handled)
+{
+    handled = true;
+    switch (type) {
+        case message_type::report_post_request:
+            return handle_report_post_request(context, reader);
+        case message_type::report_account_request:
+            return handle_report_account_request(context, reader);
+        default:
+            handled = false;
+            return true;
+    }
+}
+
 } // namespace
 
 bool route_message(handler_context &context, message_type type,
@@ -136,6 +159,12 @@ bool route_message(handler_context &context, message_type type,
         return true;
     }
     if (!route_dm_family(context, type, reader, handled)) {
+        return false;
+    }
+    if (handled) {
+        return true;
+    }
+    if (!route_report_family(context, type, reader, handled)) {
         return false;
     }
     if (handled) {

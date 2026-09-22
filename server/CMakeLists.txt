@@ -36,6 +36,7 @@ add_executable(hypercom_server
     handlers/dm_handler.cpp
     handlers/forum_handler.cpp
     handlers/profile_handler.cpp
+    handlers/report_handler.cpp
     handlers/request_router.cpp
     handlers/response_builder.cpp
     handlers/session_guard.cpp
