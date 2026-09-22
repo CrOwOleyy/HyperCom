@@ -24,6 +24,7 @@ add_executable(hypercom_client
     ui_delete_actions.cpp
     ui_dm_actions.cpp
     server_actions.cpp
+    ui_report_actions.cpp
     ui_scale.cpp
     ui_social_actions.cpp
     "${CMAKE_SOURCE_DIR}/client/cli/cli_options.cpp")
