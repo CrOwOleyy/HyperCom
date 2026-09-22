@@ -37,7 +37,11 @@ private:
     // listener onion, socket d'admin, ou connexion client.
     void dispatch_event(int descriptor, std::uint32_t events);
 
-    void accept_pending_connections(tcp_listener const &listener);
+    // is_clearnet distingue le listener a l'origine de l'appel : c'est ce qui
+    // permet de ne jamais journaliser une connexion oignon, meme si
+    // log_peer_addresses est actif -- voir BRIEF.md 13.
+    void accept_pending_connections(tcp_listener const &listener,
+                                    bool is_clearnet);
 
     void service_connection(int descriptor, std::uint32_t events);
 

@@ -103,7 +103,8 @@ bool server_runtime::start_listeners(std::string &error_out)
     return true;
 }
 
-void server_runtime::accept_pending_connections(tcp_listener const &listener)
+void server_runtime::accept_pending_connections(tcp_listener const &listener,
+                                                bool is_clearnet)
 {
     while (true) {
         std::string peer_address;
@@ -118,6 +119,18 @@ void server_runtime::accept_pending_connections(tcp_listener const &listener)
         entry->session.peer_address = peer_address;
         entry->session.connected_at = util::get_unix_timestamp();
         entry->session.last_activity_at = entry->session.connected_at;
+        // Jamais sur l'oignon, meme si log_peer_addresses est actif : Tor
+        // relaie en boucle locale, il n'y a de toute facon pas de vraie IP a
+        // voir cote client. Sur clearnet, redact_peer_address applique deja la
+        // politique de hypercom.conf -- ecrire l'entree ici est ce qui rend
+        // cette politique reellement effective plutot qu'un reglage qui ne
+        // sert jamais a rien (BRIEF.md 13).
+        if (is_clearnet) {
+            logger_.write_entry(
+                util::log_level::info,
+                "connexion acceptee depuis "
+                    + std::string{logger_.redact_peer_address(peer_address)});
+        }
         // En cas de refus, le unique_ptr est detruit par l'appele et la socket
         // se ferme d'elle-meme : il n'y a rien a fermer ici.
         if (!insert_connection(registry_, std::move(entry))) {
@@ -162,11 +175,11 @@ void server_runtime::service_connection(int descriptor, std::uint32_t events)
 void server_runtime::dispatch_event(int descriptor, std::uint32_t events)
 {
     if (descriptor == clearnet_listener_.get_descriptor()) {
-        accept_pending_connections(clearnet_listener_);
+        accept_pending_connections(clearnet_listener_, true);
         return;
     }
     if (descriptor == onion_listener_.get_descriptor()) {
-        accept_pending_connections(onion_listener_);
+        accept_pending_connections(onion_listener_, false);
         return;
     }
     if (descriptor == admin_.listener.get_descriptor()) {
