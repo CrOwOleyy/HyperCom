@@ -24,6 +24,12 @@ hypercom_add_test(message_roundtrip_session_test)
 hypercom_add_test(message_roundtrip_content_test)
 hypercom_add_test(message_roundtrip_social_test)
 
+# Multi-serveurs : scellement generique, derivation d'une identite par serveur,
+# lien d'invitation et registre chiffre. Lie le coeur client, qui porte le
+# keystore.
+hypercom_add_test(multi_server_identity_test)
+target_link_libraries(multi_server_identity_test PRIVATE hypercom_client_core)
+
 # Rejeu du corpus de fuzzing : reutilise le point d'entree libFuzzer sans
 # libFuzzer, pour que les cas limites connus tournent aussi sous gcc.
 hypercom_add_test(fuzz_corpus_replay_test
