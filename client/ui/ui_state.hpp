@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "client/net/server_connection.hpp"
 #include "client/ui/i18n.hpp"
 #include "common/protocol/content_records.hpp"
 #include "common/protocol/dm_envelope_record.hpp"
@@ -45,8 +46,9 @@ struct ui_state {
     std::string handle;
     std::string identity_hex;
     std::string server_key_hex;
-    std::string server_host;
-    std::uint16_t server_port = 0;
+    // Conserve pour la reconnexion : elle refait un handshake complet, donc il
+    // lui faut de nouveau l'adresse ET le chemin (proxy Tor le cas echeant).
+    server_endpoint endpoint;
     std::string status_message;
     bool status_is_error = false;
     // Leve une seule fois, par draw_auth_modal, juste apres la creation du

@@ -10,8 +10,7 @@ bool ensure_connected(cli_context &context, ui_state &state)
     }
     std::string error;
     bool const reconnected =
-        context.connection.open_session(state.server_host, state.server_port,
-                                        error)
+        context.connection.open_session(state.endpoint, error)
         && context.session.authenticate(error);
     state.connected = reconnected;
     if (!reconnected) {
