@@ -5,6 +5,7 @@
 
 #include "client/ui/aero_theme.hpp"
 #include "client/ui/i18n.hpp"
+#include "client/ui/ui_report_actions.hpp"
 #include "client/ui/ui_social_actions.hpp"
 
 namespace hypercom::client {
@@ -89,7 +90,8 @@ void draw_friends_panel(cli_context &context, ui_state &state, float height)
     }
 }
 
-void draw_viewed_profile_panel(ui_state const &state, float height)
+void draw_viewed_profile_panel(cli_context &context, ui_state &state,
+                               float height)
 {
     draw_section_heading(tr("viewed_profile_heading", state.current_lang));
     if (state.viewed_profile.handle.empty()) {
@@ -102,6 +104,9 @@ void draw_viewed_profile_panel(ui_state const &state, float height)
     ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK_MUTED);
     ImGui::TextWrapped("%s", state.viewed_profile.bio.c_str());
     ImGui::PopStyleColor();
+    if (ImGui::SmallButton(tr("report_account_btn", state.current_lang))) {
+        report_account(context, state, state.viewed_profile.pubkey);
+    }
     ImGui::Spacing();
     ImGui::BeginChild("viewed_top8", ImVec2{0.0f, height}, true);
     draw_top8_grid(nullptr, state.viewed_top8_slots, state.viewed_top8_details);
@@ -128,7 +133,7 @@ void draw_social_panel(cli_context &context, ui_state &state, float height)
     float const editor_h = std::max(80.0f, height * 0.26f);
     draw_friends_panel(context, state, friends_h);
     ImGui::Spacing();
-    draw_viewed_profile_panel(state, profile_h);
+    draw_viewed_profile_panel(context, state, profile_h);
     ImGui::Spacing();
     draw_own_top8_editor(context, state, editor_h);
 }
