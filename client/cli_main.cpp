@@ -4,12 +4,19 @@
 #include <vector>
 
 #include "client/cli/cli_content_commands.hpp"
+#include "client/cli/cli_content_delete_commands.hpp"
 #include "client/cli/cli_dm_commands.hpp"
 #include "client/cli/cli_forum_commands.hpp"
 #include "client/cli/cli_options.hpp"
+#include "client/cli/cli_report_commands.hpp"
+#include "client/cli/cli_server_commands.hpp"
 #include "client/cli/cli_social_commands.hpp"
 #include "client/cli/cli_top8_commands.hpp"
 #include "client/keystore/identity_store.hpp"
+#include "client/keystore/master_seed_store.hpp"
+#include "client/keystore/server_identity.hpp"
+#include "client/keystore/server_registry.hpp"
+#include "common/crypto/secure_memory.hpp"
 #include "common/crypto/sodium_runtime.hpp"
 #include "common/util/hex_codec.hpp"
 
@@ -30,23 +37,70 @@ using namespace hypercom;
     return true;
 }
 
-[[nodiscard]] bool load_identity(client::cli_options const &options,
-                                 crypto::identity_keypair &out,
-                                 std::string &error_out)
+// Sans --server, on reste en mode direct : hote, port et cle donnes a la main,
+// identite lue dans --identity. C'est ce que fait encore le client graphique,
+// et ce que font les scripts existants.
+[[nodiscard]] bool resolve_server(client::cli_options const &options,
+                                  std::string_view passphrase,
+                                  client::server_entry &out,
+                                  std::string &error_out)
 {
-    client::identity_store store{options.identity_path};
-    std::string passphrase;
-    if (!client::read_passphrase(passphrase, error_out)) {
+    if (options.server_label.empty()) {
+        out.label = options.host;
+        out.endpoint = {options.host, options.port, options.socks5_host,
+                        options.socks5_port};
+        out.source = client::identity_source::imported;
+        out.imported_identity_path = options.identity_path;
+        return decode_server_key(options.server_key_hex, out.server_key,
+                                 error_out);
+    }
+    client::server_registry registry{options.registry_path};
+    std::vector<client::server_entry> entries;
+    if (!registry.load(passphrase, entries, error_out)) {
         return false;
     }
-    if (store.has_stored_identity()) {
-        return store.unlock_identity(passphrase, out, error_out);
+    for (client::server_entry const &entry : entries) {
+        if (entry.label == options.server_label) {
+            out = entry;
+            return true;
+        }
     }
-    std::cout << "aucune identite dans " << options.identity_path
-              << ", creation d'une nouvelle paire de cles.\n"
-                 "ATTENTION : cette cle EST le compte. Perdue, elle ne se "
-                 "recupere pas, et personne ne peut la reinitialiser.\n";
-    return store.create_identity(passphrase, out, error_out);
+    error_out = "serveur inconnu dans le registre : " + options.server_label;
+    return false;
+}
+
+// Une identite importee vient de son propre fichier ; une identite derivee se
+// recalcule depuis la graine maitresse et la cle du serveur, sans rien stocker.
+[[nodiscard]] bool resolve_identity(client::cli_options const &options,
+                                    client::server_entry const &entry,
+                                    std::string_view passphrase,
+                                    crypto::identity_keypair &out,
+                                    std::string &error_out)
+{
+    if (entry.source == client::identity_source::imported) {
+        client::identity_store store{entry.imported_identity_path};
+        if (store.has_stored_identity()) {
+            return store.unlock_identity(passphrase, out, error_out);
+        }
+        std::cout << "aucune identite dans " << entry.imported_identity_path
+                  << ", creation d'une nouvelle paire de cles.\n"
+                     "ATTENTION : cette cle EST le compte. Perdue, elle ne se "
+                     "recupere pas, et personne ne peut la reinitialiser.\n";
+        return store.create_identity(passphrase, out, error_out);
+    }
+    client::master_seed_store seeds{options.master_seed_path};
+    crypto::ed25519_seed seed{};
+    bool ready = seeds.has_stored_seed()
+                     ? seeds.unlock_seed(passphrase, seed, error_out)
+                     : seeds.create_seed(passphrase, seed, error_out);
+    if (ready) {
+        ready = client::derive_server_identity(seed, entry.server_key, out);
+        if (!ready) {
+            error_out = "derivation de l'identite impossible";
+        }
+    }
+    crypto::wipe_bytes(seed);
+    return ready;
 }
 
 [[nodiscard]] bool dispatch_command(client::cli_context &context,
@@ -80,6 +134,12 @@ using namespace hypercom;
     if (command == "comment") {
         return client::run_comment_create(context, arguments, error_out);
     }
+    if (command == "post-delete") {
+        return client::run_post_delete(context, arguments, error_out);
+    }
+    if (command == "comment-delete") {
+        return client::run_comment_delete(context, arguments, error_out);
+    }
     if (command == "profile-set") {
         return client::run_profile_set(context, arguments, error_out);
     }
@@ -107,21 +167,33 @@ using namespace hypercom;
     if (command == "dm-fetch") {
         return client::run_dm_fetch(context, error_out);
     }
+    if (command == "report-post") {
+        return client::run_report_post(context, arguments, error_out);
+    }
+    if (command == "report-account") {
+        return client::run_report_account(context, arguments, error_out);
+    }
     error_out = "commande inconnue : " + command;
     return false;
 }
 
 // Etablit le canal, authentifie, enregistre si besoin, puis execute.
 [[nodiscard]] bool run_cli(client::cli_options const &options,
-                           crypto::identity_keypair const &identity,
                            std::string &error_out)
 {
-    crypto::x25519_public_key server_key{};
-    if (!decode_server_key(options.server_key_hex, server_key, error_out)) {
+    std::string passphrase;
+    if (!client::read_passphrase(passphrase, error_out)) {
         return false;
     }
-    client::server_connection connection{server_key};
-    if (!connection.open_session(options.host, options.port, error_out)) {
+    client::server_entry entry;
+    crypto::identity_keypair identity;
+    if (!resolve_server(options, passphrase, entry, error_out)
+        || !resolve_identity(options, entry, passphrase, identity,
+                             error_out)) {
+        return false;
+    }
+    client::server_connection connection{entry.server_key};
+    if (!connection.open_session(entry.endpoint, error_out)) {
         return false;
     }
     client::client_session session{connection, identity};
@@ -163,12 +235,23 @@ int main(int argc, char **argv)
         client::print_cli_usage();
         return 2;
     }
-    crypto::identity_keypair identity;
-    if (!load_identity(options, identity, failure)) {
-        std::cerr << failure << '\n';
-        return 3;
+    // Les commandes de registre n'ouvrent aucune connexion : elles se traitent
+    // avant tout ce qui touche au reseau.
+    if (client::is_registry_command(options.command)) {
+        bool const done =
+            options.command == "server-add"
+                ? client::run_server_add(options, options.arguments, failure)
+            : options.command == "server-list"
+                ? client::run_server_list(options, failure)
+                : client::run_server_import(options, options.arguments,
+                                            failure);
+        if (!done) {
+            std::cerr << failure << '\n';
+            return 3;
+        }
+        return 0;
     }
-    if (!run_cli(options, identity, failure)) {
+    if (!run_cli(options, failure)) {
         std::cerr << failure << '\n';
         return 4;
     }

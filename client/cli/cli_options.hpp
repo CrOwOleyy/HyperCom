@@ -13,7 +13,21 @@ struct cli_options {
     // silencieusement confiance au serveur de celui qui a compile le binaire.
     // La validation exige --server-key, ce qui force un choix explicite.
     std::string server_key_hex;
+    // Proxy SOCKS5 a traverser. Vide = connexion directe. C'est le seul moyen
+    // d'atteindre un .onion, que le DNS ne connait pas. Rempli automatiquement
+    // quand l'hote se termine par .onion, donc Tor s'active sans rien demander
+    // de plus que l'adresse elle-meme.
+    std::string socks5_host;
+    std::uint16_t socks5_port = 0;
     std::string identity_path = "hypercom_identity.key";
+    // Serveur du registre a viser. Vide = mode direct, ou l'hote, le port et la
+    // cle sont donnes explicitement -- ce que fait encore le client graphique.
+    std::string server_label;
+    // La graine dont derivent toutes les identites, et la liste des serveurs.
+    // Chemins relatifs par defaut, comme identity_path : le binaire ne va
+    // jamais chercher un repertoire de configuration tout seul.
+    std::string master_seed_path = "hypercom_master.key";
+    std::string registry_path = "hypercom_servers.dat";
     std::string command;
     std::vector<std::string> arguments;
     // Client graphique uniquement : rejoue la sequence d'accueil sur un compte
@@ -22,9 +36,13 @@ struct cli_options {
     bool replay_intro = false;
 };
 
+// require_server_key : le client en ligne de commande agit immediatement et a
+// donc besoin d'un serveur des l'analyse. Le client graphique, lui, resout ses
+// serveurs depuis le registre apres coup et passe false.
 [[nodiscard]] bool parse_cli_options(int argc, char **argv, cli_options &out,
                                      std::string &error_out,
-                                     bool require_command = true);
+                                     bool require_command = true,
+                                     bool require_server_key = true);
 
 void print_cli_usage();
 
