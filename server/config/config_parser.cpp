@@ -55,6 +55,10 @@ namespace {
             listener->bind_address = std::string{value};
             return true;
         }
+        if (key == "advertised_host") {
+            listener->advertised_host = std::string{value};
+            return true;
+        }
         if (key == "port") {
             std::uint32_t port = 0;
             if (!parse_unsigned(value, port) || port == 0 || port > 65535) {
@@ -123,6 +127,10 @@ namespace {
         }
         if (key == "admin_socket") {
             out.paths.admin_socket_path = std::string{value};
+            return true;
+        }
+        if (key == "connect_file") {
+            out.paths.connect_file_path = std::string{value};
             return true;
         }
         return false;

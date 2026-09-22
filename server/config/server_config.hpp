@@ -17,6 +17,12 @@ struct listener_config {
     bool enabled = false;
     std::string bind_address;
     std::uint16_t port = 0;
+    // Adresse a annoncer aux clients, quand elle differe de celle d'ecoute.
+    // bind_address = 0.0.0.0 signifie "toutes les interfaces" et n'est
+    // joignable par personne : le serveur ne peut pas deviner son adresse
+    // publique, l'administrateur la declare ici. Vide = utiliser
+    // bind_address.
+    std::string advertised_host;
 };
 
 struct limits_config {
@@ -47,6 +53,10 @@ struct paths_config {
     std::string migrations_directory = "db/migrations";
     std::string server_key_path = "keys/server_static.key";
     std::string admin_socket_path = "run/hypercom-admin.sock";
+    // Vide = aucun fichier ecrit. Contenu non secret (host+port+cle publique) :
+    // ce que l'admin donnerait de toute facon a un nouvel utilisateur, sous une
+    // forme copiable telle quelle plutot que retapee a la main.
+    std::string connect_file_path = "run/hypercom-connect.txt";
 };
 
 struct server_config {
