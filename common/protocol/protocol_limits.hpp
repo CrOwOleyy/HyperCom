@@ -47,6 +47,9 @@ constexpr std::size_t MAX_THEME_JSON_LENGTH = 1024;
 constexpr std::size_t MAX_BLOB_REFERENCE_LENGTH = 96;
 constexpr std::size_t MAX_ERROR_MESSAGE_LENGTH = 256;
 constexpr std::size_t MAX_MOTD_LENGTH = 4096;
+// Motif d'un signalement. Court par construction : c'est un signal pour
+// l'admin, pas un rapport d'incident.
+constexpr std::size_t MAX_REPORT_REASON_LENGTH = 500;
 
 // Enveloppe DM : opaque pour le serveur, mais bornee comme tout le reste.
 constexpr std::size_t MAX_DM_CIPHERTEXT_SIZE = 64 * 1024;
