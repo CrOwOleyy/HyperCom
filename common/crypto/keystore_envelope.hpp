@@ -22,6 +22,18 @@ namespace hypercom::crypto {
 constexpr std::size_t KEYSTORE_MAGIC_SIZE = 8;
 constexpr std::uint8_t KEYSTORE_VERSION = 1;
 
+// Meme format, pour un contenu de taille quelconque. Sert a la graine maitresse
+// (32 octets) et au registre des serveurs (taille variable) : la liste des
+// serveurs qu'on frequente revele des appartenances, elle ne reste donc pas en
+// clair sur le disque.
+[[nodiscard]] bool seal_blob(std::string_view passphrase,
+                             std::span<std::uint8_t const> plaintext,
+                             std::vector<std::uint8_t> &out);
+
+[[nodiscard]] bool open_blob(std::string_view passphrase,
+                             std::span<std::uint8_t const> sealed,
+                             std::vector<std::uint8_t> &out);
+
 [[nodiscard]] bool seal_identity_secret(std::string_view passphrase,
                                         ed25519_secret_key const &secret,
                                         std::vector<std::uint8_t> &out);

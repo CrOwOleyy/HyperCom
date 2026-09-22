@@ -51,9 +51,9 @@ void append_u32(std::uint32_t value, std::vector<std::uint8_t> &out)
 
 } // namespace
 
-bool seal_identity_secret(std::string_view passphrase,
-                          ed25519_secret_key const &secret,
-                          std::vector<std::uint8_t> &out)
+bool seal_blob(std::string_view passphrase,
+               std::span<std::uint8_t const> plaintext,
+               std::vector<std::uint8_t> &out)
 {
     auto const operations =
         static_cast<std::uint32_t>(crypto_pwhash_OPSLIMIT_MODERATE);
@@ -77,13 +77,14 @@ bool seal_identity_secret(std::string_view passphrase,
     append_u32(memory_kib, header);
     header.insert(header.end(), salt.begin(), salt.end());
     header.insert(header.end(), nonce.begin(), nonce.end());
-    std::vector<std::uint8_t> sealed(secret.size() + AEAD_TAG_SIZE);
+    std::vector<std::uint8_t> sealed(plaintext.size() + AEAD_TAG_SIZE);
     unsigned long long written = 0;
     // L'en-tete entier sert de donnee associee : personne ne peut abaisser le
     // cout Argon2id d'un fichier existant pour le rendre attaquable.
     int const status = crypto_aead_xchacha20poly1305_ietf_encrypt(
-        sealed.data(), &written, secret.data(), secret.size(), header.data(),
-        header.size(), nullptr, nonce.data(), wrapping_key.data());
+        sealed.data(), &written, plaintext.data(), plaintext.size(),
+        header.data(), header.size(), nullptr, nonce.data(),
+        wrapping_key.data());
     wipe_bytes(wrapping_key);
     if (status != 0) {
         return false;
@@ -94,11 +95,11 @@ bool seal_identity_secret(std::string_view passphrase,
     return true;
 }
 
-bool open_identity_secret(std::string_view passphrase,
-                          std::span<std::uint8_t const> sealed,
-                          ed25519_secret_key &out)
+bool open_blob(std::string_view passphrase,
+               std::span<std::uint8_t const> sealed,
+               std::vector<std::uint8_t> &out)
 {
-    if (sealed.size() < KEYSTORE_HEADER_SIZE + out.size() + AEAD_TAG_SIZE) {
+    if (sealed.size() < KEYSTORE_HEADER_SIZE + AEAD_TAG_SIZE) {
         return false;
     }
     if (!std::equal(KEYSTORE_MAGIC.begin(), KEYSTORE_MAGIC.end(),
@@ -123,12 +124,43 @@ bool open_identity_secret(std::string_view passphrase,
     }
     auto const header = sealed.first(KEYSTORE_HEADER_SIZE);
     auto const body = sealed.subspan(KEYSTORE_HEADER_SIZE);
+    out.assign(body.size() - AEAD_TAG_SIZE, 0);
     unsigned long long written = 0;
     int const status = crypto_aead_xchacha20poly1305_ietf_decrypt(
         out.data(), &written, nullptr, body.data(), body.size(), header.data(),
         header.size(), nonce.data(), wrapping_key.data());
     wipe_bytes(wrapping_key);
-    return status == 0 && written == out.size();
+    if (status != 0) {
+        out.clear();
+        return false;
+    }
+    out.resize(static_cast<std::size_t>(written));
+    return true;
+}
+
+bool seal_identity_secret(std::string_view passphrase,
+                          ed25519_secret_key const &secret,
+                          std::vector<std::uint8_t> &out)
+{
+    return seal_blob(passphrase, secret, out);
+}
+
+bool open_identity_secret(std::string_view passphrase,
+                          std::span<std::uint8_t const> sealed,
+                          ed25519_secret_key &out)
+{
+    std::vector<std::uint8_t> plaintext;
+    if (!open_blob(passphrase, sealed, plaintext)) {
+        return false;
+    }
+    // Une taille inattendue signale un fichier d'un autre type scelle avec la
+    // meme passphrase : on refuse plutot que de recopier ce qui tient.
+    bool const usable = plaintext.size() == out.size();
+    if (usable) {
+        std::copy(plaintext.begin(), plaintext.end(), out.begin());
+    }
+    wipe_bytes(plaintext);
+    return usable;
 }
 
 } // namespace hypercom::crypto
