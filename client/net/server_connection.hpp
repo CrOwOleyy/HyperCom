@@ -13,6 +13,20 @@
 
 namespace hypercom::client {
 
+// Ou joindre le serveur, et par quel chemin.
+//
+// socks5_host vide = connexion directe. Rempli, la socket s'ouvre vers le
+// proxy qui relaie ensuite vers host:port -- c'est le seul moyen d'atteindre
+// un service cache .onion. Le handshake Noise se deroule identiquement dans
+// les deux cas : il ne sait pas par ou passent ses octets, et l'epinglage de
+// la cle serveur protege donc exactement pareil.
+struct server_endpoint {
+    std::string host;
+    std::uint16_t port = 0;
+    std::string socks5_host;
+    std::uint16_t socks5_port = 0;
+};
+
 // Connexion au serveur : TCP, puis handshake Noise_NK, puis trames chiffrees.
 //
 // La cle statique du serveur est fournie a la construction : c'est
@@ -32,8 +46,7 @@ public:
     // fraiche. Aucun jeton de reprise n'est conserve d'une session a l'autre,
     // et le serveur n'a donc rien qui permette de recoudre deux connexions.
     // La contrepartie assumee est qu'il faut refaire le defi-reponse.
-    [[nodiscard]] bool open_session(std::string const &host,
-                                    std::uint16_t port,
+    [[nodiscard]] bool open_session(server_endpoint const &endpoint,
                                     std::string &error_out);
 
     [[nodiscard]] bool send_frame(proto::message_type type,

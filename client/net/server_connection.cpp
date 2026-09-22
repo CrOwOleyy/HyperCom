@@ -1,5 +1,6 @@
 #include "client/net/server_connection.hpp"
 
+#include "client/net/socks5_connector.hpp"
 #include "common/crypto/key_types.hpp"
 #include "common/crypto/secure_memory.hpp"
 #include "common/protocol/length_prefixed_stream.hpp"
@@ -92,8 +93,7 @@ bool server_connection::perform_handshake(std::string &error_out)
     return true;
 }
 
-bool server_connection::open_session(std::string const &host,
-                                     std::uint16_t port,
+bool server_connection::open_session(server_endpoint const &endpoint,
                                      std::string &error_out)
 {
     // Rien de la session precedente ne survit : handshake neuf, canal neuf,
@@ -103,7 +103,17 @@ bool server_connection::open_session(std::string const &host,
     transport_.reset();
     input_buffer_.clear();
     handshake_ = crypto::noise_handshake_initiator{server_static_public_};
-    if (!socket_.connect_to_host(host, port, error_out)) {
+    bool const through_proxy = !endpoint.socks5_host.empty();
+    std::string const &dial_host =
+        through_proxy ? endpoint.socks5_host : endpoint.host;
+    std::uint16_t const dial_port =
+        through_proxy ? endpoint.socks5_port : endpoint.port;
+    if (!socket_.connect_to_host(dial_host, dial_port, error_out)) {
+        return false;
+    }
+    if (through_proxy
+        && !perform_socks5_connect(socket_, endpoint.host, endpoint.port,
+                                   error_out)) {
         return false;
     }
     open_ = true;
