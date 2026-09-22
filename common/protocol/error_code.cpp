@@ -20,6 +20,7 @@ std::string_view describe_error_code(error_code code)
         case error_code::duplicate_entry:       return "entree deja existante";
         case error_code::internal_error:        return "erreur interne";
         case error_code::not_implemented:       return "non implemente";
+        case error_code::account_banned:        return "compte banni";
     }
     return "erreur inconnue";
 }

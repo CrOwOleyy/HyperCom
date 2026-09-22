@@ -26,6 +26,7 @@ enum class error_code : std::uint16_t {
     duplicate_entry = 12,
     internal_error = 13,
     not_implemented = 14,
+    account_banned = 15,
 };
 
 [[nodiscard]] std::string_view describe_error_code(error_code code);
