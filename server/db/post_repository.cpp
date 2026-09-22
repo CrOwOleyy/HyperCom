@@ -111,4 +111,40 @@ bool post_repository::list_by_forum(std::int64_t forum_id,
     return true;
 }
 
+bool post_repository::delete_own_post(std::int64_t post_id,
+                                      std::int64_t author_id)
+{
+    sql_statement statement{
+        database_,
+        "UPDATE posts SET title = '', body = '', deleted_at = ?1 "
+        "WHERE id = ?2 AND author_id = ?3 AND deleted_at IS NULL"};
+    if (!bind_integer(statement, 1,
+                      static_cast<std::int64_t>(util::get_unix_timestamp()))
+        || !bind_integer(statement, 2, post_id)
+        || !bind_integer(statement, 3, author_id)) {
+        return false;
+    }
+    if (statement.step_row() != step_result::done) {
+        return false;
+    }
+    return database_.get_changed_row_count() > 0;
+}
+
+bool post_repository::admin_delete_post(std::int64_t post_id)
+{
+    sql_statement statement{
+        database_,
+        "UPDATE posts SET title = '', body = '', deleted_at = ?1 "
+        "WHERE id = ?2 AND deleted_at IS NULL"};
+    if (!bind_integer(statement, 1,
+                      static_cast<std::int64_t>(util::get_unix_timestamp()))
+        || !bind_integer(statement, 2, post_id)) {
+        return false;
+    }
+    if (statement.step_row() != step_result::done) {
+        return false;
+    }
+    return database_.get_changed_row_count() > 0;
+}
+
 } // namespace hypercom::server
