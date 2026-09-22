@@ -99,6 +99,13 @@ bool handle_auth_response(handler_context &context,
     user_repository users{context.database};
     user_row existing;
     if (users.find_by_pubkey(session.announced_pubkey, existing)) {
+        if (existing.banned) {
+            // La signature est verifiee et valide : ce n'est pas un refus
+            // d'authentification generique, on le dit explicitement plutot
+            // que de le confondre avec une cle inconnue.
+            return send_status_error(context.connection,
+                                     proto::error_code::account_banned);
+        }
         return send_accepted_session(context, existing);
     }
     // Cle prouvee mais sans compte : seul register_request est desormais
