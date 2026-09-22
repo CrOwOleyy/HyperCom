@@ -1,5 +1,8 @@
 #include "server/config/config_validator.hpp"
 
+#include <cstdint>
+#include <string>
+
 #include "common/protocol/protocol_limits.hpp"
 
 namespace hypercom::server {
@@ -81,6 +84,20 @@ bool validate_config(server_config const &config,
             "[logging] log_peer_addresses=true : le serveur va journaliser des "
             "adresses IP, contrairement au defaut du projet. Retirer ce "
             "reglage pour revenir au comportement non surveille.");
+        // Un an, pas une valeur arbitraire : c'est le plancher legal
+        // (art. L.34-1 CPCE, art. 6-II LCEN, decret du 21/10/2025). En
+        // dessous, journaliser des IP n'apporte la conformite qu'en apparence
+        // (BRIEF.md 13).
+        constexpr std::uint32_t LEGAL_RETENTION_MINIMUM_DAYS = 365;
+        if (config.logging.retention_days < LEGAL_RETENTION_MINIMUM_DAYS) {
+            warnings.emplace_back(
+                "[logging] retention_days="
+                + std::to_string(config.logging.retention_days)
+                + " est sous le plancher legal francais d'un an pour les "
+                  "donnees de connexion. Journaliser sans le conserver assez "
+                  "longtemps n'apporte pas la conformite que log_peer_addresses "
+                  "laisse croire.");
+        }
     }
     return problems.empty();
 }
