@@ -6,6 +6,7 @@
 #include "client/ui/i18n.hpp"
 #include "client/ui/ui_actions.hpp"
 #include "client/ui/ui_delete_actions.hpp"
+#include "client/ui/ui_report_actions.hpp"
 
 namespace hypercom::client {
 namespace {
@@ -39,11 +40,17 @@ void draw_post_header(cli_context &context, ui_state &state)
     ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK_MUTED);
     ImGui::Text("@%s", state.open_post.author_handle.c_str());
     ImGui::PopStyleColor();
-    if (!is_removed(state.open_post.body)
-        && is_own_content(context, state.open_post.author_pubkey)) {
-        ImGui::SameLine();
-        if (ImGui::SmallButton(tr("delete_action", state.current_lang))) {
-            delete_post(context, state, state.open_post.id);
+    if (!is_removed(state.open_post.body)) {
+        if (is_own_content(context, state.open_post.author_pubkey)) {
+            ImGui::SameLine();
+            if (ImGui::SmallButton(tr("delete_action", state.current_lang))) {
+                delete_post(context, state, state.open_post.id);
+            }
+        } else {
+            ImGui::SameLine();
+            if (ImGui::SmallButton(tr("report_action", state.current_lang))) {
+                report_post(context, state, state.open_post.id);
+            }
         }
     }
     ImGui::Separator();
@@ -79,11 +86,21 @@ void draw_comment_tree(cli_context &context, ui_state &state)
         if (ImGui::SmallButton(tr("reply_action", state.current_lang))) {
             submit_comment(context, state, comment.id);
         }
-        if (!is_removed(comment.body)
-            && is_own_content(context, comment.author_pubkey)) {
-            ImGui::SameLine();
-            if (ImGui::SmallButton(tr("delete_action", state.current_lang))) {
-                delete_comment(context, state, comment.id);
+        if (!is_removed(comment.body)) {
+            if (is_own_content(context, comment.author_pubkey)) {
+                ImGui::SameLine();
+                if (ImGui::SmallButton(
+                        tr("delete_action", state.current_lang))) {
+                    delete_comment(context, state, comment.id);
+                }
+            } else {
+                ImGui::SameLine();
+                // Un commentaire n'a pas d'identifiant signalable a lui : ce
+                // qu'on signale, c'est son auteur.
+                if (ImGui::SmallButton(
+                        tr("report_action", state.current_lang))) {
+                    report_account(context, state, comment.author_pubkey);
+                }
             }
         }
         ImGui::PopID();
