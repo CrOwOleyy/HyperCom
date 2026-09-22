@@ -54,6 +54,8 @@ static const std::unordered_map<std::string_view, translation> dictionary = {
     {"reply_action", {"répondre", "reply"}},
     {"delete_action", {"retirer", "remove"}},
     {"content_removed", {"[retiré par son auteur]", "[removed by its author]"}},
+    {"report_action", {"signaler", "report"}},
+    {"report_account_btn", {"Signaler ce compte", "Report this account"}},
     {"replies_heading", {"RÉPONSES", "REPLIES"}},
     {"thread_truncated", {"(fil tronqué par le serveur)", "(thread truncated by server)"}},
 
