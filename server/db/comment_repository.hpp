@@ -39,6 +39,12 @@ public:
     [[nodiscard]] bool check_parent_belongs_to_post(
         std::int64_t parent_comment_id, std::int64_t post_id);
 
+    // Meme principe que delete_own_post : la propriete est dans le WHERE, et
+    // seul le texte disparait. La ligne reste, sinon ON DELETE CASCADE
+    // emporterait toutes les reponses -- donc le contenu d'autres personnes.
+    [[nodiscard]] bool delete_own_comment(std::int64_t comment_id,
+                                          std::int64_t author_id);
+
 private:
     database_handle &database_;
 };

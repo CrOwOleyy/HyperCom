@@ -139,4 +139,23 @@ bool comment_repository::check_parent_belongs_to_post(
     return statement.step_row() == step_result::row;
 }
 
+bool comment_repository::delete_own_comment(std::int64_t comment_id,
+                                            std::int64_t author_id)
+{
+    sql_statement statement{
+        database_,
+        "UPDATE comments SET body = '', deleted_at = ?1 "
+        "WHERE id = ?2 AND author_id = ?3 AND deleted_at IS NULL"};
+    if (!bind_integer(statement, 1,
+                      static_cast<std::int64_t>(util::get_unix_timestamp()))
+        || !bind_integer(statement, 2, comment_id)
+        || !bind_integer(statement, 3, author_id)) {
+        return false;
+    }
+    if (statement.step_row() != step_result::done) {
+        return false;
+    }
+    return database_.get_changed_row_count() > 0;
+}
+
 } // namespace hypercom::server
