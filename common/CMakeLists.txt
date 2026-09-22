@@ -17,6 +17,7 @@ add_library(hypercom_protocol STATIC
     protocol/byte_reader.cpp
     protocol/byte_writer.cpp
     protocol/comment_create_message.cpp
+    protocol/content_delete_message.cpp
     protocol/content_records.cpp
     protocol/dm_ack_message.cpp
     protocol/dm_envelope_record.cpp
@@ -40,6 +41,7 @@ add_library(hypercom_protocol STATIC
     protocol/profile_get_message.cpp
     protocol/profile_set_message.cpp
     protocol/register_message.cpp
+    protocol/report_message.cpp
     protocol/social_records.cpp
     protocol/status_message.cpp
     protocol/text_field_codec.cpp
