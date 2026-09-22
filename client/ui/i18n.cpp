@@ -52,6 +52,8 @@ static const std::unordered_map<std::string_view, translation> dictionary = {
     {"post_reply_heading", {"RÉPONDRE", "REPLY"}},
     {"post_reply_btn", {"Publier la réponse", "Publish reply"}},
     {"reply_action", {"répondre", "reply"}},
+    {"delete_action", {"retirer", "remove"}},
+    {"content_removed", {"[retiré par son auteur]", "[removed by its author]"}},
     {"replies_heading", {"RÉPONSES", "REPLIES"}},
     {"thread_truncated", {"(fil tronqué par le serveur)", "(thread truncated by server)"}},
 
@@ -81,6 +83,18 @@ static const std::unordered_map<std::string_view, translation> dictionary = {
     {"dm_unreadable", {"illisible", "unreadable"}},
     {"identity_heading", {"IDENTITÉ", "IDENTITY"}},
     {"identity_copy_key", {"Copier ma clé publique", "Copy my public key"}},
+    {"identity_per_server", {"Cette clé ne vaut que sur ce serveur. Ailleurs vous en avez une autre, sans lien avec celle-ci : vos amis doivent vous rajouter sur chaque serveur.", "This key only applies to this server. Elsewhere you have a different, unlinked one: your friends must add you again on each server."}},
+
+    // draw_server_bar.cpp
+    {"servers_heading", {"SERVEURS", "SERVERS"}},
+    {"servers_add_heading", {"REJOINDRE", "JOIN"}},
+    {"servers_add_hint", {"Collez le lien reçu d'un ami (hypercom://…). Il n'existe pas d'annuaire : on ne rejoint un serveur que sur invitation.", "Paste the link a friend sent you (hypercom://…). There is no directory: you only join a server by invitation."}},
+    {"servers_add_btn", {"Ajouter ce serveur", "Add this server"}},
+    {"trust_heading", {"AVANT DE VOUS CONNECTER", "BEFORE YOU CONNECT"}},
+    {"trust_server", {"Serveur :", "Server:"}},
+    {"trust_body", {"L'opérateur de ce serveur verra vos publications, vos forums et le moment de vos connexions. Vos messages privés, eux, restent chiffrés : il ne peut pas les lire.", "This server's operator will see your posts, your forums and when you connect. Your direct messages stay encrypted: they cannot read them."}},
+    {"trust_identity", {"Vous utiliserez ici une identité distincte de celle de vos autres serveurs. Aucun opérateur ne peut faire le lien entre elles.", "You will use an identity here that is separate from your other servers. No operator can link them together."}},
+    {"trust_accept", {"J'ai compris, se connecter", "Understood, connect"}},
 };
 
 const char* tr(const char* key, language lang)

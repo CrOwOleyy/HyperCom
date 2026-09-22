@@ -75,6 +75,11 @@ void draw_identity_panel(cli_context &context, ui_state &state, float bio_height
     if (ImGui::Button(tr("identity_copy_key", state.current_lang))) {
         ImGui::SetClipboardText(state.identity_hex.c_str());
     }
+    // Consequence directe d'une cle par serveur : mieux vaut l'expliquer ici
+    // que laisser l'utilisateur s'etonner de ne pas etre reconnu ailleurs.
+    ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK_MUTED);
+    ImGui::TextWrapped("%s", tr("identity_per_server", state.current_lang));
+    ImGui::PopStyleColor();
     ImGui::Spacing();
     draw_profile_editor(context, state, bio_height);
 }
