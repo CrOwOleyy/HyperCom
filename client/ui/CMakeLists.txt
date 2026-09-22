@@ -12,6 +12,7 @@ add_executable(hypercom_client
     draw_auth_modal.cpp
     draw_dm_panel.cpp
     draw_forum_panel.cpp
+    draw_server_bar.cpp
     draw_social_panel.cpp
     draw_thread_panel.cpp
     draw_welcome_overlay.cpp
@@ -20,7 +21,9 @@ add_executable(hypercom_client
     i18n.cpp
     intro_sequence.cpp
     ui_actions.cpp
+    ui_delete_actions.cpp
     ui_dm_actions.cpp
+    server_actions.cpp
     ui_scale.cpp
     ui_social_actions.cpp
     "${CMAKE_SOURCE_DIR}/client/cli/cli_options.cpp")

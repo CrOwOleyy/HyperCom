@@ -9,7 +9,12 @@
 #include <string>
 
 #include "client/cli/cli_options.hpp"
+#include "client/keystore/server_registry.hpp"
 #include "client/ui/aero_decorations.hpp"
+#include "client/ui/app_state.hpp"
+#include "client/ui/draw_server_bar.hpp"
+#include "client/ui/server_actions.hpp"
+#include "client/ui/server_slot.hpp"
 #include "client/ui/aero_theme.hpp"
 #include "client/ui/audio_player.hpp"
 #include "client/ui/bubble_reveal.hpp"
@@ -112,8 +117,80 @@ void draw_columns(client::cli_context &context, client::ui_state &state,
     client::end_bubble_reveal();
 }
 
-void draw_application_frame(client::cli_context &context,
-                            client::ui_state &state,
+// Le registre s'il existe, sinon un serveur unique construit depuis --host,
+// --port et --server-key. Ce repli garde intacts les scripts et raccourcis
+// existants, qui ne connaissent pas encore le registre.
+[[nodiscard]] bool load_server_entries(client::cli_options const &options,
+                                       std::string_view passphrase,
+                                       std::vector<client::server_entry> &out,
+                                       std::string &error_out)
+{
+    client::server_registry registry{options.registry_path};
+    if (registry.has_stored_registry()) {
+        return registry.load(passphrase, out, error_out);
+    }
+    if (options.server_key_hex.size() != 64) {
+        error_out = "Aucun serveur enregistre, et --server-key absent.\n\n"
+                    "Ajoutez un serveur avec hypercom_cli server-add, ou "
+                    "passez --server-key.";
+        return false;
+    }
+    client::server_entry entry;
+    entry.label = options.host;
+    entry.endpoint = {options.host, options.port, options.socks5_host,
+                      options.socks5_port};
+    std::vector<std::uint8_t> decoded;
+    if (!util::decode_hex(options.server_key_hex, decoded)
+        || decoded.size() != entry.server_key.size()) {
+        error_out = "--server-key doit faire 64 caracteres hexadecimaux.";
+        return false;
+    }
+    std::copy(decoded.begin(), decoded.end(), entry.server_key.begin());
+    entry.source = client::identity_source::imported;
+    entry.imported_identity_path = options.identity_path;
+    // Le mode direct suppose un serveur deja choisi en connaissance de cause :
+    // reafficher l'avertissement a chaque lancement n'apprendrait rien.
+    entry.trust_acknowledged = true;
+    out.push_back(std::move(entry));
+    return true;
+}
+
+// Le serveur affiche est connecte a la demande, jamais avant que son
+// avertissement ait ete acquitte. Les autres slots restent inactifs tant qu'on
+// ne bascule pas dessus : ouvrir N sessions Noise -- et N circuits Tor -- au
+// demarrage couterait plusieurs secondes par serveur.
+void service_active_slot(client::app_state &app,
+                         client::server_slot_list &slots)
+{
+    if (app.active_slot >= slots.size()) {
+        return;
+    }
+    client::server_slot &slot = *slots[app.active_slot];
+    slot.view.current_lang = app.current_lang;
+    // L'accueil est leve par draw_auth_modal sur le slot qui vient de creer un
+    // compte, mais la sequence occupe toute la fenetre : elle se joue au niveau
+    // application.
+    if (slot.view.intro_requested) {
+        slot.view.intro_requested = false;
+        app.intro_requested = true;
+    }
+    if (!slot.entry.trust_acknowledged || slot.connection->is_open()) {
+        return;
+    }
+    std::string failure;
+    if (!client::connect_slot(slot, failure)) {
+        slot.view.status_message = failure;
+        slot.view.status_is_error = true;
+        return;
+    }
+    if (slot.view.registered && slot.view.forums.empty()) {
+        client::cli_context context = client::make_context(slot);
+        client::refresh_forum_list(context, slot.view);
+    }
+}
+
+void draw_application_frame(client::app_state &app,
+                            client::server_slot_list &slots,
                             client::ui_scale_state &scale_state,
                             client::intro_state const &intro)
 {
@@ -126,6 +203,7 @@ void draw_application_frame(client::cli_context &context,
         client::draw_welcome_overlay(intro, scale);
         return;
     }
+    service_active_slot(app, slots);
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGuiWindowFlags const flags =
@@ -133,14 +211,26 @@ void draw_application_frame(client::cli_context &context,
         | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
         | ImGuiWindowFlags_NoBringToFrontOnFocus;
     ImGui::Begin("hypercom", nullptr, flags);
-    draw_top_bar(state, scale_state);
-    static_cast<void>(client::handle_zoom_input(scale_state));
-    if (state.registered) {
-        draw_columns(context, state, scale, intro);
-    } else {
-        client::draw_auth_modal(context, state, scale);
+    float const bar_width = std::max(150.0f * scale,
+                                     viewport->WorkSize.x * 0.11f);
+    client::draw_server_bar(app, slots, bar_width);
+    ImGui::SameLine();
+    ImGui::BeginChild("zone_serveur", ImVec2{0.0f, 0.0f}, false);
+    if (app.active_slot < slots.size()) {
+        client::server_slot &slot = *slots[app.active_slot];
+        draw_top_bar(slot.view, scale_state);
+        static_cast<void>(client::handle_zoom_input(scale_state));
+        app.current_lang = slot.view.current_lang;
+        client::cli_context context = client::make_context(slot);
+        if (slot.view.registered) {
+            draw_columns(context, slot.view, scale, intro);
+        } else if (slot.entry.trust_acknowledged) {
+            client::draw_auth_modal(context, slot.view, scale);
+        }
     }
+    ImGui::EndChild();
     ImGui::End();
+    static_cast<void>(client::draw_trust_warning(app, slots, scale));
 }
 
 // Une fenetre de 1280x800 codee en dur occupe un quart d'un ecran 4K. On part
@@ -206,16 +296,16 @@ void refresh_scaling_if_needed(client::ui_scale_state &scale_state)
                              client::compute_effective_scale(scale_state));
 }
 
-void run_render_loop(GLFWwindow *window, client::cli_context &context,
-                     client::ui_state &state,
+void run_render_loop(GLFWwindow *window, client::app_state &app,
+                     client::server_slot_list &slots,
                      client::ui_scale_state &scale_state,
                      client::intro_state &intro, client::audio_player &audio)
 {
     while (glfwWindowShouldClose(window) == 0) {
         glfwPollEvents();
         refresh_scaling_if_needed(scale_state);
-        if (state.intro_requested) {
-            state.intro_requested = false;
+        if (app.intro_requested) {
+            app.intro_requested = false;
             std::string audio_failure;
             // L'echec audio n'interrompt rien : la sequence se deroule sur
             // l'horloge, avec une duree de repli.
@@ -232,7 +322,7 @@ void run_render_loop(GLFWwindow *window, client::cli_context &context,
         ImGui::NewFrame();
         client::advance_intro(intro,
                               static_cast<double>(ImGui::GetIO().DeltaTime));
-        draw_application_frame(context, state, scale_state, intro);
+        draw_application_frame(app, slots, scale_state, intro);
         ImGui::Render();
         int width = 0;
         int height = 0;
@@ -256,35 +346,33 @@ int main(int argc, char **argv)
     }
     client::cli_options options;
     std::string failure;
-    if (!client::parse_cli_options(argc, argv, options, failure, false)) {
+    if (!client::parse_cli_options(argc, argv, options, failure, false,
+                                   false)) {
         client::report_startup_failure(failure);
         return 2;
     }
-    crypto::identity_keypair identity;
-    crypto::x25519_public_key server_key{};
-    if (!client::prepare_session(options, identity, server_key, failure)) {
+    client::app_state app;
+    app.registry_path = options.registry_path;
+    app.master_seed_path = options.master_seed_path;
+    if (!client::read_passphrase(app.passphrase, failure)) {
         client::report_startup_failure(failure);
         return 3;
     }
-    client::server_connection connection{server_key};
-    if (!connection.open_session(options.host, options.port, failure)) {
-        client::report_startup_failure("Connexion impossible : " + failure);
+    std::vector<client::server_entry> entries;
+    if (!load_server_entries(options, app.passphrase, entries, failure)) {
+        client::report_startup_failure(failure);
         return 4;
     }
-    client::client_session session{connection, identity};
-    if (!session.authenticate(failure)) {
-        client::report_startup_failure("Authentification refusee : " + failure);
-        return 5;
-    }
-    bool is_registered = !session.needs_registration();
-    bool account_just_created = false;
-    if (!is_registered && !options.command.empty()) {
-        std::string registration_failure;
-        if (session.register_handle(options.command, registration_failure)) {
-            is_registered = true;
-            account_just_created = true;
+    client::server_slot_list slots;
+    for (client::server_entry const &entry : entries) {
+        std::unique_ptr<client::server_slot> slot;
+        if (!client::build_slot(entry, app, slot, failure)) {
+            client::report_startup_failure(failure);
+            return 5;
         }
+        slots.push_back(std::move(slot));
     }
+    app.intro_requested = options.replay_intro;
     GLFWwindow *const window = create_window();
     if (window == nullptr) {
         client::report_startup_failure(
@@ -303,27 +391,9 @@ int main(int argc, char **argv)
                      * client::compute_effective_scale(scale_state)
               << " px)\n"
               << std::flush;
-    client::ui_state state;
-    state.connected = connection.is_open();
-    state.server_host = options.host;
-    state.server_port = options.port;
-    state.registered = is_registered;
-    // Creer son compte par argument de ligne de commande reste une creation de
-    // compte : meme accueil que par la fenetre d'inscription. --replay-intro
-    // force la sequence sur un compte existant, pour pouvoir la regler.
-    state.intro_requested = account_just_created || options.replay_intro;
-    if (is_registered) {
-        state.handle = session.get_handle();
-    }
-    util::encode_hex(identity.get_public_key(), state.identity_hex);
-    state.server_key_hex = options.server_key_hex;
-    client::cli_context context{connection, identity, session};
-    if (is_registered) {
-        client::refresh_forum_list(context, state);
-    }
     client::intro_state intro;
     client::audio_player audio;
-    run_render_loop(window, context, state, scale_state, intro, audio);
+    run_render_loop(window, app, slots, scale_state, intro, audio);
     audio.stop_track();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
