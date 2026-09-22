@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "common/protocol/comment_create_message.hpp"
+#include "common/protocol/content_delete_message.hpp"
 #include "common/protocol/forum_create_message.hpp"
 #include "common/protocol/forum_list_message.hpp"
 #include "common/protocol/post_create_message.hpp"
@@ -260,6 +261,38 @@ void check_list_caps(tests::test_report &report)
     HYPERCOM_CHECK(report, refused_thread.comments.empty());
 }
 
+// Les messages de retrait ne portent qu'un identifiant : l'auteur vient de la
+// session, jamais du message. Un lecteur a court d'octets doit echouer plutot
+// que de laisser un identifiant a zero passer pour une cible valide.
+void check_delete_messages(tests::test_report &report)
+{
+    proto::post_delete_request post_request;
+    post_request.post_id = 4242;
+    std::vector<std::uint8_t> buffer;
+    proto::byte_writer writer{buffer};
+    post_request.write_to(writer);
+    proto::byte_reader reader{buffer};
+    proto::post_delete_request decoded_post;
+    HYPERCOM_CHECK(report, decoded_post.read_from(reader));
+    HYPERCOM_CHECK(report, reader.count_remaining_bytes() == 0);
+    HYPERCOM_CHECK(report, decoded_post.post_id == post_request.post_id);
+    proto::comment_delete_request comment_request;
+    comment_request.comment_id = 77;
+    std::vector<std::uint8_t> comment_buffer;
+    proto::byte_writer comment_writer{comment_buffer};
+    comment_request.write_to(comment_writer);
+    proto::byte_reader comment_reader{comment_buffer};
+    proto::comment_delete_request decoded_comment;
+    HYPERCOM_CHECK(report, decoded_comment.read_from(comment_reader));
+    HYPERCOM_CHECK(report, comment_reader.count_remaining_bytes() == 0);
+    HYPERCOM_CHECK(report,
+                   decoded_comment.comment_id == comment_request.comment_id);
+    std::vector<std::uint8_t> const truncated{0x01, 0x02, 0x03};
+    proto::byte_reader truncated_reader{truncated};
+    proto::post_delete_request refused;
+    HYPERCOM_CHECK(report, !refused.read_from(truncated_reader));
+}
+
 } // namespace
 
 int main()
@@ -271,5 +304,6 @@ int main()
     check_comment_messages(report);
     check_thread_messages(report);
     check_list_caps(report);
+    check_delete_messages(report);
     return report.summarize("aller-retour contenu");
 }
