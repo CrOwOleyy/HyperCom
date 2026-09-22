@@ -32,6 +32,12 @@ public:
 
     [[nodiscard]] std::int64_t get_last_insert_id() const;
 
+    // Lignes touchees par le dernier UPDATE/DELETE. Un UPDATE dont le WHERE
+    // porte la verification de propriete n'echoue pas quand il ne trouve
+    // rien : il reussit en ne touchant aucune ligne. C'est ce compteur qui
+    // distingue les deux.
+    [[nodiscard]] int get_changed_row_count() const;
+
 private:
     database_pointer handle_;
 };

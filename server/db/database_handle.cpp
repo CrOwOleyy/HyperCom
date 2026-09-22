@@ -12,11 +12,18 @@ namespace {
 //   immediatement au lieu d'attendre.
 // synchronous NORMAL : le bon compromis en WAL, une coupure de courant peut
 //   couter la derniere transaction, jamais l'integrite du fichier.
+// secure_delete : sans lui, sqlite laisse le contenu efface intact dans les
+//   pages liberees. Un post retire par son auteur resterait donc lisible en
+//   clair dans le fichier de base, et dans chaque sauvegarde -- ce qui ne
+//   serait pas une suppression, seulement une disparition de l'affichage.
+//   Le cout est un peu d'ecriture supplementaire, a une echelle ou ca ne se
+//   mesure pas.
 constexpr char const *STARTUP_PRAGMAS =
     "PRAGMA journal_mode=WAL;"
     "PRAGMA foreign_keys=ON;"
     "PRAGMA busy_timeout=5000;"
     "PRAGMA synchronous=NORMAL;"
+    "PRAGMA secure_delete=ON;"
     "PRAGMA temp_store=MEMORY;";
 
 } // namespace
@@ -71,6 +78,14 @@ std::int64_t database_handle::get_last_insert_id() const
         return 0;
     }
     return static_cast<std::int64_t>(sqlite3_last_insert_rowid(handle_.get()));
+}
+
+int database_handle::get_changed_row_count() const
+{
+    if (handle_ == nullptr) {
+        return 0;
+    }
+    return sqlite3_changes(handle_.get());
 }
 
 } // namespace hypercom::server
