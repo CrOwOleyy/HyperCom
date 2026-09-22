@@ -5,16 +5,33 @@
 #include "client/ui/aero_theme.hpp"
 #include "client/ui/i18n.hpp"
 #include "client/ui/ui_actions.hpp"
+#include "client/ui/ui_delete_actions.hpp"
 
 namespace hypercom::client {
 namespace {
+
+// Le bouton n'est propose que sur son propre contenu. Ce n'est pas ce qui
+// protege celui des autres -- le serveur verifie de son cote -- ca evite
+// seulement d'afficher une action vouee au refus.
+[[nodiscard]] bool is_own_content(cli_context const &context,
+                                  proto::wire_public_key const &author)
+{
+    return author == context.identity.get_public_key();
+}
+
+// Un contenu retire garde sa ligne pour que le fil tienne, mais son texte est
+// vide : c'est ce vide qui le signale, aucun drapeau ne circule sur le fil.
+[[nodiscard]] bool is_removed(std::string const &body)
+{
+    return body.empty();
+}
 
 // Profondeur d'indentation plafonnee a l'affichage. Le serveur borne deja
 // l'arbre, mais l'UI ne doit pas dependre de cette borne pour rester lisible :
 // au-dela, on cesse simplement de decaler.
 constexpr std::uint16_t MAX_VISUAL_DEPTH = 8;
 
-void draw_post_header(ui_state const &state)
+void draw_post_header(cli_context &context, ui_state &state)
 {
     ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK);
     ImGui::TextWrapped("%s", state.open_post.title.c_str());
@@ -22,9 +39,22 @@ void draw_post_header(ui_state const &state)
     ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK_MUTED);
     ImGui::Text("@%s", state.open_post.author_handle.c_str());
     ImGui::PopStyleColor();
+    if (!is_removed(state.open_post.body)
+        && is_own_content(context, state.open_post.author_pubkey)) {
+        ImGui::SameLine();
+        if (ImGui::SmallButton(tr("delete_action", state.current_lang))) {
+            delete_post(context, state, state.open_post.id);
+        }
+    }
     ImGui::Separator();
     ImGui::Spacing();
-    ImGui::TextWrapped("%s", state.open_post.body.c_str());
+    if (is_removed(state.open_post.body)) {
+        ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK_MUTED);
+        ImGui::TextUnformatted(tr("content_removed", state.current_lang));
+        ImGui::PopStyleColor();
+    } else {
+        ImGui::TextWrapped("%s", state.open_post.body.c_str());
+    }
     ImGui::Spacing();
 }
 
@@ -38,10 +68,23 @@ void draw_comment_tree(cli_context &context, ui_state &state)
         ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK_MUTED);
         ImGui::Text("@%s", comment.author_handle.c_str());
         ImGui::PopStyleColor();
-        ImGui::TextWrapped("%s", comment.body.c_str());
+        if (is_removed(comment.body)) {
+            ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK_MUTED);
+            ImGui::TextUnformatted(tr("content_removed", state.current_lang));
+            ImGui::PopStyleColor();
+        } else {
+            ImGui::TextWrapped("%s", comment.body.c_str());
+        }
         ImGui::PushID(static_cast<int>(comment.id));
         if (ImGui::SmallButton(tr("reply_action", state.current_lang))) {
             submit_comment(context, state, comment.id);
+        }
+        if (!is_removed(comment.body)
+            && is_own_content(context, comment.author_pubkey)) {
+            ImGui::SameLine();
+            if (ImGui::SmallButton(tr("delete_action", state.current_lang))) {
+                delete_comment(context, state, comment.id);
+            }
         }
         ImGui::PopID();
         ImGui::Unindent(static_cast<float>(depth) * 16.0f);
@@ -59,7 +102,7 @@ void draw_thread_column(cli_context &context, ui_state &state, float column_widt
         ImGui::EndChild();
         return;
     }
-    draw_post_header(state);
+    draw_post_header(context, state);
     draw_section_heading(tr("replies_heading", state.current_lang));
 
     float const avail_h = ImGui::GetContentRegionAvail().y;
