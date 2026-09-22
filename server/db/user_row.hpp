@@ -17,6 +17,10 @@ struct user_row {
     std::int64_t id = 0;
     proto::wire_public_key pubkey{};
     std::string handle;
+    // Reserve a l'action sur signalement (BRIEF.md 13) : un compte banni ne
+    // peut plus s'authentifier, ce qui laisse son contenu passe intact --
+    // bannir et supprimer restent deux actions distinctes et deliberees.
+    bool banned = false;
 };
 
 } // namespace hypercom::server

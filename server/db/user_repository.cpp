@@ -7,7 +7,8 @@
 namespace hypercom::server {
 namespace {
 
-constexpr char const *SELECT_COLUMNS = "SELECT id, pubkey, handle FROM users ";
+constexpr char const *SELECT_COLUMNS =
+    "SELECT id, pubkey, handle, banned FROM users ";
 
 [[nodiscard]] bool read_user_row(sql_statement const &statement, user_row &out)
 {
@@ -16,6 +17,7 @@ constexpr char const *SELECT_COLUMNS = "SELECT id, pubkey, handle FROM users ";
         return false;
     }
     out.handle = read_text(statement, 2);
+    out.banned = read_integer(statement, 3) != 0;
     return true;
 }
 
@@ -71,6 +73,17 @@ bool user_repository::create_user(proto::wire_public_key const &pubkey,
     }
     out_id = database_.get_last_insert_id();
     return true;
+}
+
+bool user_repository::set_banned(std::int64_t user_id, bool banned)
+{
+    sql_statement statement{database_,
+                            "UPDATE users SET banned = ?1 WHERE id = ?2"};
+    if (!bind_integer(statement, 1, banned ? 1 : 0)
+        || !bind_integer(statement, 2, user_id)) {
+        return false;
+    }
+    return statement.step_row() == step_result::done;
 }
 
 } // namespace hypercom::server
