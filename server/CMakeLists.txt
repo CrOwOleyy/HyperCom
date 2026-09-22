@@ -21,6 +21,7 @@ add_executable(hypercom_server
     db/post_repository.cpp
     db/prekey_repository.cpp
     db/profile_repository.cpp
+    db/report_repository.cpp
     db/sql_binder.cpp
     db/sql_column_reader.cpp
     db/sql_statement.cpp
@@ -30,6 +31,7 @@ add_executable(hypercom_server
     db/friend_repository.cpp
     handlers/account_handler.cpp
     handlers/connection_processor.cpp
+    handlers/content_delete_handler.cpp
     handlers/content_handler.cpp
     handlers/dm_handler.cpp
     handlers/forum_handler.cpp
