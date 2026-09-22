@@ -1,7 +1,9 @@
 #include "server/admin/admin_dispatcher.hpp"
 
 #include "server/admin/admin_backup_command.hpp"
+#include "server/admin/admin_ban_command.hpp"
 #include "server/admin/admin_motd_command.hpp"
+#include "server/admin/admin_reports_command.hpp"
 #include "server/admin/admin_session_command.hpp"
 #include "server/admin/admin_stats_command.hpp"
 
@@ -18,6 +20,11 @@ namespace {
            "  motd set \"texte\"           publie une annonce\n"
            "  motd clear                 desactive l'annonce\n"
            "  backup <chemin>            sauvegarde a chaud de la base\n"
+           "  reports [list]             signalements en attente (BRIEF.md 13)\n"
+           "  reports clear <id>         classe un signalement\n"
+           "  reports delete-post <id>   supprime le post signale\n"
+           "  ban <cle_hex>              revoque l'authentification d'un compte\n"
+           "  unban <cle_hex>            restaure l'authentification\n"
            "  help                       cette liste\n"
            "\n"
            "Non implemente : le rechargement a chaud de la configuration.\n"
@@ -43,6 +50,15 @@ std::string execute_admin_command(admin_context &context,
     }
     if (command.verb == "backup") {
         return run_backup_command(context, command);
+    }
+    if (command.verb == "reports") {
+        return run_reports_command(context, command);
+    }
+    if (command.verb == "ban") {
+        return run_ban_command(context, command, true);
+    }
+    if (command.verb == "unban") {
+        return run_ban_command(context, command, false);
     }
     if (command.verb == "help") {
         return build_help();

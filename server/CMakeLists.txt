@@ -1,9 +1,11 @@
 add_executable(hypercom_server
     admin/admin_backup_command.cpp
+    admin/admin_ban_command.cpp
     admin/admin_command.cpp
     admin/admin_dispatcher.cpp
     admin/admin_listener.cpp
     admin/admin_motd_command.cpp
+    admin/admin_reports_command.cpp
     admin/admin_service.cpp
     admin/admin_session_command.cpp
     admin/admin_stats_command.cpp
