@@ -58,6 +58,53 @@ void announce_server_key(crypto::x25519_public_key const &public_key,
                        "cle statique du serveur : " + encoded);
 }
 
+// Depose les memes informations que ci-dessus sous une forme que le client sait
+// lire (--connect-file), pour que l'admin les transmette sans les retaper.
+//
+// Le fichier ne contient rien de secret et ne change RIEN au modele de
+// confiance : il reste a transmettre par un canal sur. Le recuperer depuis le
+// serveur qu'il decrit annulerait tout l'interet de l'epinglage.
+//
+// Seul le listener clearnet y figure. Le port de l'oignon est en boucle locale
+// et ne doit jamais etre annonce.
+void write_connect_file(server::server_config const &config,
+                        crypto::x25519_public_key const &public_key,
+                        util::logger &logger)
+{
+    if (config.paths.connect_file_path.empty() || !config.clearnet.enabled) {
+        return;
+    }
+    std::ofstream file{config.paths.connect_file_path, std::ios::trunc};
+    if (!file) {
+        logger.write_entry(util::log_level::warning,
+                           "fichier de connexion non ecrit : "
+                               + config.paths.connect_file_path);
+        return;
+    }
+    std::string encoded;
+    util::encode_hex(public_key, encoded);
+    // bind_address est une adresse d'ECOUTE : 0.0.0.0 signifie "toutes les
+    // interfaces" et n'est joignable par personne. Le serveur ne peut pas
+    // deviner son adresse publique, d'ou advertised_host dans la config.
+    // Corriger le fichier a la main ne servirait a rien : il est reecrit a
+    // chaque demarrage.
+    std::string const &host = config.clearnet.advertised_host.empty()
+                                  ? config.clearnet.bind_address
+                                  : config.clearnet.advertised_host;
+    file << "host=" << host << '\n'
+         << "port=" << config.clearnet.port << '\n'
+         << "server_key=" << encoded << '\n';
+    if (host == "0.0.0.0") {
+        logger.write_entry(util::log_level::warning,
+                           "fichier de connexion : host=0.0.0.0 n'est joignable "
+                           "par personne. Declarer advertised_host dans "
+                           "[clearnet] avant de transmettre le fichier.");
+    }
+    logger.write_entry(util::log_level::info,
+                       "fichier de connexion : "
+                           + config.paths.connect_file_path);
+}
+
 [[nodiscard]] int run_server(server::server_config const &config,
                              util::logger &logger)
 {
@@ -81,6 +128,7 @@ void announce_server_key(crypto::x25519_public_key const &public_key,
         return EXIT_RUNTIME_ERROR;
     }
     announce_server_key(static_public, logger);
+    write_connect_file(config, static_public, logger);
     server::server_runtime runtime{config, logger, database, static_public,
                                    static_secret};
     if (!runtime.start_listeners(failure)
