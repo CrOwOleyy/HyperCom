@@ -1,5 +1,6 @@
 build/
 build-wsl/
+mastodon/
 out/
 cmake-build-*/
 x64/
@@ -63,3 +64,5 @@ third_party/*
 !third_party/checksums.txt
 run/
 *.sock
+hypercom_servers.dat
+hypercom_master.key
