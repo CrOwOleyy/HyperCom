@@ -23,6 +23,49 @@ Le serveur **refuse de démarrer sur une configuration invalide** plutôt que de
 retomber sur des valeurs par défaut silencieuses. Les erreurs sont accumulées
 et affichées ensemble, avec leur numéro de ligne.
 
+### Fichier de connexion
+
+Au démarrage, le serveur écrit aussi ces informations sous une forme que le
+client sait lire directement, dans `run/hypercom-connect.txt` :
+
+```ini
+host=203.0.113.7
+port=7717
+server_key=447a6def06c64a36...
+```
+
+Le nouvel utilisateur le passe au client sans rien retaper :
+
+```
+./hypercom_cli --connect-file hypercom-connect.txt whoami
+```
+
+Un `--host`, `--port` ou `--server-key` placé **après** `--connect-file` sur la
+ligne de commande écrase la valeur correspondante du fichier.
+
+> **Le modèle de confiance est inchangé.** Ce fichier ne contient rien de
+> secret, mais il porte la clé à épingler : il se transmet par le même canal de
+> confiance que la clé elle-même. Le faire télécharger depuis le serveur qu'il
+> décrit annulerait l'épinglage exactement de la même façon.
+
+Le chemin se règle avec `connect_file` dans `[paths]` ; une valeur vide
+désactive l'écriture. Seul le listener clearnet y figure — le port de l'oignon
+est en boucle locale et n'a rien à faire dans un fichier partagé.
+
+`bind_address` est une adresse d'**écoute** : `0.0.0.0` signifie « toutes les
+interfaces » et n'est joignable par personne. Le serveur ne peut pas deviner
+son adresse publique, donc déclarez-la :
+
+```ini
+[clearnet]
+bind_address    = 0.0.0.0
+advertised_host = 203.0.113.7
+```
+
+C'est `advertised_host` qui part dans le fichier de connexion. Sans lui, le
+serveur écrit `bind_address` et prévient au démarrage. **Corriger le fichier à
+la main ne sert à rien** : il est réécrit à chaque démarrage.
+
 ## 2. Configuration
 
 Tout est dans `hypercom.conf`, format `clé = valeur` par section. Voir
