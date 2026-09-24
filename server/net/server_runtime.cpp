@@ -18,6 +18,15 @@ namespace {
 
 constexpr int POLL_INTERVAL_MILLISECONDS = 1000;
 
+// Plafond volontaire sur le nombre d'acceptations traitees par appel. Sans
+// lui, un flux soutenu de nouvelles connexions viderait tout le backlog TCP
+// avant qu'un seul octet des connexions deja authentifiees ne soit lu,
+// affamant le service en cours pendant l'attaque. Le listener est
+// level-triggered (pas d'EPOLLET) : s'il reste des connexions en attente,
+// epoll_wait re-signale immediatement le descripteur au prochain tour, donc
+// rien n'est perdu -- seul l'ordre de service redevient equitable.
+constexpr int MAX_ACCEPTS_PER_CALL = 32;
+
 #if !defined(_WIN32)
 [[nodiscard]] int create_signal_descriptor()
 {
@@ -106,7 +115,7 @@ bool server_runtime::start_listeners(std::string &error_out)
 void server_runtime::accept_pending_connections(tcp_listener const &listener,
                                                 bool is_clearnet)
 {
-    while (true) {
+    for (int count = 0; count < MAX_ACCEPTS_PER_CALL; ++count) {
         std::string peer_address;
         int const accepted = listener.accept_connection(peer_address);
         if (accepted < 0) {
