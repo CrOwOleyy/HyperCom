@@ -32,7 +32,9 @@ using namespace hypercom;
                                    std::uint16_t port, std::uint64_t token,
                                    std::string &error_out)
 {
-    if (!connection.open_session("127.0.0.1", port, error_out)) {
+    client::server_endpoint const endpoint{
+        .host = "127.0.0.1", .port = port, .socks5_host = "", .socks5_port = 0};
+    if (!connection.open_session(endpoint, error_out)) {
         return false;
     }
     std::vector<std::uint8_t> const payload{
@@ -104,9 +106,10 @@ void check_wrong_pinned_key(tests::test_report &report)
     std::thread server{tests::serve_noise_sessions, listener, server_public,
                        server_secret, 1, std::ref(outcome)};
     client::server_connection connection{impostor_public};
+    client::server_endpoint const endpoint{
+        .host = "127.0.0.1", .port = port, .socks5_host = "", .socks5_port = 0};
     std::string error;
-    HYPERCOM_CHECK(report,
-                   !connection.open_session("127.0.0.1", port, error));
+    HYPERCOM_CHECK(report, !connection.open_session(endpoint, error));
     HYPERCOM_CHECK(report, !connection.is_open());
     server.join();
 }
