@@ -1,31 +1,32 @@
 # HyperCom
 
-Réseau social décentralisé et chiffré de bout en bout : forums communautaires
-façon Reddit, profils façon MySpace, messages privés qu'aucun serveur ne peut
-lire. Écrit from scratch en C++20, sans TLS ni dépendance web — protocole
-Noise fait maison sur libsodium.
+**English** · [Français](docs/readme/README.fr.md) · [中文](docs/readme/README.zh.md) · [हिन्दी](docs/readme/README.hi.md) · [Español](docs/readme/README.es.md) · [العربية](docs/readme/README.ar.md) · [বাংলা](docs/readme/README.bn.md) · [Português](docs/readme/README.pt.md) · [Русский](docs/readme/README.ru.md) · [日本語](docs/readme/README.ja.md)
 
-Chaque communauté héberge son propre serveur, comme sur Discord, plutôt qu'un
-service central. Une seule identité maîtresse permet de rejoindre autant de
-serveurs qu'on veut, chacun avec une identité distincte et non corrélable.
+Decentralized, end-to-end encrypted social network: Reddit-style community
+forums, MySpace-style profiles, private messages no server can read. Built
+from scratch in C++20, no TLS, no web dependency — a Noise protocol
+handshake written by hand on top of libsodium.
 
-Documentation complète : [ARCHITECTURE.md](ARCHITECTURE.md) (comment les
-pièces s'assemblent), [BRIEF.md](BRIEF.md) (décisions de conception),
-[docs/ADMIN.md](docs/ADMIN.md) (exploitation serveur),
-[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) (ce qui est protégé, ce qui ne
-l'est pas), [COMMANDS.md](COMMANDS.md) (référence complète des commandes).
+Each community runs its own server, Discord-style, instead of one central
+service. A single master identity lets you join as many servers as you
+like, each with a separate, uncorrelatable identity.
 
-## Prérequis
+Full documentation: [ARCHITECTURE.md](ARCHITECTURE.md) (how the pieces fit
+together), [BRIEF.md](BRIEF.md) (design decisions), [docs/ADMIN.md](docs/ADMIN.md)
+(running a server), [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) (what's
+protected and what isn't), [COMMANDS.md](COMMANDS.md) (full command
+reference).
 
-- CMake ≥ 3.20, compilateur C++20 (MSVC sur Windows, GCC/Clang sur Linux)
-- libsodium, SQLite et Dear ImGui : récupérés une fois via un script, jamais
-  automatiquement par CMake (BRIEF.md 15)
+## Requirements
 
-**Le serveur ne compile que sous Linux/WSL** (il s'appuie sur epoll et
-signalfd). Le client — CLI et interface graphique — compile sous Windows et
-sous Linux.
+- CMake ≥ 3.20, a C++20 compiler (MSVC on Windows, GCC/Clang on Linux)
+- libsodium, SQLite and Dear ImGui: fetched once through a script, never
+  pulled automatically by CMake (BRIEF.md 15)
 
-## Côté serveur (Linux / WSL)
+**The server only builds on Linux/WSL** (it relies on epoll and signalfd).
+The client — CLI and GUI — builds on both Windows and Linux.
+
+## Server side (Linux / WSL)
 
 ```bash
 ./scripts/fetch_third_party.sh
@@ -33,15 +34,15 @@ cmake -S . -B build/linux
 cmake --build build/linux -j
 ```
 
-Première configuration :
+First-time setup:
 
 ```bash
 ./build/linux/bin/hypercom_keygen server keys/server_static.key
 chmod 600 keys/server_static.key
 ```
 
-Créer `hypercom.conf` à la racine (toutes les options sont commentées dans
-`docs/ADMIN.md §1-2`) :
+Create `hypercom.conf` at the repo root (every option is documented in
+`docs/ADMIN.md §1-2`):
 
 ```ini
 [server]
@@ -66,21 +67,21 @@ server_key   = keys/server_static.key
 admin_socket = run/hypercom-admin.sock
 ```
 
-Puis :
+Then:
 
 ```bash
 ./build/linux/bin/hypercom_server hypercom.conf
 ```
 
-Au démarrage, le serveur affiche sa clé publique et écrit
-`run/hypercom-connect.txt`. C'est ce fichier — ou la clé qu'il contient —
-qu'on transmet à quelqu'un pour qu'il rejoigne le serveur, par un canal de
-confiance et jamais en le faisant récupérer depuis le serveur lui-même.
+On startup, the server prints its public key and writes
+`run/hypercom-connect.txt`. That file — or just the key inside it — is what
+you hand to someone joining the server, over a channel you trust, never by
+having them fetch it from the server itself.
 
-Administrer un serveur en cours d'exécution (sessions, MOTD, signalements,
-bannissement) : `docs/ADMIN.md §7`.
+Managing a running server (sessions, MOTD, reports, bans):
+`docs/ADMIN.md §7`.
 
-## Côté client (Windows ou Linux)
+## Client side (Windows or Linux)
 
 ```powershell
 .\scripts\fetch_third_party.ps1
@@ -94,46 +95,46 @@ cmake -S . -B build/linux
 cmake --build build/linux -j
 ```
 
-Charger l'environnement une fois construit — ça expose les raccourcis
-`hserver`, `hgui` et `hcli` :
+Load the environment once it's built — this gives you the `hserver`,
+`hgui` and `hcli` shortcuts:
 
 ```powershell
-cp env.example.ps1 env.ps1   # une seule fois, puis éditer avec vos valeurs
+cp env.example.ps1 env.ps1   # once, then edit with your own values
 . .\env.ps1
 ```
 
-Rejoindre un serveur avec le lien d'invitation reçu
-(`hypercom://hote:port#cle`) :
+Join a server using an invite link
+(`hypercom://host:port#key`):
 
 ```
-hcli server-add hypercom://203.0.113.7:7717#447a6def... mon-serveur
-hcli --server mon-serveur whoami
+hcli server-add hypercom://203.0.113.7:7717#447a6def... my-server
+hcli --server my-server whoami
 ```
 
-Ou directement avec le fichier de connexion transmis par l'administrateur :
+Or directly with the connect file an admin handed you:
 
 ```
 hcli --connect-file hypercom-connect.txt whoami
 ```
 
-Lancer l'interface graphique :
+Launch the graphical client:
 
 ```
 hgui
 ```
 
-Un deuxième compte, pour tester en local avec deux identités côte à côte :
+A second account, for testing two identities side by side locally:
 
 ```
-hgui --identity compte2.key
+hgui --identity account2.key
 ```
 
-## Tester
+## Testing
 
 ```bash
 cmake --build build/windows --config RelWithDebInfo -j
 ctest --test-dir build/windows -C RelWithDebInfo --output-on-failure
 ```
 
-Détail des suites, builds sous sanitizers et séquence d'accueil du client :
-voir [COMMANDS.md](COMMANDS.md).
+Test suite details, sanitizer builds and the client's welcome sequence:
+see [COMMANDS.md](COMMANDS.md).
