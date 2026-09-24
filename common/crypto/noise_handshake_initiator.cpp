@@ -1,12 +1,12 @@
 #include "common/crypto/noise_handshake_initiator.hpp"
 
-#include <algorithm>
-#include <string_view>
-
 #include "common/crypto/noise_parameters.hpp"
 #include "common/crypto/noise_payload_codec.hpp"
 #include "common/crypto/secure_memory.hpp"
 #include "common/crypto/x25519_exchange.hpp"
+
+#include <algorithm>
+#include <string_view>
 
 namespace hypercom::crypto {
 namespace {
@@ -20,14 +20,18 @@ namespace {
 
 noise_handshake_initiator::noise_handshake_initiator(
     x25519_public_key const &server_static_public)
-    : state_{}, remote_static_{server_static_public}, ephemeral_public_{},
-      ephemeral_secret_{}, first_message_sent_{false}, complete_{false}
+    : state_{},
+      remote_static_{server_static_public},
+      ephemeral_public_{},
+      ephemeral_secret_{},
+      first_message_sent_{false},
+      complete_{false}
 {
     initialize_symmetric_state(NOISE_PROTOCOL_NAME, state_);
     mix_hash(state_, as_bytes(NOISE_PROLOGUE));
-    // Pre-message NK : la cle statique du repondeur entre dans le hachage des
-    // deux cotes. Un client qui epingle la mauvaise cle divergera ici et
-    // echouera au dechiffrement du second message, sans jamais rien reveler.
+    // NK pre-message: the responder's static key is mixed into both sides'
+    // hash. A client pinning the wrong key will diverge here and fail to
+    // decrypt the second message, without ever revealing anything.
     mix_hash(state_, remote_static_);
 }
 
@@ -76,8 +80,8 @@ bool noise_handshake_initiator::read_second_message(
     symmetric_key shared{};
     bool const exchanged =
         compute_shared_secret(ephemeral_secret_, remote_ephemeral, shared);
-    // La cle ephemere a joue son role : elle disparait immediatement, meme si
-    // l'echange a echoue.
+    // The ephemeral key has played its role: it disappears immediately, even
+    // if the exchange failed.
     wipe_bytes(ephemeral_secret_);
     if (!exchanged) {
         return false;

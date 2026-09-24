@@ -10,8 +10,8 @@ constexpr std::size_t MIN_HANDLE_LENGTH = 3;
 
 [[nodiscard]] bool is_handle_character(char character)
 {
-    if ((character >= 'a' && character <= 'z')
-        || (character >= 'A' && character <= 'Z')) {
+    if ((character >= 'a' && character <= 'z') ||
+        (character >= 'A' && character <= 'Z')) {
         return true;
     }
     if (character >= '0' && character <= '9') {
@@ -34,11 +34,11 @@ bool register_request::read_from(byte_reader &reader)
 
 bool validate_handle(std::string_view handle)
 {
-    if (handle.size() < MIN_HANDLE_LENGTH
-        || handle.size() > MAX_HANDLE_LENGTH) {
+    if (handle.size() < MIN_HANDLE_LENGTH ||
+        handle.size() > MAX_HANDLE_LENGTH) {
         return false;
     }
-    // Lettres (minuscules et majuscules), chiffres, tiret, souligne imposes.
+    // Letters (lower and upper case), digits, hyphen, underscore required.
     if (handle.front() >= '0' && handle.front() <= '9') {
         return false;
     }

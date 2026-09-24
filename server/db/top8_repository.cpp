@@ -1,17 +1,16 @@
 #include "server/db/top8_repository.hpp"
 
-#include <string>
-
 #include "server/db/sql_binder.hpp"
 #include "server/db/sql_column_reader.hpp"
 #include "server/db/sql_statement.hpp"
+
+#include <string>
 
 namespace hypercom::server {
 
 top8_repository::top8_repository(database_handle &database)
     : database_{database}
-{
-}
+{}
 
 bool top8_repository::replace_slots(std::int64_t user_id,
                                     std::vector<top8_entry> const &entries)
@@ -21,8 +20,8 @@ bool top8_repository::replace_slots(std::int64_t user_id,
         return false;
     }
     sql_statement remover{database_, "DELETE FROM top8 WHERE user_id = ?1"};
-    bool succeeded = bind_integer(remover, 1, user_id)
-                     && remover.step_row() == step_result::done;
+    bool succeeded = bind_integer(remover, 1, user_id) &&
+                     remover.step_row() == step_result::done;
     sql_statement inserter{
         database_,
         "INSERT INTO top8 (user_id, slot, friend_id) VALUES (?1, ?2, ?3)"};
@@ -30,16 +29,16 @@ bool top8_repository::replace_slots(std::int64_t user_id,
         if (!succeeded) {
             break;
         }
-        succeeded = inserter.reset_for_reuse()
-                    && bind_integer(inserter, 1, user_id)
-                    && bind_integer(inserter, 2,
-                                    static_cast<std::int64_t>(entry.slot))
-                    && bind_integer(inserter, 3, entry.friend_id)
-                    && inserter.step_row() == step_result::done;
+        succeeded =
+            inserter.reset_for_reuse() && bind_integer(inserter, 1, user_id) &&
+            bind_integer(inserter, 2, static_cast<std::int64_t>(entry.slot)) &&
+            bind_integer(inserter, 3, entry.friend_id) &&
+            inserter.step_row() == step_result::done;
     }
-    // Tout ou rien : un top 8 a moitie ecrit serait pire que pas de top 8.
-    return database_.execute_script(succeeded ? "COMMIT" : "ROLLBACK", error)
-           && succeeded;
+    // All or nothing: a half-written top 8 would be worse than no top 8 at
+    // all.
+    return database_.execute_script(succeeded ? "COMMIT" : "ROLLBACK", error) &&
+           succeeded;
 }
 
 bool top8_repository::list_slots(std::int64_t user_id,
@@ -71,8 +70,8 @@ bool top8_repository::list_slots(std::int64_t user_id,
         record.pubkey = out.slots[slot];
         record.handle = read_text(statement, 2);
         record.display_name = read_text(statement, 3);
-        record.status = static_cast<proto::friendship_status>(
-            read_integer(statement, 4));
+        record.status =
+            static_cast<proto::friendship_status>(read_integer(statement, 4));
         out.details.push_back(std::move(record));
     }
     return true;

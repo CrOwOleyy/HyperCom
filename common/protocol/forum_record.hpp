@@ -1,19 +1,19 @@
 #pragma once
 
-#include <cstdint>
-#include <string>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/wire_key.hpp"
 
+#include <cstdint>
+#include <string>
+
 namespace hypercom::proto {
 
-// Un forum tel qu'il circule sur le fil.
+// A forum as it travels over the wire.
 //
-// Le fondateur est designe par sa cle publique et pas par un identifiant de
-// base, pour que le client puisse verifier a qui il a affaire sans dependre
-// d'une table de correspondance que le serveur controle.
+// The founder is designated by their public key rather than a database
+// identifier, so the client can verify who they're dealing with without
+// depending on a lookup table controlled by the server.
 struct forum_record {
     std::uint64_t id = 0;
     std::string name;

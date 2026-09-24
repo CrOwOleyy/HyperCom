@@ -6,29 +6,30 @@ struct GLFWwindow;
 
 namespace hypercom::client {
 
-// Mise a l'echelle de l'interface.
+// Interface scaling.
 //
-// Le probleme que ce module resout : la police integree a Dear ImGui est un
-// bitmap de 13 pixels. Sur un ecran dense ou simplement grand, elle est
-// illisible, et l'agrandir avec FontGlobalScale ne fait que l'etaler -- on
-// obtient du gros flou, pas du gros net.
+// The problem this module solves: Dear ImGui's built-in font is a
+// 13-pixel bitmap. On a dense or simply large screen it's unreadable,
+// and enlarging it with FontGlobalScale only stretches it -- you get
+// big and blurry, not big and crisp.
 //
-// La solution est de RASTERISER la police a la bonne taille plutot que de
-// zoomer une image. L'atlas est donc reconstruit a chaque changement
-// d'echelle, et uniquement a ce moment-la : c'est une operation couteuse qui
-// n'a rien a faire dans une boucle de rendu.
+// The solution is to RASTERIZE the font at the right size rather than
+// zoom an image. The atlas is therefore rebuilt on every scale change,
+// and only then: it's an expensive operation that has no business
+// being in a render loop.
 //
-// L'echelle finale combine deux facteurs :
-//   display_scale  deduit du systeme (DPI, puis resolution en secours)
-//   user_zoom      regle par l'utilisateur, parce qu'aucune heuristique ne
-//                  connait sa distance a l'ecran ni sa vue
+// The final scale combines two factors:
+//   display_scale  inferred from the system (DPI, then resolution as
+//                  a fallback)
+//   user_zoom      set by the user, because no heuristic knows their
+//                  distance from the screen or their eyesight
 
 constexpr float MIN_USER_ZOOM = 0.7f;
 constexpr float MAX_USER_ZOOM = 2.5f;
 constexpr float USER_ZOOM_STEP = 0.1f;
 
-// 17 px plutot que les 13 px d'origine : meme sans aucune mise a l'echelle,
-// la valeur par defaut doit deja etre confortable.
+// 17 px rather than the original 13 px: even with no scaling applied
+// at all, the default should already be comfortable.
 constexpr float BASE_FONT_SIZE = 17.0f;
 
 struct ui_scale_state {
@@ -42,11 +43,11 @@ void detect_display_scale(GLFWwindow *window, ui_scale_state &state);
 
 [[nodiscard]] float compute_effective_scale(ui_scale_state const &state);
 
-// Ctrl + / Ctrl - / Ctrl 0, et Ctrl + molette. A appeler pendant une image :
-// le drapeau de reconstruction est traite au tour suivant, entre deux images.
+// Ctrl + / Ctrl - / Ctrl 0, and Ctrl + wheel. To call during a frame:
+// the rebuild flag is handled on the next pass, between two frames.
 [[nodiscard]] bool handle_zoom_input(ui_scale_state &state);
 
-// A n'appeler QU'ENTRE deux images, jamais entre NewFrame et Render.
+// To call ONLY BETWEEN two frames, never between NewFrame and Render.
 void rebuild_scaled_font(ui_scale_state &state);
 
 void draw_zoom_controls(ui_scale_state &state, ui_state &ui_state_ref);

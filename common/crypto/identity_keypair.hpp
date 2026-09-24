@@ -1,20 +1,20 @@
 #pragma once
 
+#include "common/crypto/key_types.hpp"
+
 #include <cstdint>
 #include <span>
 
-#include "common/crypto/key_types.hpp"
-
 namespace hypercom::crypto {
 
-// L'identite d'un utilisateur EST cette paire de cles. Il n'y a ni email, ni
-// telephone, ni mot de passe cote serveur (BRIEF.md 2).
+// A user's identity IS this key pair. There is no email, no phone number,
+// and no server-side password (BRIEF.md 2).
 //
-// Contrepartie assumee en v1 : la cle perdue, le compte est perdu. Aucune
-// procedure de recuperation n'existe, et c'est ce qui garantit qu'aucun
-// administrateur ne peut en usurper une. La phrase de recuperation a 12 mots
-// est prevue en v2 ; derive_from_seed est deja la pour l'accueillir sans
-// changer le format de stockage.
+// Accepted trade-off in v1: lose the key, lose the account. No recovery
+// procedure exists, and that is exactly what guarantees no administrator
+// can impersonate one. A 12-word recovery phrase is planned for v2;
+// derive_from_seed is already in place to support it without changing the
+// storage format.
 class identity_keypair {
 public:
     [[nodiscard]] static bool generate_random(identity_keypair &out);
@@ -27,8 +27,8 @@ public:
 
     [[nodiscard]] ed25519_public_key const &get_public_key() const;
 
-    // Expose la cle privee pour le seul usage du keystore chiffre et de la
-    // conversion vers X25519. Tout autre appelant est une erreur de conception.
+    // Exposes the private key for the sole use of the encrypted keystore and
+    // the conversion to X25519. Any other caller is a design error.
     [[nodiscard]] ed25519_secret_key const &get_secret_key() const;
 
 private:

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cstdint>
-#include <string>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/wire_key.hpp"
+
+#include <cstdint>
+#include <string>
 
 namespace hypercom::proto {
 
@@ -24,12 +24,12 @@ struct post_record {
     [[nodiscard]] bool read_from(byte_reader &reader);
 };
 
-// Les commentaires voyagent a plat, pas en arbre : chacun porte son parent et
-// sa profondeur, calculee cote serveur par la requete recursive. Le client
-// n'a plus qu'a regrouper.
+// Comments travel flat, not as a tree: each one carries its parent and its
+// depth, computed server-side by the recursive query. The client only has
+// to regroup them.
 //
-// Serialiser un arbre imbrique donnerait a l'emetteur le controle de la
-// profondeur de recursion du parseur. Non merci.
+// Serializing a nested tree would give the sender control over the parser's
+// recursion depth. No thanks.
 struct comment_record {
     std::uint64_t id = 0;
     std::uint64_t post_id = 0;

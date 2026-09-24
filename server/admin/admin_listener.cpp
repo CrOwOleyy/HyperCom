@@ -1,9 +1,9 @@
 #include "server/admin/admin_listener.hpp"
 
 #if defined(_WIN32)
-#include <winsock2.h>
 #include <afunix.h>
 #include <io.h>
+#include <winsock2.h>
 #else
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -20,11 +20,10 @@ namespace {
 
 constexpr int LISTEN_BACKLOG = 8;
 
-// sockaddr_un.sun_path est un tableau de taille fixe, sans terminaison
-// garantie s'il deborde. Refuser un chemin trop long vaut mieux que le
-// tronquer en silence et ecouter au mauvais endroit.
-[[nodiscard]] bool build_unix_address(std::string const &path,
-                                      sockaddr_un &out)
+// sockaddr_un.sun_path is a fixed-size array, with no guaranteed
+// termination if it overflows. Rejecting a path that's too long beats
+// silently truncating it and listening at the wrong location.
+[[nodiscard]] bool build_unix_address(std::string const &path, sockaddr_un &out)
 {
     out = {};
     out.sun_family = AF_UNIX;
@@ -35,8 +34,8 @@ constexpr int LISTEN_BACKLOG = 8;
     return true;
 }
 
-// Un fichier de socket residuel fait echouer bind() avec EADDRINUSE alors que
-// plus personne n'ecoute. C'est le cas apres un arret brutal.
+// A leftover socket file makes bind() fail with EADDRINUSE even though
+// nobody's listening anymore. This happens after an unclean shutdown.
 void remove_stale_socket(std::string const &path)
 {
     std::error_code ignored;
@@ -52,9 +51,9 @@ void ensure_parent_directory(std::string const &path)
     }
 }
 
-// 0600 apres bind. Sous Windows, AF_UNIX n'expose pas de mode POSIX : la
-// protection repose alors sur les ACL du repertoire parent, ce qui est plus
-// faible et doit etre su.
+// 0600 after bind. On Windows, AF_UNIX doesn't expose a POSIX mode: the
+// protection then relies on the parent directory's ACLs, which is weaker
+// and should be understood as such.
 [[nodiscard]] bool restrict_socket_permissions(std::string const &path)
 {
 #if defined(_WIN32)
@@ -81,7 +80,8 @@ void ensure_parent_directory(std::string const &path)
 
 } // namespace
 
-admin_listener::admin_listener() : descriptor_{}, path_{} {}
+admin_listener::admin_listener() : descriptor_{}, path_{}
+{}
 
 admin_listener::~admin_listener()
 {
@@ -106,19 +106,18 @@ bool admin_listener::open_listener(std::string const &path,
         error_out = "socket AF_UNIX indisponible pour l'admin";
         return false;
     }
-    if (::bind(handle.get_value(),
-               reinterpret_cast<sockaddr const *>(&address), sizeof(address))
-        != 0) {
+    if (::bind(handle.get_value(), reinterpret_cast<sockaddr const *>(&address),
+               sizeof(address)) != 0) {
         error_out = "bind du socket d'admin impossible : " + path;
         return false;
     }
     if (!restrict_socket_permissions(path)) {
-        error_out = "impossible de restreindre le socket d'admin a 0600 : "
-                    + path;
+        error_out =
+            "impossible de restreindre le socket d'admin a 0600 : " + path;
         return false;
     }
-    if (!make_non_blocking(handle.get_value())
-        || ::listen(handle.get_value(), LISTEN_BACKLOG) != 0) {
+    if (!make_non_blocking(handle.get_value()) ||
+        ::listen(handle.get_value(), LISTEN_BACKLOG) != 0) {
         error_out = "listen() sur le socket d'admin a echoue";
         return false;
     }

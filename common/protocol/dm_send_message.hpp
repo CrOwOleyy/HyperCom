@@ -1,18 +1,18 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/wire_key.hpp"
 
+#include <cstdint>
+#include <vector>
+
 namespace hypercom::proto {
 
-// Depot d'une enveloppe dans la boite du destinataire.
+// Deposit of an envelope into the recipient's mailbox.
 //
-// Le serveur ne peut pas verifier que ciphertext est bien forme -- s'il le
-// pouvait, c'est qu'il pourrait le lire. Il se contente de le stocker.
+// The server cannot verify that ciphertext is well-formed -- if it could,
+// that would mean it could read it. It just stores it.
 struct dm_send_request {
     wire_public_key recipient_pubkey{};
     std::vector<std::uint8_t> ciphertext;

@@ -23,9 +23,9 @@ constexpr std::size_t READ_CHUNK_SIZE = 16 * 1024;
 constexpr int RECEIVE_TIMEOUT_MILLISECONDS = 200;
 constexpr std::intptr_t INVALID_HANDLE = -1;
 
-// Memes valeurs que le serveur (server/net/tcp_listener.cpp) : les deux bouts
-// doivent sonder a la meme cadence, sinon c'est toujours le meme cote qui
-// declare la connexion morte.
+// Same values as the server (server/net/tcp_listener.cpp): both ends must
+// probe at the same cadence, otherwise it's always the same side that
+// declares the connection dead.
 constexpr int KEEPALIVE_IDLE_SECONDS = 120;
 constexpr int KEEPALIVE_INTERVAL_SECONDS = 30;
 constexpr int KEEPALIVE_PROBE_COUNT = 4;
@@ -34,8 +34,8 @@ constexpr int KEEPALIVE_PROBE_COUNT = 4;
 [[nodiscard]] bool start_windows_sockets()
 {
     WSADATA data{};
-    // Winsock compte lui-meme ses initialisations : appeler WSAStartup une
-    // fois par socket est correct, et evite une globale (regle G4).
+    // Winsock counts its own initializations: calling WSAStartup once per
+    // socket is correct, and avoids a global (rule G4).
     return WSAStartup(MAKEWORD(2, 2), &data) == 0;
 }
 #endif
@@ -54,9 +54,10 @@ void apply_receive_timeout(std::intptr_t handle)
 #endif
 }
 
-// Pendant client du reglage serveur : sans timeout applicatif, le keepalive
-// est ce qui evite au client de rester bloque sur un serveur devenu injoignable
-// sans avoir ferme proprement.
+// The client-side counterpart of the server setting: without an
+// application-level timeout, keepalive is what keeps the client from
+// getting stuck on a server that's become unreachable without closing
+// cleanly.
 void apply_keepalive(std::intptr_t handle)
 {
     int const enable = 1;
@@ -130,8 +131,7 @@ bool tcp_client_socket::connect_to_host(std::string const &host,
         error_out = "hote introuvable : " + host;
         return false;
     }
-    for (addrinfo *entry = resolved; entry != nullptr;
-         entry = entry->ai_next) {
+    for (addrinfo *entry = resolved; entry != nullptr; entry = entry->ai_next) {
         auto const attempt = static_cast<std::intptr_t>(
             socket(entry->ai_family, entry->ai_socktype, entry->ai_protocol));
         if (attempt == INVALID_HANDLE) {
@@ -144,8 +144,7 @@ bool tcp_client_socket::connect_to_host(std::string const &host,
                         int
 #endif
                         >(attempt),
-                    entry->ai_addr, static_cast<int>(entry->ai_addrlen))
-            == 0) {
+                    entry->ai_addr, static_cast<int>(entry->ai_addrlen)) == 0) {
             handle_ = attempt;
             apply_receive_timeout(handle_);
             apply_keepalive(handle_);
@@ -173,10 +172,9 @@ bool tcp_client_socket::send_all(std::span<std::uint8_t const> data)
             static_cast<SOCKET>(handle_),
             reinterpret_cast<char const *>(data.data() + offset), remaining, 0);
 #else
-        ssize_t const sent = ::send(static_cast<int>(handle_),
-                                    data.data() + offset,
-                                    static_cast<std::size_t>(remaining),
-                                    MSG_NOSIGNAL);
+        ssize_t const sent =
+            ::send(static_cast<int>(handle_), data.data() + offset,
+                   static_cast<std::size_t>(remaining), MSG_NOSIGNAL);
 #endif
         if (sent > 0) {
             offset += static_cast<std::size_t>(sent);
@@ -196,13 +194,12 @@ bool tcp_client_socket::receive_available(
     received_any = false;
     std::array<std::uint8_t, READ_CHUNK_SIZE> chunk{};
 #if defined(_WIN32)
-    int const received =
-        recv(static_cast<SOCKET>(handle_),
-             reinterpret_cast<char *>(chunk.data()),
-             static_cast<int>(chunk.size()), 0);
+    int const received = recv(static_cast<SOCKET>(handle_),
+                              reinterpret_cast<char *>(chunk.data()),
+                              static_cast<int>(chunk.size()), 0);
 #else
-    ssize_t const received = ::recv(static_cast<int>(handle_), chunk.data(),
-                                    chunk.size(), 0);
+    ssize_t const received =
+        ::recv(static_cast<int>(handle_), chunk.data(), chunk.size(), 0);
 #endif
     if (received > 0) {
         destination.insert(destination.end(), chunk.begin(),
@@ -210,7 +207,7 @@ bool tcp_client_socket::receive_available(
         received_any = true;
         return true;
     }
-    // Zero octet signifie fermeture propre par le pair, pas simplement silence.
+    // Zero bytes means a clean close by the peer, not just silence.
     return received < 0 && is_timeout_error();
 }
 

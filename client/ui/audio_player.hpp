@@ -5,31 +5,32 @@
 
 namespace hypercom::client {
 
-// Lecture du theme d'accueil.
+// Playback of the welcome theme.
 //
-// miniaudio est la seule dependance du projet hors libsodium, SQLite et ImGui,
-// et elle est cantonnee au client graphique : ni le serveur, ni le client CLI,
-// ni la bibliotheque commune ne la voient passer.
+// miniaudio is the project's only dependency besides libsodium, SQLite
+// and ImGui, and it's confined to the graphical client: neither the
+// server, the CLI client, nor the common library ever see it.
 //
-// Aucun echec n'est fatal. Machine sans carte son, serveur audio absent,
-// peripherique deja occupe, fichier introuvable : dans tous ces cas le client
-// s'ouvre normalement, en silence. La musique est un agrement, pas une
-// condition de fonctionnement.
+// No failure is fatal. Machine without a sound card, missing audio
+// server, device already in use, file not found: in all these cases
+// the client still opens normally, silently. The music is a nicety,
+// not a functional requirement.
 class audio_player {
 public:
     audio_player();
 
     ~audio_player();
 
-    // file_name est cherche a cote de l'executable puis dans les repertoires
-    // parents, ce qui couvre aussi bien un binaire installe qu'un build local.
+    // file_name is looked up next to the executable and then in the
+    // parent directories, which covers both an installed binary and a
+    // local build.
     [[nodiscard]] bool start_track(std::string const &file_name,
                                    std::string &error_out);
 
     void stop_track();
 
-    // 0 si le morceau n'a pas pu etre ouvert. L'appelant retombe alors sur une
-    // duree fixe plutot que de jouer une animation de duree nulle.
+    // 0 if the track couldn't be opened. The caller then falls back to
+    // a fixed duration instead of playing a zero-length animation.
     [[nodiscard]] double get_track_length_seconds() const;
 
 private:

@@ -1,8 +1,5 @@
 #include "client/cli/cli_dm_commands.hpp"
 
-#include <algorithm>
-#include <iostream>
-
 #include "client/dm/dm_courier.hpp"
 #include "client/net/message_exchange.hpp"
 #include "common/protocol/dm_ack_message.hpp"
@@ -11,6 +8,9 @@
 #include "common/protocol/prekey_fetch_message.hpp"
 #include "common/protocol/prekey_publish_message.hpp"
 #include "common/util/hex_codec.hpp"
+
+#include <algorithm>
+#include <iostream>
 
 namespace hypercom::client {
 namespace {
@@ -28,9 +28,10 @@ namespace {
     return true;
 }
 
-[[nodiscard]] bool fetch_recipient_bundle(
-    cli_context &context, proto::wire_public_key const &target,
-    proto::prekey_bundle_response &out, std::string &error_out)
+[[nodiscard]] bool fetch_recipient_bundle(cli_context &context,
+                                          proto::wire_public_key const &target,
+                                          proto::prekey_bundle_response &out,
+                                          std::string &error_out)
 {
     proto::prekey_fetch_request request;
     request.target_pubkey = target;
@@ -51,8 +52,7 @@ bool run_prekey_publish(cli_context &context, std::string &error_out)
 {
     proto::prekey_publish_request request;
     crypto::x25519_secret_key prekey_secret{};
-    if (!derive_local_prekey(context.identity, request.prekey,
-                             prekey_secret)) {
+    if (!derive_local_prekey(context.identity, request.prekey, prekey_secret)) {
         error_out = "derivation de la prekey impossible";
         return false;
     }
@@ -88,8 +88,7 @@ bool run_dm_send(cli_context &context,
         return false;
     }
     proto::dm_send_request request;
-    if (!parse_public_key(arguments[0], request.recipient_pubkey,
-                          error_out)) {
+    if (!parse_public_key(arguments[0], request.recipient_pubkey, error_out)) {
         return false;
     }
     proto::prekey_bundle_response bundle;
@@ -97,8 +96,9 @@ bool run_dm_send(cli_context &context,
                                 error_out)) {
         return false;
     }
-    // Le chiffrement se fait ICI, avant le moindre envoi. Ce qui part sur le
-    // fil est deja opaque, et le restera sur le disque du serveur.
+    // Encryption happens HERE, before anything is sent. What goes out on
+    // the wire is already opaque, and will stay that way on the server's
+    // disk.
     if (!seal_direct_message(context.identity, bundle, arguments[1],
                              request.ciphertext, error_out)) {
         return false;
@@ -147,8 +147,8 @@ bool run_dm_fetch(cli_context &context, std::string &error_out)
                       << '\n';
             acknowledgement.envelope_ids.push_back(envelope.id);
         } else {
-            std::cout << "  de " << sender.substr(0, 16)
-                      << "... : [illisible] " << failure << '\n';
+            std::cout << "  de " << sender.substr(0, 16) << "... : [illisible] "
+                      << failure << '\n';
         }
     }
     if (acknowledgement.envelope_ids.empty()) {

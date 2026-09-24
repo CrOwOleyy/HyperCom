@@ -1,20 +1,20 @@
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include "server/admin/admin_command.hpp"
 #include "server/admin/admin_context.hpp"
 
+#include <string>
+#include <vector>
+
 namespace hypercom::server {
 
-// Aiguillage des commandes d'administration.
+// Dispatch for admin commands.
 //
-// Toute commande rend du texte, y compris en cas d'echec : la CLI ne laisse
-// jamais l'administrateur devant un silence. close_requests recueille les
-// sessions client a fermer, appliquees par la boucle d'evenements apres coup.
-[[nodiscard]] std::string execute_admin_command(
-    admin_context &context, admin_command const &command,
-    std::vector<int> &close_requests);
+// Every command returns text, even on failure: the CLI never leaves the
+// administrator facing silence. close_requests collects the client sessions
+// to close, applied by the event loop afterward.
+[[nodiscard]] std::string
+execute_admin_command(admin_context &context, admin_command const &command,
+                      std::vector<int> &close_requests);
 
 } // namespace hypercom::server

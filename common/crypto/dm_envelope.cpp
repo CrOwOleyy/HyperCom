@@ -2,17 +2,15 @@
 
 #include <algorithm>
 #include <array>
-
 #include <sodium.h>
 
 namespace hypercom::crypto {
 namespace {
 
-// Le nonce est nul, et c'est sur -- mais uniquement parce que la cle est
-// unique par message : le cliquet de dm_message_chain n'en produit jamais deux
-// fois la meme. Reutiliser une cle avec un nonce fixe serait catastrophique, et
-// c'est pourquoi seal_dm_envelope n'accepte pas de cle de session, seulement
-// une cle de message.
+// The nonce is zero, and that is safe -- but only because the key is unique
+// per message: the dm_message_chain ratchet never produces the same one
+// twice. Reusing a key with a fixed nonce would be catastrophic, which is
+// why seal_dm_envelope does not accept a session key, only a message key.
 constexpr std::array<std::uint8_t, XCHACHA_NONCE_SIZE> ZERO_NONCE{};
 
 void serialize_header(dm_envelope_header const &header,
@@ -24,8 +22,8 @@ void serialize_header(dm_envelope_header const &header,
     out.insert(out.end(), header.sender_ephemeral.begin(),
                header.sender_ephemeral.end());
     for (std::size_t index = 0; index < 4; ++index) {
-        out.push_back(
-            static_cast<std::uint8_t>((header.counter >> (index * 8U)) & 0xFFU));
+        out.push_back(static_cast<std::uint8_t>(
+            (header.counter >> (index * 8U)) & 0xFFU));
     }
 }
 
@@ -69,8 +67,7 @@ bool seal_dm_envelope(dm_envelope_header const &header,
     if (crypto_aead_xchacha20poly1305_ietf_encrypt(
             sealed.data(), &written, plaintext.data(), plaintext.size(),
             serialized_header.data(), serialized_header.size(), nullptr,
-            ZERO_NONCE.data(), message_key.data())
-        != 0) {
+            ZERO_NONCE.data(), message_key.data()) != 0) {
         return false;
     }
     sealed.resize(static_cast<std::size_t>(written));
@@ -94,8 +91,7 @@ bool open_dm_envelope(std::span<std::uint8_t const> envelope,
     if (crypto_aead_xchacha20poly1305_ietf_decrypt(
             decoded.data(), &written, nullptr, body.data(), body.size(),
             associated_data.data(), associated_data.size(), ZERO_NONCE.data(),
-            message_key.data())
-        != 0) {
+            message_key.data()) != 0) {
         return false;
     }
     decoded.resize(static_cast<std::size_t>(written));

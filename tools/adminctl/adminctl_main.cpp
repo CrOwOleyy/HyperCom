@@ -1,6 +1,6 @@
 #if defined(_WIN32)
-#include <winsock2.h>
 #include <afunix.h>
+#include <winsock2.h>
 #else
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -11,16 +11,16 @@
 #include <iostream>
 #include <string>
 
-// Client de la CLI d'administration.
+// Administration CLI client.
 //
-//   hypercom_adminctl [--socket <chemin>] <commande> [arguments...]
+//   hypercom_adminctl [--socket <path>] <command> [arguments...]
 //
-// Envoie une ligne sur le socket d'admin et recopie la reponse. Rien de plus :
-// toute l'intelligence est cote serveur, ce binaire n'est qu'un tuyau.
+// Sends a line over the admin socket and copies back the response. Nothing
+// more: all the intelligence lives server-side, this binary is just a pipe.
 //
-// Il existe pour que l'administration ne demande ni socat, ni netcat, ni de
-// savoir comment le protocole de ligne est fait. On tape une commande, on lit
-// une reponse.
+// It exists so that administration needs neither socat nor netcat, nor any
+// knowledge of how the line protocol is built. You type a command, you
+// read a response.
 
 namespace {
 
@@ -45,13 +45,13 @@ void print_usage()
         << DEFAULT_SOCKET_PATH << "\n";
 }
 
-// Un argument contenant des espaces est reentoure de guillemets : c'est ce que
-// parse_admin_command attend cote serveur, et ca evite a l'administrateur d'y
-// penser lui-meme.
+// An argument containing spaces gets re-wrapped in quotes: that's what
+// parse_admin_command expects on the server side, and it saves the
+// administrator from having to think about it themselves.
 [[nodiscard]] std::string quote_if_needed(std::string const &argument)
 {
-    if (argument.find(' ') == std::string::npos
-        && argument.find('\t') == std::string::npos) {
+    if (argument.find(' ') == std::string::npos &&
+        argument.find('\t') == std::string::npos) {
         return argument;
     }
     return "\"" + argument + "\"";
@@ -76,8 +76,7 @@ void print_usage()
         return -1;
     }
     if (::connect(handle, reinterpret_cast<sockaddr const *>(&address),
-                  sizeof(address))
-        != 0) {
+                  sizeof(address)) != 0) {
 #if defined(_WIN32)
         ::closesocket(static_cast<SOCKET>(handle));
 #else
@@ -92,9 +91,8 @@ void print_usage()
 {
     std::size_t offset = 0;
     while (offset < payload.size()) {
-        auto const sent =
-            ::send(handle, payload.data() + offset,
-                   static_cast<int>(payload.size() - offset), 0);
+        auto const sent = ::send(handle, payload.data() + offset,
+                                 static_cast<int>(payload.size() - offset), 0);
         if (sent <= 0) {
             return false;
         }

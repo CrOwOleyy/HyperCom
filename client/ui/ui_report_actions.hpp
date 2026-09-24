@@ -1,16 +1,16 @@
 #pragma once
 
-#include <cstdint>
-
 #include "client/cli/cli_context.hpp"
 #include "client/ui/ui_state.hpp"
 #include "common/protocol/wire_key.hpp"
 
+#include <cstdint>
+
 namespace hypercom::client {
 
-// Signalement (BRIEF.md 13). Aucun motif saisi depuis le GUI -- juste
-// signaler, vite. Le CLI (report-post/report-account) reste disponible pour
-// qui veut joindre une explication.
+// Reporting (BRIEF.md 13). No reason entered from the GUI -- just
+// report, quickly. The CLI (report-post/report-account) remains
+// available for anyone who wants to attach an explanation.
 
 void report_post(cli_context &context, ui_state &state, std::uint64_t post_id);
 

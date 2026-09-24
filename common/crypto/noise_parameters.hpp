@@ -1,38 +1,40 @@
 #pragma once
 
+#include "common/crypto/key_types.hpp"
+
 #include <cstddef>
 #include <string_view>
 
-#include "common/crypto/key_types.hpp"
-
 namespace hypercom::crypto {
 
-// Suite Noise retenue, en remplacement de TLS (BRIEF.md 5).
+// Noise suite chosen as a replacement for TLS (BRIEF.md 5).
 //
 //   Noise_NK_25519_ChaChaPoly_SHA256
 //
-// NK : le serveur est authentifie par sa cle statique, connue du client a
-// l'avance (epinglee ou saisie a la premiere connexion). Le client reste
-// anonyme au niveau transport et s'authentifie ensuite au niveau applicatif.
-// Ni X.509, ni autorite de certification, ni parseur de certificats.
+// NK: the server is authenticated by its static key, known to the client
+// in advance (pinned or entered on first connection). The client stays
+// anonymous at the transport level and authenticates afterward at the
+// application level. No X.509, no certificate authority, no certificate
+// parser.
 //
-// Le nom fait exactement 32 octets, soit HASHLEN : il est donc utilise tel quel
-// comme etat de hachage initial, sans passer par SHA-256, conformement a la
+// The name is exactly 32 bytes, i.e. HASHLEN: it is therefore used as-is
+// as the initial hash state, without going through SHA-256, per the
 // specification.
 //
-// COMPROMIS A CONNAITRE : ce code est une implementation maison d'un protocole
-// specifie, pas une crypto maison -- les primitives viennent toutes de
-// libsodium. Le risque residuel est une erreur dans l'enchainement des etapes,
-// pas dans les primitives. C'est pour cela que noise_handshake_test verifie le
-// deroule complet et que le sens des cles de transport est teste dans les deux
-// directions. Une validation contre les vecteurs officiels Noise reste a faire
-// et est notee dans docs/THREAT_MODEL.md.
+// TRADE-OFF WORTH KNOWING: this code is a homegrown implementation of a
+// specified protocol, not homegrown crypto -- all the primitives come from
+// libsodium. The residual risk is a mistake in how the steps are chained
+// together, not in the primitives themselves. This is why
+// noise_handshake_test verifies the full run and why the direction of the
+// transport keys is tested both ways. Validation against the official
+// Noise test vectors is still pending and is noted in
+// docs/THREAT_MODEL.md.
 constexpr std::string_view NOISE_PROTOCOL_NAME =
     "Noise_NK_25519_ChaChaPoly_SHA256";
 
-// Le prologue est mixe dans le hachage par les deux pairs. Il lie la session a
-// cette application et a cette version : un handshake Hypercom ne peut pas
-// etre rejoue vers un autre service partageant la meme suite Noise.
+// The prologue is mixed into the hash by both peers. It ties the session
+// to this application and this version: a Hypercom handshake cannot be
+// replayed against another service that shares the same Noise suite.
 constexpr std::string_view NOISE_PROLOGUE = "hypercom-v1";
 
 constexpr std::size_t NOISE_HANDSHAKE_MESSAGE_ONE_SIZE =

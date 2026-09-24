@@ -20,9 +20,9 @@ bool extract_length_prefixed_message(std::vector<std::uint8_t> &buffer,
         return false;
     }
     std::size_t const length = static_cast<std::size_t>(announced);
-    // Controle avant allocation, et avant meme d'attendre les octets : un pair
-    // qui annonce 4 Gio est ejecte immediatement, sans que le serveur ait
-    // reserve quoi que ce soit ni attendu quoi que ce soit.
+    // Checked before allocation, and even before waiting for the bytes: a
+    // peer announcing 4 GiB gets rejected immediately, without the server
+    // having reserved or waited for anything.
     if (length == 0 || length > maximum_size) {
         malformed = true;
         return false;
@@ -30,11 +30,10 @@ bool extract_length_prefixed_message(std::vector<std::uint8_t> &buffer,
     if (buffer.size() < FRAME_LENGTH_FIELD_SIZE + length) {
         return false;
     }
-    auto const begin = buffer.begin()
-                       + static_cast<std::ptrdiff_t>(FRAME_LENGTH_FIELD_SIZE);
+    auto const begin =
+        buffer.begin() + static_cast<std::ptrdiff_t>(FRAME_LENGTH_FIELD_SIZE);
     out.assign(begin, begin + static_cast<std::ptrdiff_t>(length));
-    buffer.erase(buffer.begin(),
-                 begin + static_cast<std::ptrdiff_t>(length));
+    buffer.erase(buffer.begin(), begin + static_cast<std::ptrdiff_t>(length));
     return true;
 }
 

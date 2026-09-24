@@ -1,17 +1,17 @@
 #include "client/cli/cli_server_commands.hpp"
 
-#include <algorithm>
-#include <iostream>
-
 #include "client/cli/invite_link.hpp"
 #include "client/keystore/server_registry.hpp"
 #include "common/util/hex_codec.hpp"
 
+#include <algorithm>
+#include <iostream>
+
 namespace hypercom::client {
 namespace {
 
-// Un registre absent n'est pas une erreur : c'est l'etat normal avant d'avoir
-// ajoute son premier serveur.
+// A missing registry is not an error: it's the normal state before
+// adding your first server.
 [[nodiscard]] bool load_existing(server_registry &registry,
                                  std::string_view passphrase,
                                  std::vector<server_entry> &out,
@@ -27,10 +27,9 @@ namespace {
 [[nodiscard]] server_entry *find_by_label(std::vector<server_entry> &entries,
                                           std::string_view label)
 {
-    auto const found = std::find_if(entries.begin(), entries.end(),
-                                    [label](server_entry const &entry) {
-                                        return entry.label == label;
-                                    });
+    auto const found = std::find_if(
+        entries.begin(), entries.end(),
+        [label](server_entry const &entry) { return entry.label == label; });
     return found == entries.end() ? nullptr : &*found;
 }
 
@@ -49,8 +48,8 @@ namespace {
 
 bool is_registry_command(std::string_view command)
 {
-    return command == "server-add" || command == "server-list"
-           || command == "server-import";
+    return command == "server-add" || command == "server-list" ||
+           command == "server-import";
 }
 
 bool run_server_add(cli_options const &options,

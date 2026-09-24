@@ -2,14 +2,14 @@
 #include "tests/noise_vector_replay.hpp"
 #include "tests/test_harness.hpp"
 
-// Validation contre un vecteur de test officiel du projet Noise. Source et
-// details de la sequence rejouee : tests/noise_vector_replay.hpp.
+// Validation against an official test vector from the Noise project. Source
+// and details of the replayed sequence: tests/noise_vector_replay.hpp.
 //
-// crypto_round_trip_test verifie que notre initiateur et notre repondeur sont
-// d'accord entre eux, ce qui n'attrape pas un bug present a l'identique des
-// deux cotes -- ils se comprendraient parfaitement en se trompant pareil.
-// Comparer nos octets a une reference externe est le seul moyen de couvrir ce
-// cas.
+// crypto_round_trip_test checks that our initiator and our responder agree
+// with each other, which doesn't catch a bug present identically on both
+// sides -- they'd understand each other perfectly while being wrong the
+// same way. Comparing our bytes against an external reference is the only
+// way to cover that case.
 
 int main()
 {

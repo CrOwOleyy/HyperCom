@@ -6,8 +6,7 @@
 
 namespace hypercom::server {
 
-bool send_raw_message(client_connection &connection,
-                      proto::message_type type,
+bool send_raw_message(client_connection &connection, proto::message_type type,
                       std::span<std::uint8_t const> payload)
 {
     std::vector<std::uint8_t> frame;
@@ -35,8 +34,9 @@ bool send_status_error(client_connection &connection, proto::error_code code)
 {
     proto::status_error_response response;
     response.code = code;
-    // Le detail reste le libelle generique du code : il ne doit jamais
-    // renseigner sur l'etat interne du serveur ni sur l'existence d'un compte.
+    // The detail stays the generic label for the code: it must never leak
+    // anything about the server's internal state or an account's
+    // existence.
     response.detail = std::string{proto::describe_error_code(code)};
     return send_message(connection, proto::message_type::status_error,
                         response);

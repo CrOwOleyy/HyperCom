@@ -3,8 +3,8 @@
 namespace hypercom::server {
 namespace {
 
-// Deux fenetres : une entree dont la fenetre est close depuis plus longtemps
-// n'a plus aucune influence sur la decision, elle peut disparaitre.
+// Two windows: an entry whose window has been closed for longer than this no
+// longer has any influence on the decision, it can be dropped.
 constexpr std::uint64_t EXPIRY_SECONDS = 120;
 
 } // namespace
@@ -32,16 +32,14 @@ void forget_expired_windows(rate_tracker &tracker, std::uint64_t now)
 {
     for (auto entry = tracker.by_address.begin();
          entry != tracker.by_address.end();) {
-        bool const expired = now >= entry->second.window_start
-                             && now - entry->second.window_start
-                                    >= EXPIRY_SECONDS;
+        bool const expired = now >= entry->second.window_start &&
+                             now - entry->second.window_start >= EXPIRY_SECONDS;
         entry = expired ? tracker.by_address.erase(entry) : std::next(entry);
     }
     for (auto entry = tracker.by_identity.begin();
          entry != tracker.by_identity.end();) {
-        bool const expired = now >= entry->second.window_start
-                             && now - entry->second.window_start
-                                    >= EXPIRY_SECONDS;
+        bool const expired = now >= entry->second.window_start &&
+                             now - entry->second.window_start >= EXPIRY_SECONDS;
         entry = expired ? tracker.by_identity.erase(entry) : std::next(entry);
     }
 }

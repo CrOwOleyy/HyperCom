@@ -1,19 +1,20 @@
 #pragma once
 
+#include "common/crypto/key_types.hpp"
+#include "common/crypto/noise_cipher_state.hpp"
+
 #include <cstdint>
 #include <span>
 #include <vector>
 
-#include "common/crypto/key_types.hpp"
-#include "common/crypto/noise_cipher_state.hpp"
-
 namespace hypercom::crypto {
 
-// Canal etabli, apres Split(). Chaque sens a sa cle et son compteur propres,
-// ce qui evite toute collision de nonce entre client et serveur.
+// Established channel, after Split(). Each direction has its own key and
+// counter, which avoids any nonce collision between client and server.
 //
-// Tout ce qui passe ensuite -- trames de protocole comprises -- traverse cet
-// objet. Le protocole applicatif n'est jamais visible sur le fil.
+// Everything that passes through afterward -- including protocol frames --
+// goes through this object. The application protocol is never visible on
+// the wire.
 class noise_transport {
 public:
     noise_transport(symmetric_key const &send_key,

@@ -4,15 +4,15 @@
 
 namespace hypercom::client {
 
-// La sequence d'accueil, jouee UNE seule fois, a la creation du compte.
+// The welcome sequence, played ONCE, on account creation.
 //
-//   0 s ........ 6 s          message de bienvenue, sur la musique
-//   6 s ........ fin du son   l'interface apparait bloc par bloc, en bulles
-//   ensuite                   interface normale, plus aucune animation
+//   0 s ........ 6 s          welcome message, over the music
+//   6 s ........ end of song  the interface appears block by block, as bubbles
+//   after that                normal interface, no more animation
 //
-// Le decoupage suit le morceau : six secondes d'intro, puis la partie rythmee.
-// Si la duree reelle du fichier n'est pas lisible, on retombe sur une valeur
-// fixe -- l'animation ne doit jamais dependre de la reussite de l'audio.
+// The split follows the track: six seconds of intro, then the rhythmic
+// part. If the file's actual duration can't be read, we fall back to
+// a fixed value -- the animation must never depend on audio succeeding.
 enum class intro_phase : std::uint8_t {
     welcome,
     reveal,
@@ -34,8 +34,9 @@ void advance_intro(intro_state &state, double delta_seconds);
 
 [[nodiscard]] intro_phase get_intro_phase(intro_state const &state);
 
-// Progression 0..1 du bloc `index` parmi `count`. Rend 1 hors sequence, pour
-// que les fonctions de dessin n'aient pas a savoir si une intro est en cours.
+// Progress 0..1 of block `index` out of `count`. Returns 1 outside the
+// sequence, so drawing functions don't need to know whether an intro
+// is in progress.
 [[nodiscard]] float compute_element_reveal(intro_state const &state, int index,
                                            int count);
 

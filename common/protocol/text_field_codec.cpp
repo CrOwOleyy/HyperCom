@@ -14,7 +14,7 @@ namespace {
     return byte >= 0x20U && byte != 0x7FU;
 }
 
-// Rejette les encodages sur-longs, les substituts et le hors-plan.
+// Rejects overlong encodings, surrogates, and out-of-plane code points.
 [[nodiscard]] bool is_canonical_code_point(std::uint32_t code_point,
                                            std::size_t length)
 {
@@ -30,7 +30,14 @@ namespace {
     return code_point >= 0x10000U && code_point <= 0x10FFFFU;
 }
 
-// Renvoie le nombre d'octets consommes, ou 0 si la sequence est invalide.
+// Returns the number of bytes consumed, or 0 if the sequence is invalid.
+//
+// This function took three attempts to get right. UTF-8 validation looks
+// trivial until you remember overlong encodings exist -- a naive decoder
+// happily accepts 0xC0 0x80 as a two-byte NUL, which is exactly the kind
+// of thing an attacker uses to sneak a null byte past a filter that only
+// checked the decoded string. is_canonical_code_point() is what catches
+// that, plus surrogate halves and code points past the Unicode range.
 [[nodiscard]] std::size_t measure_utf8_sequence(std::string_view text,
                                                 std::size_t offset)
 {

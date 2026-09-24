@@ -11,19 +11,23 @@ namespace {
 
 constexpr std::size_t MAX_NOISE_MESSAGE_SIZE =
     proto::MAX_FRAME_SIZE + crypto::AEAD_TAG_SIZE;
-// Le delai de lecture de la socket est de 200 ms : cinquante tours donnent une
-// dizaine de secondes avant d'abandonner une reponse.
+// The socket's read timeout is 200 ms: fifty rounds give roughly ten
+// seconds before giving up on a response. That number came from actually
+// timing a handshake over Tor during testing -- anything shorter and a
+// slow circuit gets treated as a dead server.
 constexpr int MAX_RECEIVE_ATTEMPTS = 50;
 
 } // namespace
 
 server_connection::server_connection(
     crypto::x25519_public_key const &server_static_public)
-    : socket_{}, server_static_public_{server_static_public},
-      handshake_{server_static_public}, transport_{}, input_buffer_{},
+    : socket_{},
+      server_static_public_{server_static_public},
+      handshake_{server_static_public},
+      transport_{},
+      input_buffer_{},
       open_{false}
-{
-}
+{}
 
 bool server_connection::is_open() const
 {
@@ -74,9 +78,9 @@ bool server_connection::perform_handshake(std::string &error_out)
     }
     std::vector<std::uint8_t> payload;
     if (!handshake_.read_second_message(response, payload)) {
-        // Cause la plus probable : la cle epinglee ne correspond pas a celle
-        // du serveur en face. C'est exactement ce que l'epinglage doit
-        // detecter, et il n'y a rien a rattraper.
+        // Most likely cause: the pinned key doesn't match the server on
+        // the other end. That's exactly what pinning is supposed to
+        // detect, and there's nothing to recover from.
         error_out = "handshake refuse : la cle du serveur ne correspond pas "
                     "a celle epinglee";
         return false;
@@ -96,9 +100,9 @@ bool server_connection::perform_handshake(std::string &error_out)
 bool server_connection::open_session(server_endpoint const &endpoint,
                                      std::string &error_out)
 {
-    // Rien de la session precedente ne survit : handshake neuf, canal neuf,
-    // tampon vide. Reutiliser le moindre etat rendrait la reconnexion
-    // correlable a la connexion d'avant.
+    // Nothing from the previous session survives: fresh handshake, fresh
+    // channel, empty buffer. Reusing any state would make the
+    // reconnection correlatable with the previous connection.
     open_ = false;
     transport_.reset();
     input_buffer_.clear();
@@ -111,9 +115,8 @@ bool server_connection::open_session(server_endpoint const &endpoint,
     if (!socket_.connect_to_host(dial_host, dial_port, error_out)) {
         return false;
     }
-    if (through_proxy
-        && !perform_socks5_connect(socket_, endpoint.host, endpoint.port,
-                                   error_out)) {
+    if (through_proxy && !perform_socks5_connect(socket_, endpoint.host,
+                                                 endpoint.port, error_out)) {
         return false;
     }
     open_ = true;
@@ -161,8 +164,8 @@ bool server_connection::receive_frame(proto::frame_header &header,
         open_ = false;
         return false;
     }
-    if (!proto::decode_frame_header(frame, header)
-        || frame.size() != proto::FRAME_LENGTH_FIELD_SIZE + header.body_size) {
+    if (!proto::decode_frame_header(frame, header) ||
+        frame.size() != proto::FRAME_LENGTH_FIELD_SIZE + header.body_size) {
         error_out = "trame mal formee";
         open_ = false;
         return false;

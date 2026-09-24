@@ -1,19 +1,19 @@
 #include "client/ui/aero_decorations.hpp"
 
-#include <cmath>
-
 #include "client/ui/aero_theme.hpp"
+
+#include <cmath>
 
 namespace hypercom::client {
 namespace {
 
-// Bruit deterministe : meme indice, meme valeur, a chaque image et sur toutes
-// les machines. C'est ce qui evite d'avoir a stocker les bulles quelque part.
+// Deterministic noise: same index, same value, on every frame and across
+// all machines. This avoids having to store the bubbles anywhere.
 [[nodiscard]] float hash_unit(int index, int salt)
 {
     float const raw =
-        std::sin(static_cast<float>(index * 127 + salt * 311) * 0.7548f)
-        * 43758.5453f;
+        std::sin(static_cast<float>(index * 127 + salt * 311) * 0.7548f) *
+        43758.5453f;
     return raw - std::floor(raw);
 }
 
@@ -22,16 +22,15 @@ struct bubble_shape {
     float radius;
 };
 
-// Une bulle monte lentement, derive lateralement, et reboucle en haut.
-[[nodiscard]] bubble_shape compute_bubble(int index, ImVec2 origin,
-                                          ImVec2 size, float time_seconds)
+// A bubble rises slowly, drifts sideways, and loops back at the top.
+[[nodiscard]] bubble_shape compute_bubble(int index, ImVec2 origin, ImVec2 size,
+                                          float time_seconds)
 {
     float const radius = 12.0f + hash_unit(index, 4) * 46.0f;
     float const rise_speed = 9.0f + hash_unit(index, 2) * 26.0f;
     float const travel = size.y + radius * 4.0f;
-    float const offset =
-        std::fmod(time_seconds * rise_speed + hash_unit(index, 3) * travel,
-                  travel);
+    float const offset = std::fmod(
+        time_seconds * rise_speed + hash_unit(index, 3) * travel, travel);
     float const drift =
         std::sin(time_seconds * 0.35f + static_cast<float>(index)) * 26.0f;
     bubble_shape shape;
@@ -46,10 +45,9 @@ void draw_single_bubble(ImDrawList *list, bubble_shape const &shape)
     list->AddCircleFilled(shape.center, shape.radius,
                           ImGui::GetColorU32(AERO_BUBBLE), 32);
     list->AddCircle(shape.center, shape.radius,
-                    ImGui::GetColorU32(AERO_BUBBLE_RIM), 32,
-                    1.5f);
-    // Le petit reflet en haut a gauche : c'est lui qui fait lire un volume
-    // plutot qu'un simple disque.
+                    ImGui::GetColorU32(AERO_BUBBLE_RIM), 32, 1.5f);
+    // The small highlight at the top left: it's what reads as volume
+    // rather than a flat disc.
     ImVec2 const glint{shape.center.x - shape.radius * 0.34f,
                        shape.center.y - shape.radius * 0.38f};
     list->AddCircleFilled(glint, shape.radius * 0.20f,
@@ -66,8 +64,8 @@ void draw_aero_backdrop(ImDrawList *list, ImVec2 origin, ImVec2 size,
     ImU32 const bottom = ImGui::GetColorU32(AERO_SKY_BOTTOM);
     list->AddRectFilledMultiColor(origin, corner, top, top, bottom, bottom);
     for (int index = 0; index < AERO_BUBBLE_COUNT; ++index) {
-        draw_single_bubble(list, compute_bubble(index, origin, size,
-                                                time_seconds));
+        draw_single_bubble(list,
+                           compute_bubble(index, origin, size, time_seconds));
     }
 }
 
@@ -84,9 +82,9 @@ void draw_glass_surface(ImDrawList *list, ImVec2 minimum, ImVec2 maximum,
 void draw_gloss_highlight(ImDrawList *list, ImVec2 minimum, ImVec2 maximum,
                           float rounding)
 {
-    // Le reflet ne couvre que la moitie haute, et s'eteint vers le bas : c'est
-    // la signature visuelle de l'epoque, un plastique brillant eclaire d'en
-    // haut.
+    // The highlight only covers the top half, and fades toward the
+    // bottom: that's the visual signature of the era, glossy plastic
+    // lit from above.
     float const middle = minimum.y + (maximum.y - minimum.y) * 0.48f;
     ImU32 const bright = ImGui::GetColorU32(AERO_GLOSS);
     ImU32 const clear = ImGui::GetColorU32(ImVec4{1.0f, 1.0f, 1.0f, 0.0f});
@@ -94,12 +92,10 @@ void draw_gloss_highlight(ImDrawList *list, ImVec2 minimum, ImVec2 maximum,
     list->AddRectFilled(minimum, ImVec2{maximum.x, middle + 1.0f}, bright,
                         rounding);
     list->PopClipRect();
-    list->AddRectFilledMultiColor(ImVec2{minimum.x, middle},
-                                  ImVec2{maximum.x, maximum.y}, clear, clear,
-                                  ImGui::GetColorU32(
-                                      ImVec4{1.0f, 1.0f, 1.0f, 0.10f}),
-                                  ImGui::GetColorU32(
-                                      ImVec4{1.0f, 1.0f, 1.0f, 0.10f}));
+    list->AddRectFilledMultiColor(
+        ImVec2{minimum.x, middle}, ImVec2{maximum.x, maximum.y}, clear, clear,
+        ImGui::GetColorU32(ImVec4{1.0f, 1.0f, 1.0f, 0.10f}),
+        ImGui::GetColorU32(ImVec4{1.0f, 1.0f, 1.0f, 0.10f}));
 }
 
 } // namespace hypercom::client

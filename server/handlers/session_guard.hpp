@@ -4,15 +4,15 @@
 
 namespace hypercom::server {
 
-// Verrou d'entree de tous les handlers metier.
+// Entry gate for every business handler.
 //
-// Deux etats distincts sont refuses ici : la session non authentifiee, et la
-// session authentifiee dont la cle n'a pas encore de compte (user_id == 0).
-// Le second cas existe parce que la signature du defi prouve la possession
-// d'une cle bien avant qu'un pseudo n'ait ete choisi.
+// Two distinct states are rejected here: the unauthenticated session, and
+// the authenticated session whose key doesn't have an account yet
+// (user_id == 0). The second case exists because signing the challenge
+// proves possession of a key well before a handle has been chosen.
 //
-// Emet elle-meme l'erreur protocolaire, pour qu'aucun handler n'ait a se
-// souvenir de le faire.
+// Emits the protocol error itself, so that no handler has to remember to do
+// it.
 [[nodiscard]] bool require_registered_session(handler_context &context);
 
 } // namespace hypercom::server

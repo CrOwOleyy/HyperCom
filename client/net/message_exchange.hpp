@@ -1,13 +1,13 @@
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include "client/net/server_connection.hpp"
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/error_code.hpp"
 #include "common/protocol/status_message.hpp"
+
+#include <string>
+#include <vector>
 
 namespace hypercom::client {
 
@@ -22,8 +22,9 @@ template <typename message_struct>
     return connection.send_frame(type, payload);
 }
 
-// Attend un type precis. Un status_error est traduit en message lisible : le
-// client ne doit jamais silencieusement prendre une erreur pour une reponse.
+// Waits for a specific type. A status_error is translated into a readable
+// message: the client must never silently mistake an error for a
+// response.
 template <typename message_struct>
 [[nodiscard]] bool receive_typed_message(server_connection &connection,
                                          proto::message_type expected,

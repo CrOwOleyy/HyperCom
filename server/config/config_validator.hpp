@@ -1,23 +1,23 @@
 #pragma once
 
+#include "server/config/server_config.hpp"
+
 #include <string>
 #include <vector>
 
-#include "server/config/server_config.hpp"
-
 namespace hypercom::server {
 
-// Coherence d'ensemble, apres que chaque valeur a ete lue individuellement.
+// Overall consistency, after each value has been individually parsed.
 //
-// Le serveur REFUSE de demarrer sur une configuration invalide plutot que de
-// partir avec des valeurs par defaut silencieuses. Un serveur qui
-// se rabat tout seul sur un port ou une politique de logs par defaut est un
-// serveur qui, un jour, journalisera des IP sans que personne l'ait decide.
+// The server REFUSES to start on an invalid configuration rather than
+// falling back to silent defaults. A server that quietly falls back to a
+// default port or logging policy is a server that will, one day, log IPs
+// without anyone having decided so.
 //
-// problems et warnings sont bien deux choses distinctes : les premiers
-// empechent le demarrage, les seconds sont affiches puis le serveur demarre.
-// Les confondre rendrait inutilisable un reglage pourtant legitime -- activer
-// la journalisation des IP doit etre bruyant, pas interdit.
+// problems and warnings are genuinely two different things: the former
+// prevent startup, the latter are printed and then the server starts.
+// Conflating them would make an otherwise legitimate setting unusable --
+// enabling IP logging should be loud, not forbidden.
 [[nodiscard]] bool validate_config(server_config const &config,
                                    std::vector<std::string> &problems,
                                    std::vector<std::string> &warnings);

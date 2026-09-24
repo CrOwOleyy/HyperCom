@@ -1,9 +1,9 @@
 #pragma once
 
+#include "common/protocol/wire_key.hpp"
+
 #include <cstdint>
 #include <string>
-
-#include "common/protocol/wire_key.hpp"
 
 namespace hypercom::server {
 
@@ -14,15 +14,15 @@ enum class session_phase {
     authenticated,
 };
 
-// Etat applicatif d'une connexion.
+// Application state of a connection.
 //
-// peer_address est en memoire pour le comptage par adresse, et n'atteint jamais
-// un journal sans passer par logger::redact_peer_address. Elle n'est ecrite
-// nulle part sur disque.
+// peer_address is kept in memory for per-address counting, and never
+// reaches a log without going through logger::redact_peer_address. It is
+// never written to disk anywhere.
 //
-// Les compteurs de debit ne sont PAS ici : une limite qui repart a zero a
-// chaque connexion ne limite rien. Ils vivent dans rate_tracker, partages
-// entre connexions.
+// The rate counters are NOT here: a limit that resets to zero on every
+// connection doesn't limit anything. They live in rate_tracker, shared
+// across connections.
 struct session_state {
     session_phase phase = session_phase::awaiting_handshake;
     proto::wire_public_key announced_pubkey{};

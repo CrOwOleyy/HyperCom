@@ -5,13 +5,12 @@
 
 namespace hypercom::server {
 
-// Traite tout ce qui est arrive sur une connexion : handshake Noise tant qu'il
-// n'est pas termine, puis trames applicatives dechiffrees.
+// Processes everything that has arrived on a connection: the Noise handshake
+// while it isn't finished yet, then decrypted application frames.
 //
-// Renvoie false quand la connexion doit etre fermee. Aucune tentative de
-// recuperation n'est faite sur un flux invalide : un flux desynchronise ne se
-// rattrape pas, et deviner ou reprendre est le genre de code qui finit
-// exploite.
+// Returns false when the connection must be closed. No attempt is made to
+// recover from an invalid stream: a desynchronized stream can't be salvaged,
+// and guessing where to resume is the kind of code that ends up exploited.
 [[nodiscard]] bool process_connection_input(handler_context &context,
                                             rate_policy &policy);
 

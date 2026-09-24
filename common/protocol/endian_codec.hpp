@@ -7,9 +7,9 @@
 
 namespace hypercom::proto {
 
-// Les entiers circulent en petit-boutiste, quelle que soit la machine.
-// La conversion se fait octet par octet : independante du boutisme de l'hote
-// et de l'alignement, et sans arithmetique de pointeur.
+// Integers travel little-endian, regardless of the machine.
+// The conversion is done byte by byte: independent of the host's
+// endianness and alignment, and without pointer arithmetic.
 
 template <typename T>
 [[nodiscard]] bool load_little_endian(std::span<std::uint8_t const> source,
@@ -22,8 +22,8 @@ template <typename T>
     }
     T value = 0;
     for (std::size_t index = 0; index < sizeof(T); ++index) {
-        value = static_cast<T>(value | (static_cast<T>(source[index])
-                                        << (index * 8U)));
+        value = static_cast<T>(value |
+                               (static_cast<T>(source[index]) << (index * 8U)));
     }
     out = value;
     return true;
@@ -38,8 +38,8 @@ template <typename T>
         return false;
     }
     for (std::size_t index = 0; index < sizeof(T); ++index) {
-        target[index] = static_cast<std::uint8_t>((value >> (index * 8U))
-                                                  & 0xFFU);
+        target[index] =
+            static_cast<std::uint8_t>((value >> (index * 8U)) & 0xFFU);
     }
     return true;
 }

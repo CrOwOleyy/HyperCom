@@ -17,11 +17,13 @@ std::string run_backup_command(admin_context &context,
     }
     context.logger.write_entry(util::log_level::info,
                                "sauvegarde a chaud effectuee");
-    // Rappel utile : la base seule ne suffit pas a redemarrer un serveur
-    // identique. Perdre la cle statique casse l'epinglage de tous les clients.
-    return "sauvegarde ecrite : " + destination
-           + "\nPenser a sauvegarder aussi " + context.config.paths.server_key_path
-           + " : sans elle, les clients refuseront de se reconnecter.\n";
+    // Useful reminder: the database alone isn't enough to restart an
+    // identical server. Losing the static key breaks pinning for every
+    // client.
+    return "sauvegarde ecrite : " + destination +
+           "\nPenser a sauvegarder aussi " +
+           context.config.paths.server_key_path +
+           " : sans elle, les clients refuseront de se reconnecter.\n";
 }
 
 } // namespace hypercom::server

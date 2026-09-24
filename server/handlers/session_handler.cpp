@@ -23,9 +23,9 @@ namespace {
     session.phase = session_phase::authenticated;
     session.user_id = user.id;
     session.handle = user.handle;
-    // Aucune ecriture en base a l'authentification : enregistrer « untel s'est
-    // connecte a telle heure » serait un journal de presence, et il serait
-    // conserve avec le disque.
+    // No database write on authentication: recording "so-and-so connected
+    // at such a time" would be a presence log, and it would persist as long
+    // as the disk does.
     proto::auth_accepted accepted;
     accepted.user_id = static_cast<std::uint64_t>(user.id);
     accepted.handle = user.handle;
@@ -45,8 +45,7 @@ namespace {
 
 } // namespace
 
-bool handle_hello_request(handler_context &context,
-                          proto::byte_reader &reader)
+bool handle_hello_request(handler_context &context, proto::byte_reader &reader)
 {
     session_state &session = context.connection.session;
     if (session.phase != session_phase::awaiting_hello) {
@@ -71,12 +70,11 @@ bool handle_hello_request(handler_context &context,
         users.find_by_pubkey(request.client_pubkey, existing) ? 1U : 0U;
     challenge.server_time = util::get_unix_timestamp();
     session.phase = session_phase::awaiting_auth;
-    return send_message(context.connection,
-                        proto::message_type::auth_challenge, challenge);
+    return send_message(context.connection, proto::message_type::auth_challenge,
+                        challenge);
 }
 
-bool handle_auth_response(handler_context &context,
-                          proto::byte_reader &reader)
+bool handle_auth_response(handler_context &context, proto::byte_reader &reader)
 {
     session_state &session = context.connection.session;
     if (session.phase != session_phase::awaiting_auth) {
@@ -92,24 +90,25 @@ bool handle_auth_response(handler_context &context,
                                     session.announced_pubkey, signed_input);
     if (!crypto::verify_signature(session.announced_pubkey, signed_input,
                                   response.signature)) {
-        // Fermeture immediate : rejouer un defi avec une autre signature ne
-        // doit pas etre possible sur la meme connexion.
+        // Immediate close: replaying a challenge with a different signature
+        // must not be possible on the same connection.
         return false;
     }
     user_repository users{context.database};
     user_row existing;
     if (users.find_by_pubkey(session.announced_pubkey, existing)) {
         if (existing.banned) {
-            // La signature est verifiee et valide : ce n'est pas un refus
-            // d'authentification generique, on le dit explicitement plutot
-            // que de le confondre avec une cle inconnue.
+            // The signature is verified and valid: this isn't a generic
+            // authentication refusal, it's stated explicitly rather than
+            // confused with an unknown key.
             return send_status_error(context.connection,
                                      proto::error_code::account_banned);
         }
         return send_accepted_session(context, existing);
     }
-    // Cle prouvee mais sans compte : seul register_request est desormais
-    // recevable. user_id reste a 0, ce que verifie require_registered_session.
+    // Key proven but without an account: only register_request is now
+    // acceptable. user_id stays at 0, which require_registered_session
+    // checks for.
     session.phase = session_phase::authenticated;
     session.user_id = 0;
     return send_status_ok(context.connection, 0);
@@ -119,8 +118,7 @@ bool handle_register_request(handler_context &context,
                              proto::byte_reader &reader)
 {
     session_state &session = context.connection.session;
-    if (session.phase != session_phase::authenticated
-        || session.user_id != 0) {
+    if (session.phase != session_phase::authenticated || session.user_id != 0) {
         return send_status_error(context.connection,
                                  proto::error_code::already_authenticated);
     }
@@ -140,7 +138,7 @@ bool handle_register_request(handler_context &context,
     std::int64_t created_id = 0;
     if (!users.create_user(session.announced_pubkey, request.handle,
                            created_id)) {
-        // La contrainte UNIQUE a tranche : le pseudo est deja pris.
+        // The UNIQUE constraint settled it: the handle is already taken.
         return send_status_error(context.connection,
                                  proto::error_code::handle_unavailable);
     }

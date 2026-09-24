@@ -1,25 +1,24 @@
 #pragma once
 
+#include "common/protocol/wire_key.hpp"
+
 #include <cstdint>
 #include <string>
 
-#include "common/protocol/wire_key.hpp"
-
 namespace hypercom::server {
 
-// Les autres depots remplissent directement les enregistrements de
-// common/protocol : ce sont deja des structures de donnees pures, et ajouter
-// une couche de types miroir ne ferait que doubler le code de recopie sans
-// rien empecher. users est le seul cas sans equivalent protocolaire -- une
-// ligne utilisateur n'est jamais servie telle quelle sur le fil, seul son
-// profil l'est.
+// The other repositories fill common/protocol records directly: those are
+// already plain data structures, and adding a mirrored type layer would
+// only double the copying code without preventing anything. users is the
+// one case with no protocol equivalent -- a user row is never served
+// as-is over the wire, only its profile is.
 struct user_row {
     std::int64_t id = 0;
     proto::wire_public_key pubkey{};
     std::string handle;
-    // Reserve a l'action sur signalement (BRIEF.md 13) : un compte banni ne
-    // peut plus s'authentifier, ce qui laisse son contenu passe intact --
-    // bannir et supprimer restent deux actions distinctes et deliberees.
+    // Reserved for action on a report (BRIEF.md 13): a banned account can
+    // no longer authenticate, which leaves its past content untouched --
+    // banning and deleting remain two distinct, deliberate actions.
     bool banned = false;
 };
 

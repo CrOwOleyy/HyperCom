@@ -1,46 +1,47 @@
 #pragma once
 
+#include "common/crypto/key_types.hpp"
+
 #include <cstdint>
 #include <vector>
 
-#include "common/crypto/key_types.hpp"
-
 namespace hypercom::crypto {
 
-// Nombre maximal de messages qu'on accepte de sauter d'un coup. Une enveloppe
-// annoncant un compteur tres eloigne forcerait sinon des millions de
-// derivations : c'est un deni de service a un octet.
+// Maximum number of messages we accept to skip at once. Otherwise an
+// envelope announcing a far-off counter would force millions of
+// derivations: a one-byte denial of service.
 constexpr std::uint32_t MAX_SKIPPED_MESSAGE_KEYS = 1000;
 
-// Cliquet symetrique. La cle de chaine avance a chaque message et l'etat
-// precedent est efface :
+// Symmetric ratchet. The chain key advances with every message and the
+// previous state is wiped:
 //
 //   mk_i     = HKDF(ck_i, "message")
-//   ck_{i+1} = HKDF(ck_i, "chain")      puis ck_i est detruite
+//   ck_{i+1} = HKDF(ck_i, "chain")      then ck_i is destroyed
 //
-// Consequence concrete : quelqu'un qui saisit la machine aujourd'hui et
-// obtient ck_n ne peut PAS relire les messages 0..n-1. C'est la confidentialite
-// persistante symetrique promise par BRIEF.md 6.
+// Concrete consequence: someone who seizes the machine today and obtains
+// ck_n can NOT read back messages 0..n-1. This is the symmetric forward
+// secrecy promised by BRIEF.md 6.
 //
-// Limite connue de la v1 : le cliquet Diffie-Hellman complet, qui protegerait
-// aussi les messages FUTURS apres compromission, arrive en v2. Le format
-// d'enveloppe est deja pret a l'accueillir.
+// Known v1 limitation: the full Diffie-Hellman ratchet, which would also
+// protect FUTURE messages after a compromise, is coming in v2. The envelope
+// format is already ready to accommodate it.
 class dm_message_chain {
 public:
     explicit dm_message_chain(symmetric_key const &initial_chain_key);
 
-    // Avance d'un cran et rend la cle du message courant.
+    // Advances by one step and returns the current message's key.
     [[nodiscard]] bool derive_next_message_key(symmetric_key &out);
 
-    // Rattrape les messages arrives dans le desordre. Les cles sautees sont
-    // rendues a l'appelant, a lui de les conserver le temps necessaire.
+    // Catches up on messages that arrived out of order. The skipped keys are
+    // returned to the caller, who is responsible for keeping them as long as
+    // needed.
     [[nodiscard]] bool advance_to_counter(std::uint32_t target,
                                           std::vector<symmetric_key> &skipped);
 
     [[nodiscard]] std::uint32_t get_counter() const;
 
-    // Pour la persistance cote client uniquement. Ce qui sort d'ici doit etre
-    // stocke chiffre, jamais en clair.
+    // For client-side persistence only. Whatever comes out of here must be
+    // stored encrypted, never in plaintext.
     [[nodiscard]] symmetric_key const &get_chain_key() const;
 
 private:

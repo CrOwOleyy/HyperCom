@@ -1,9 +1,9 @@
 #include "common/util/logger.hpp"
 
+#include "common/util/unix_clock.hpp"
+
 #include <ctime>
 #include <ostream>
-
-#include "common/util/unix_clock.hpp"
 
 namespace hypercom::util {
 namespace {
@@ -24,12 +24,11 @@ void format_utc_timestamp(std::uint64_t seconds, char (&out)[32])
 
 } // namespace
 
-logger::logger(log_level minimum, bool allow_peer_addresses,
-               std::ostream &sink)
-    : minimum_{minimum}, allow_peer_addresses_{allow_peer_addresses},
+logger::logger(log_level minimum, bool allow_peer_addresses, std::ostream &sink)
+    : minimum_{minimum},
+      allow_peer_addresses_{allow_peer_addresses},
       sink_{sink}
-{
-}
+{}
 
 bool logger::is_level_enabled(log_level level) const
 {
@@ -55,11 +54,11 @@ void logger::write_entry(log_level level, std::string_view message)
     }
     write_prefix(level);
     sink_ << message << '\n';
-    // Purge systematique, y compris en info. Sur une sortie redirigee vers un
-    // fichier, stdio met en tampon 4 KiB : sans ce flush, les lignes de
-    // demarrage n'apparaissent qu'a l'arret du serveur. Le volume attendu ne
-    // justifie aucune optimisation ici, et un journal en retard sur la realite
-    // ne sert a personne.
+    // Flushed unconditionally, even at info level. On output redirected
+    // to a file, stdio buffers 4 KiB: without this flush, startup lines
+    // wouldn't appear until the server stops. The expected volume doesn't
+    // justify any optimization here, and a log that lags behind reality
+    // is useless to anyone.
     sink_.flush();
 }
 

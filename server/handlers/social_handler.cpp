@@ -1,7 +1,5 @@
 #include "server/handlers/social_handler.hpp"
 
-#include <algorithm>
-
 #include "common/protocol/friend_message.hpp"
 #include "common/protocol/top8_message.hpp"
 #include "server/db/friend_repository.hpp"
@@ -9,6 +7,8 @@
 #include "server/db/user_repository.hpp"
 #include "server/handlers/response_builder.hpp"
 #include "server/handlers/session_guard.hpp"
+
+#include <algorithm>
 
 namespace hypercom::server {
 namespace {
@@ -19,12 +19,12 @@ namespace {
                        [](std::uint8_t byte) { return byte == 0; });
 }
 
-// Traduit les cles publiques des huit cases en identifiants internes. Renvoie
-// false des qu'une cle est inconnue : mieux vaut refuser tout le top 8 que d'en
-// ecrire une version amputee que l'utilisateur n'a pas demandee.
-[[nodiscard]] bool resolve_top8_entries(
-    user_repository &users, proto::top8_set_request const &request,
-    std::vector<top8_entry> &out)
+// Translates the public keys of the eight slots into internal ids. Returns
+// false as soon as a key is unknown: better to reject the whole top 8 than
+// write a truncated version the user never asked for.
+[[nodiscard]] bool resolve_top8_entries(user_repository &users,
+                                        proto::top8_set_request const &request,
+                                        std::vector<top8_entry> &out)
 {
     for (std::size_t index = 0; index < request.slots.size(); ++index) {
         if (is_empty_slot(request.slots[index])) {
@@ -77,8 +77,8 @@ bool handle_friend_list_request(handler_context &context,
     if (!require_registered_session(context)) {
         return true;
     }
-    // La requete n'a aucun champ : la liste demandee est toujours celle de la
-    // session. Le lecteur n'est la que pour la coherence de signature.
+    // The request has no fields: the list requested is always the session's
+    // own. The reader is only there for signature consistency.
     static_cast<void>(reader);
     friend_repository friends{context.database};
     proto::friend_list_response response;

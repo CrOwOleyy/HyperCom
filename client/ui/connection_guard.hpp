@@ -5,13 +5,13 @@
 
 namespace hypercom::client {
 
-// Garde d'entree pour toute action reseau declenchee par un bouton.
+// Entry guard for any network action triggered by a button.
 //
-// Si la connexion est encore ouverte, ne fait rien d'autre que confirmer
-// state.connected. Si elle est tombee, tente une reconnexion complete :
-// handshake Noise neuf puis defi-reponse neuf, exactement comme au premier
-// lancement. Un echec renseigne state.status_message au lieu de laisser
-// l'action echouer en silence.
+// If the connection is still open, this does nothing more than confirm
+// state.connected. If it dropped, it attempts a full reconnection: a
+// fresh Noise handshake followed by a fresh challenge-response,
+// exactly as on first launch. A failure fills in
+// state.status_message instead of letting the action fail silently.
 [[nodiscard]] bool ensure_connected(cli_context &context, ui_state &state);
 
 } // namespace hypercom::client

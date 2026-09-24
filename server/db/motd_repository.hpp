@@ -1,27 +1,26 @@
 #pragma once
 
-#include <string_view>
-
 #include "common/protocol/motd_message.hpp"
 #include "server/db/database_handle.hpp"
 
+#include <string_view>
+
 namespace hypercom::server {
 
-// Message du jour, modifiable a chaud par la CLI d'administration sans
-// redemarrage ni recompilation. C'est le canal d'annonce du
-// collaborateur.
+// Message of the day, editable live through the admin CLI without a
+// restart or a recompile. This is the operator's announcement channel.
 class motd_repository {
 public:
     explicit motd_repository(database_handle &database);
 
-    // Renvoie false s'il n'y a aucun MOTD actif, ce qui est un etat normal.
+    // Returns false when there's no active MOTD, which is a normal state.
     [[nodiscard]] bool find_active_motd(proto::motd_push &out);
 
     [[nodiscard]] bool publish_motd(std::string_view body);
 
-    // Desactive l'annonce en cours sans en publier de nouvelle. Les anciennes
-    // lignes restent en base : elles servent d'historique des annonces, et
-    // rien n'y est nominatif.
+    // Deactivates the current announcement without publishing a new one.
+    // Old rows remain in the database: they serve as an announcement
+    // history, and nothing in them identifies anyone.
     [[nodiscard]] bool clear_active_motd();
 
 private:

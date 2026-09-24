@@ -5,12 +5,12 @@
 
 namespace hypercom::server {
 
-// Publication et distribution des prekeys X25519 signees.
+// Publishing and distribution of signed X25519 prekeys.
 //
-// Le serveur ne verifie pas la signature au depot. Une prekey mal signee ne
-// penalise que son proprietaire, qui ne recevra plus rien. La verification qui
-// compte est celle du destinataire : c'est la seule qui protege contre un
-// serveur malveillant.
+// The server does not verify the signature on upload. A badly signed prekey
+// only penalizes its own owner, who simply won't receive anything anymore.
+// The verification that matters is the recipient's: it's the only one that
+// protects against a malicious server.
 
 [[nodiscard]] bool handle_prekey_publish_request(handler_context &context,
                                                  proto::byte_reader &reader);

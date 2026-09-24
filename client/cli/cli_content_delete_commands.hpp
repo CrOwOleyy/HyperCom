@@ -1,14 +1,14 @@
 #pragma once
 
+#include "client/cli/cli_context.hpp"
+
 #include <string>
 #include <vector>
 
-#include "client/cli/cli_context.hpp"
-
 namespace hypercom::client {
 
-// Separe de cli_content_commands.hpp, deja a quatre fonctions exposees pour un
-// plafond de cinq.
+// Split off from cli_content_commands.hpp, which already exposes four
+// functions against a cap of five.
 
 [[nodiscard]] bool run_post_delete(cli_context &context,
                                    std::vector<std::string> const &arguments,

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string_view>
-
 #include "server/db/database_handle.hpp"
+
+#include <string_view>
 
 namespace hypercom::server {
 
@@ -12,20 +12,20 @@ enum class step_result {
     failed,
 };
 
-// Requete preparee, exclusivement.
+// A prepared statement, exclusively.
 //
-// Il n'existe aucun moyen de construire une requete a partir
-// d'une chaine assemblee : le seul constructeur prend un litteral SQL et les
-// valeurs arrivent ensuite par sql_binder. Une injection demanderait de
-// modifier ce fichier, pas d'oublier un echappement.
+// There is no way to build a query from an assembled string: the only
+// constructor takes a SQL literal, and values arrive afterward through
+// sql_binder. An injection would require editing this file, not forgetting
+// to escape something.
 class sql_statement {
 public:
     sql_statement(database_handle &database, std::string_view sql);
 
     [[nodiscard]] step_result step_row();
 
-    // Remet la requete a zero pour un nouveau jeu de parametres, ce qui evite
-    // de re-compiler le SQL a chaque iteration.
+    // Resets the statement for a new set of parameters, which avoids
+    // recompiling the SQL on every iteration.
     [[nodiscard]] bool reset_for_reuse();
 
     [[nodiscard]] sqlite3_stmt *get_raw_handle() const;

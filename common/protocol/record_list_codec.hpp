@@ -1,21 +1,21 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 
+#include <cstdint>
+#include <vector>
+
 namespace hypercom::proto {
 
-// Listes : [u16 nombre][elements...]
+// Lists: [u16 count][elements...]
 //
-// Un seul endroit ou le plafond d'une liste est verifie. Recopier la boucle
-// dans chaque message finit toujours par produire une variante ou le reserve()
-// passe avant le controle.
+// A single place where a list's cap is checked. Copy-pasting the loop
+// into every message always ends up producing a variant where reserve()
+// runs before the check.
 //
-// Noter qu'on ne reserve rien d'avance : un pair qui annonce 65535 elements
-// n'obtient aucune allocation tant qu'il n'a pas fourni les octets.
+// Note that nothing is reserved up front: a peer announcing 65535
+// elements gets no allocation until it has actually supplied the bytes.
 
 template <typename record_type>
 [[nodiscard]] bool read_record_list(byte_reader &reader,

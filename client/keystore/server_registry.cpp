@@ -1,14 +1,14 @@
 #include "client/keystore/server_registry.hpp"
 
-#include <algorithm>
-#include <filesystem>
-
 #include "client/keystore/sealed_file.hpp"
 #include "common/crypto/keystore_envelope.hpp"
 #include "common/crypto/secure_memory.hpp"
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/text_field_codec.hpp"
+
+#include <algorithm>
+#include <filesystem>
 
 namespace hypercom::client {
 namespace {
@@ -32,24 +32,24 @@ void write_entry(proto::byte_writer &writer, server_entry const &entry)
     writer.write_integer(static_cast<std::uint8_t>(entry.trust_acknowledged));
 }
 
-// Le fichier vient du disque de l'utilisateur, mais il est lu avec la meme
-// rigueur qu'une trame reseau : un disque corrompu ne doit pas mieux s'en tirer
-// qu'un pair hostile.
+// The file comes from the user's disk, but it's read with the same rigor
+// as a network frame: a corrupted disk must not get any easier a pass
+// than a hostile peer.
 [[nodiscard]] bool read_entry(proto::byte_reader &reader, server_entry &out)
 {
     std::uint8_t raw_source = 0;
     std::uint8_t raw_acknowledged = 0;
-    if (!proto::read_text_field(reader, out.label, MAX_LABEL_LENGTH)
-        || !proto::read_text_field(reader, out.endpoint.host, MAX_HOST_LENGTH)
-        || !reader.read_integer(out.endpoint.port)
-        || !proto::read_text_field(reader, out.endpoint.socks5_host,
-                                   MAX_HOST_LENGTH)
-        || !reader.read_integer(out.endpoint.socks5_port)
-        || !reader.read_fixed_bytes(out.server_key)
-        || !reader.read_integer(raw_source)
-        || !proto::read_text_field(reader, out.imported_identity_path,
-                                   MAX_PATH_LENGTH)
-        || !reader.read_integer(raw_acknowledged)) {
+    if (!proto::read_text_field(reader, out.label, MAX_LABEL_LENGTH) ||
+        !proto::read_text_field(reader, out.endpoint.host, MAX_HOST_LENGTH) ||
+        !reader.read_integer(out.endpoint.port) ||
+        !proto::read_text_field(reader, out.endpoint.socks5_host,
+                                MAX_HOST_LENGTH) ||
+        !reader.read_integer(out.endpoint.socks5_port) ||
+        !reader.read_fixed_bytes(out.server_key) ||
+        !reader.read_integer(raw_source) ||
+        !proto::read_text_field(reader, out.imported_identity_path,
+                                MAX_PATH_LENGTH) ||
+        !reader.read_integer(raw_acknowledged)) {
         return false;
     }
     if (raw_source > static_cast<std::uint8_t>(identity_source::imported)) {
@@ -66,8 +66,8 @@ void write_entry(proto::byte_writer &writer, server_entry const &entry)
     proto::byte_reader reader{plaintext};
     std::uint8_t version = 0;
     std::uint16_t count = 0;
-    if (!reader.read_integer(version) || version != REGISTRY_VERSION
-        || !reader.read_integer(count) || count > MAX_SERVERS) {
+    if (!reader.read_integer(version) || version != REGISTRY_VERSION ||
+        !reader.read_integer(count) || count > MAX_SERVERS) {
         return false;
     }
     out.clear();
@@ -85,7 +85,8 @@ void write_entry(proto::byte_writer &writer, server_entry const &entry)
 
 } // namespace
 
-server_registry::server_registry(std::string path) : path_{std::move(path)} {}
+server_registry::server_registry(std::string path) : path_{std::move(path)}
+{}
 
 bool server_registry::has_stored_registry() const
 {
@@ -131,8 +132,8 @@ bool server_registry::save(std::string_view passphrase,
         write_entry(writer, entry);
     }
     std::vector<std::uint8_t> sealed;
-    bool const succeeded = crypto::seal_blob(passphrase, plaintext, sealed)
-                           && write_sealed_file(path_, sealed, error_out);
+    bool const succeeded = crypto::seal_blob(passphrase, plaintext, sealed) &&
+                           write_sealed_file(path_, sealed, error_out);
     crypto::wipe_bytes(plaintext);
     if (!succeeded && error_out.empty()) {
         error_out = "scellement du registre impossible";

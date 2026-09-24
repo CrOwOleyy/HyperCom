@@ -1,16 +1,16 @@
 #pragma once
 
+#include "common/crypto/key_types.hpp"
+
 #include <cstdint>
 #include <span>
 
-#include "common/crypto/key_types.hpp"
-
 namespace hypercom::crypto {
 
-// Verification separee de identity_keypair, et ce n'est pas un detail : le
-// serveur verifie des signatures en permanence et ne detient jamais la moindre
-// cle privee d'utilisateur. Lui donner acces a un type qui en contient une
-// serait une invitation a l'erreur.
+// Verification kept separate from identity_keypair, and that's not a
+// minor detail: the server verifies signatures constantly and never holds
+// any user private key. Giving it access to a type that contains one
+// would be an invitation for mistakes.
 [[nodiscard]] bool verify_signature(ed25519_public_key const &public_key,
                                     std::span<std::uint8_t const> message,
                                     ed25519_signature const &signature);

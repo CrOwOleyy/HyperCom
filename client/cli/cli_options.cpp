@@ -9,8 +9,8 @@
 namespace hypercom::client {
 namespace {
 
-// Valeurs par defaut du proxy local de Tor, identiques sur toutes les
-// plateformes (tor daemon comme Tor Browser).
+// Default values for Tor's local proxy, identical on all platforms (tor
+// daemon and Tor Browser alike).
 constexpr char const *DEFAULT_TOR_SOCKS_HOST = "127.0.0.1";
 constexpr std::uint16_t DEFAULT_TOR_SOCKS_PORT = 9050;
 constexpr char const *ONION_SUFFIX = ".onion";
@@ -42,14 +42,12 @@ constexpr char const *ONION_SUFFIX = ".onion";
 [[nodiscard]] std::string trim_spaces(std::string_view text)
 {
     std::size_t start = 0;
-    while (start < text.size()
-           && (text[start] == ' ' || text[start] == '\t')) {
+    while (start < text.size() && (text[start] == ' ' || text[start] == '\t')) {
         ++start;
     }
     std::size_t end = text.size();
-    while (end > start
-           && (text[end - 1] == ' ' || text[end - 1] == '\t'
-               || text[end - 1] == '\r')) {
+    while (end > start && (text[end - 1] == ' ' || text[end - 1] == '\t' ||
+                           text[end - 1] == '\r')) {
         --end;
     }
     return std::string{text.substr(start, end - start)};
@@ -60,8 +58,8 @@ constexpr char const *ONION_SUFFIX = ".onion";
                                         std::string &error_out)
 {
     std::size_t const separator = text.rfind(':');
-    if (separator == std::string::npos
-        || !parse_port(text.substr(separator + 1), out.socks5_port)) {
+    if (separator == std::string::npos ||
+        !parse_port(text.substr(separator + 1), out.socks5_port)) {
         error_out = "proxy SOCKS5 invalide, attendu hote:port : " + text;
         return false;
     }
@@ -73,9 +71,9 @@ constexpr char const *ONION_SUFFIX = ".onion";
     return true;
 }
 
-// Une ligne sans '=' est ignoree plutot que rejetee : un fichier de connexion
-// peut porter des commentaires ou des lignes vides sans faire echouer le
-// client. Seule une valeur reconnue et invalide (port) est une erreur fatale.
+// A line without '=' is ignored rather than rejected: a connect file can
+// carry comments or blank lines without making the client fail. Only a
+// recognized but invalid value (port) is a fatal error.
 [[nodiscard]] bool apply_connect_line(std::string_view line, cli_options &out,
                                       std::string &error_out)
 {
@@ -102,10 +100,11 @@ constexpr char const *ONION_SUFFIX = ".onion";
     return true;
 }
 
-// Applique immediatement au point ou --connect-file apparait dans les
-// arguments : un --host/--port/--server-key place APRES sur la meme ligne de
-// commande ecrase la valeur du fichier, un --connect-file place apres les
-// ecrase a son tour. Ordre gauche a droite, sans etat cache.
+// Applied immediately at the point where --connect-file appears in the
+// arguments: a --host/--port/--server-key placed AFTER it on the same
+// command line overwrites the file's value, and a --connect-file placed
+// after those overwrites them in turn. Left-to-right order, no hidden
+// state.
 [[nodiscard]] bool load_connect_file(std::string const &path, cli_options &out,
                                      std::string &error_out)
 {
@@ -139,7 +138,8 @@ void print_cli_usage()
            "  --server <nom>         serveur du registre a viser\n"
            "  --master-seed <chemin> graine dont derivent les identites\n"
            "  --servers <chemin>     registre chiffre des serveurs\n"
-           "  --tor                  passe par Tor (127.0.0.1:9050). Implicite\n"
+           "  --tor                  passe par Tor (127.0.0.1:9050). "
+           "Implicite\n"
            "                          si --host se termine par .onion\n"
            "  --socks5 <hote:port>   proxy SOCKS5 autre que celui par defaut\n"
            "  --direct               force la connexion directe, sans proxy\n"
@@ -191,13 +191,11 @@ bool parse_cli_options(int argc, char **argv, cli_options &out,
                 return false;
             }
         } else if (argument == "--server-key") {
-            if (!take_value(argc, argv, index, out.server_key_hex,
-                            error_out)) {
+            if (!take_value(argc, argv, index, out.server_key_hex, error_out)) {
                 return false;
             }
         } else if (argument == "--identity") {
-            if (!take_value(argc, argv, index, out.identity_path,
-                            error_out)) {
+            if (!take_value(argc, argv, index, out.identity_path, error_out)) {
                 return false;
             }
         } else if (argument == "--server") {
@@ -226,13 +224,13 @@ bool parse_cli_options(int argc, char **argv, cli_options &out,
             out.socks5_port = DEFAULT_TOR_SOCKS_PORT;
         } else if (argument == "--socks5") {
             std::string endpoint;
-            if (!take_value(argc, argv, index, endpoint, error_out)
-                || !parse_proxy_endpoint(endpoint, out, error_out)) {
+            if (!take_value(argc, argv, index, endpoint, error_out) ||
+                !parse_proxy_endpoint(endpoint, out, error_out)) {
                 return false;
             }
         } else if (argument == "--direct") {
-            // Desactivation explicite : utile quand le fichier de connexion
-            // impose Tor mais qu'on veut joindre le serveur en clair.
+            // Explicit disable: useful when the connect file forces Tor
+            // but you want to reach the server in the clear.
             out.socks5_host.clear();
             out.socks5_port = 0;
         } else if (argument == "--replay-intro") {
@@ -247,19 +245,21 @@ bool parse_cli_options(int argc, char **argv, cli_options &out,
         error_out = "aucune commande fournie";
         return false;
     }
-    // Une adresse .onion n'existe pas dans le DNS : sans proxy, la resolution
-    // echouerait sur un « hote introuvable » incomprehensible. On bascule donc
-    // sur le proxy Tor par defaut. C'est ce qui rend Tor actif sans autre
-    // reglage que l'adresse elle-meme -- et --direct permet de s'y soustraire.
+    // A .onion address doesn't exist in DNS: without a proxy, resolution
+    // would fail with a baffling "host not found". So we switch to the
+    // default Tor proxy. This is what makes Tor active with no
+    // configuration beyond the address itself -- and --direct lets you
+    // opt out.
     if (out.socks5_host.empty() && out.host.ends_with(ONION_SUFFIX)) {
         out.socks5_host = DEFAULT_TOR_SOCKS_HOST;
         out.socks5_port = DEFAULT_TOR_SOCKS_PORT;
     }
-    // Deux cas dispensent d'une cle explicite : une commande de registre ne se
-    // connecte a rien, et --server resout l'hote et la cle depuis le registre.
-    if (require_server_key && out.server_label.empty()
-        && !out.command.starts_with("server-")
-        && out.server_key_hex.size() != 64) {
+    // Two cases don't need an explicit key: a registry command doesn't
+    // connect to anything, and --server resolves the host and key from
+    // the registry.
+    if (require_server_key && out.server_label.empty() &&
+        !out.command.starts_with("server-") &&
+        out.server_key_hex.size() != 64) {
         error_out = "--server-key est requis : 64 caracteres hexadecimaux, "
                     "affiches par le serveur a son demarrage. Sinon, --server "
                     "<nom> pour viser un serveur deja enregistre";
@@ -275,11 +275,11 @@ bool read_passphrase(std::string &out, std::string &error_out)
         out = from_environment;
         return true;
     }
-    // Aucune valeur de repli ici. Une passphrase codee en dur se retrouve dans
-    // chaque binaire distribue, donc dans les mains de tout le monde : le
-    // keystore Argon2id ne protegerait plus rien. Le client graphique n'a pas
-    // de console et echouera ici -- c'est voulu, il passe par
-    // HYPERCOM_PASSPHRASE et report_startup_failure le dit.
+    // No fallback value here. A hardcoded passphrase would end up in
+    // every distributed binary, so in everyone's hands: the Argon2id
+    // keystore would no longer protect anything. The graphical client has
+    // no console and will fail here -- that's intentional, it goes
+    // through HYPERCOM_PASSPHRASE and report_startup_failure says so.
     std::cout << "passphrase : " << std::flush;
     if (!std::getline(std::cin, out) || out.empty()) {
         error_out = "passphrase requise";

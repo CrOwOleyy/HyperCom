@@ -5,11 +5,11 @@
 
 namespace hypercom::server {
 
-// Creation et listage des forums.
+// Creating and listing forums.
 //
-// Le serveur ne refuse un forum que sur la forme du nom ou son unicite. Il n'a
-// aucune liste de sujets interdits, aucune validation editoriale, et il n'est
-// pas prevu d'en ajouter : c'est le point du projet.
+// The server only rejects a forum on the shape of its name or its
+// uniqueness. It has no list of forbidden topics, no editorial validation,
+// and there's no plan to add one: that's the whole point of the project.
 
 [[nodiscard]] bool handle_forum_create_request(handler_context &context,
                                                proto::byte_reader &reader);

@@ -1,7 +1,3 @@
-#include <cstddef>
-#include <cstdint>
-#include <span>
-
 #include "common/protocol/auth_message.hpp"
 #include "common/protocol/comment_create_message.hpp"
 #include "common/protocol/dm_ack_message.hpp"
@@ -25,22 +21,26 @@
 #include "common/protocol/thread_fetch_message.hpp"
 #include "common/protocol/top8_message.hpp"
 
-// Harnais libFuzzer sur le parseur de protocole.
+#include <cstddef>
+#include <cstdint>
+#include <span>
+
+// libFuzzer harness for the protocol parser.
 //
-// Probablement le test le plus rentable du projet : le parseur est la premiere
-// chose qu'un inconnu atteint. Il est sans etat, sans I/O et sans acces base,
-// donc ce fichier ne depend que de hypercom_protocol.
+// Probably the project's highest-value test: the parser is the first thing
+// a stranger reaches. It's stateless, has no I/O, and no database access,
+// so this file only depends on hypercom_protocol.
 //
 //   cmake -B build-fuzz -DHYPERCOM_BUILD_FUZZ=ON -DCMAKE_CXX_COMPILER=clang++
 //   ./build-fuzz/bin/fuzz_protocol_frame tools/fuzz/corpus/ -max_len=4096
 //
-// Le harnais ne verifie aucune valeur : le succes est l'ABSENCE de plantage,
-// de lecture hors bornes et d'allocation non bornee. Toute entree doit etre
-// soit decodee, soit rejetee proprement.
+// The harness checks no values: success is the ABSENCE of a crash, an
+// out-of-bounds read, and an unbounded allocation. Every input must either
+// be decoded or cleanly rejected.
 //
-// Chaque decodeur voit les memes octets, chacun sur son propre lecteur. Un
-// decodeur absent de cette liste n'est pas fuzze : penser a l'ajouter en meme
-// temps que le message.
+// Each decoder sees the same bytes, each on its own reader. A decoder
+// missing from this list isn't fuzzed: remember to add it at the same time
+// as the message.
 
 namespace {
 
@@ -116,13 +116,13 @@ extern "C" int LLVMFuzzerTestOneInput(std::uint8_t const *data,
 {
     std::span<std::uint8_t const> const input{data, size};
     proto::frame_header header{};
-    // L'entete d'abord : c'est lui qui borne tout le reste.
-    if (proto::decode_frame_header(input, header)
-        && input.size() >= proto::FRAME_HEADER_SIZE) {
+    // The header first: it's what bounds everything else.
+    if (proto::decode_frame_header(input, header) &&
+        input.size() >= proto::FRAME_HEADER_SIZE) {
         exercise_every_message(input.subspan(proto::FRAME_HEADER_SIZE));
     }
-    // Puis les messages sur les octets bruts, sans entete : un handler ne doit
-    // pas non plus deborder si le routeur lui passe n'importe quoi.
+    // Then the messages on the raw bytes, with no header: a handler must
+    // not overflow either if the router hands it just anything.
     exercise_every_message(input);
     return 0;
 }

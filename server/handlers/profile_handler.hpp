@@ -5,12 +5,12 @@
 
 namespace hypercom::server {
 
-// Profils personnalisables -- le cote MySpace de la v1.
+// Customizable profiles -- the MySpace side of v1.
 //
-// Le profil est public par nature : n'importe quelle session authentifiee peut
-// lire celui de n'importe qui. Il n'y a pas de reglage de visibilite, et c'est
-// coherent avec le reste : ce qui doit rester prive passe par les DM chiffres,
-// pas par un drapeau que le serveur promettrait de respecter.
+// The profile is public by nature: any authenticated session can read
+// anyone's. There is no visibility setting, and that's consistent with the
+// rest: whatever needs to stay private goes through encrypted DMs, not
+// through a flag the server would merely promise to respect.
 
 [[nodiscard]] bool handle_profile_get_request(handler_context &context,
                                               proto::byte_reader &reader);

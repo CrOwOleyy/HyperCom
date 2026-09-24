@@ -5,7 +5,8 @@
 
 namespace hypercom::client {
 
-// Ecran / modal de creation de compte style Discord lorsque la cle n'est pas encore enregistree.
+// Discord-style account creation screen / modal, shown when the key
+// isn't registered yet.
 void draw_auth_modal(cli_context &context, ui_state &state, float scale);
 
 } // namespace hypercom::client

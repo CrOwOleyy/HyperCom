@@ -14,38 +14,49 @@ constexpr std::uint8_t ADDRESS_TYPE_IPV6 = 0x04;
 constexpr std::uint8_t REPLY_SUCCESS = 0x00;
 constexpr std::size_t MAX_DOMAIN_LENGTH = 255;
 
-// La socket expire en lecture toutes les 200 ms. Construire un circuit Tor
-// prend couramment plusieurs secondes, parfois une trentaine : ce plafond
-// laisse le temps au circuit de s'etablir sans bloquer indefiniment.
+// The socket times out on read every 200 ms. Building a Tor circuit
+// commonly takes several seconds, sometimes as many as thirty: this cap
+// leaves enough time for the circuit to establish without blocking
+// indefinitely.
 constexpr int MAX_READ_ATTEMPTS = 150;
 
 [[nodiscard]] std::string describe_reply_code(std::uint8_t code)
 {
     switch (code) {
-        case 0x01: return "echec general du proxy";
-        case 0x02: return "connexion refusee par la regle du proxy";
-        case 0x03: return "reseau injoignable";
-        case 0x04: return "hote injoignable : l'adresse .onion existe-t-elle ?";
-        case 0x05: return "connexion refusee par la cible";
-        case 0x06: return "delai expire";
-        case 0x07: return "commande non supportee par le proxy";
-        case 0x08: return "type d'adresse non supporte par le proxy";
-        default: return "code de reponse inconnu";
+        case 0x01:
+            return "echec general du proxy";
+        case 0x02:
+            return "connexion refusee par la regle du proxy";
+        case 0x03:
+            return "reseau injoignable";
+        case 0x04:
+            return "hote injoignable : l'adresse .onion existe-t-elle ?";
+        case 0x05:
+            return "connexion refusee par la cible";
+        case 0x06:
+            return "delai expire";
+        case 0x07:
+            return "commande non supportee par le proxy";
+        case 0x08:
+            return "type d'adresse non supporte par le proxy";
+        default:
+            return "code de reponse inconnu";
     }
 }
 
-// receive_available n'ajoute que ce qui est disponible : on boucle jusqu'a
-// obtenir le compte voulu. Un retour false signale une vraie fermeture, pas
-// un simple silence.
+// receive_available only appends what's available: we loop until we get
+// the count we want. A false return signals a genuine close, not just
+// silence.
 [[nodiscard]] bool read_exactly(tcp_client_socket &socket,
                                 std::vector<std::uint8_t> &buffer,
                                 std::size_t needed, std::string &error_out)
 {
-    for (int attempt = 0;
-         attempt < MAX_READ_ATTEMPTS && buffer.size() < needed; ++attempt) {
+    for (int attempt = 0; attempt < MAX_READ_ATTEMPTS && buffer.size() < needed;
+         ++attempt) {
         bool received_any = false;
         if (!socket.receive_available(buffer, received_any)) {
-            error_out = "proxy SOCKS5 : connexion fermee pendant la negociation";
+            error_out =
+                "proxy SOCKS5 : connexion fermee pendant la negociation";
             return false;
         }
     }
@@ -88,8 +99,8 @@ constexpr int MAX_READ_ATTEMPTS = 150;
                                       ADDRESS_TYPE_DOMAIN,
                                       static_cast<std::uint8_t>(host.size())};
     request.insert(request.end(), host.begin(), host.end());
-    // Gros-boutiste, impose par le RFC 1928 -- a l'inverse du reste du
-    // protocole HyperCom, qui est petit-boutiste.
+    // Big-endian, mandated by RFC 1928 -- unlike the rest of the HyperCom
+    // protocol, which is little-endian.
     request.push_back(static_cast<std::uint8_t>(port >> 8U));
     request.push_back(static_cast<std::uint8_t>(port & 0xFFU));
     if (!socket.send_all(request)) {
@@ -99,9 +110,9 @@ constexpr int MAX_READ_ATTEMPTS = 150;
     return true;
 }
 
-// L'adresse liee renvoyee par le proxy est de taille variable selon son type.
-// On la lit sans l'utiliser : elle ne sert a rien ici, mais tout octet non
-// consomme polluerait le premier message Noise.
+// The bound address returned by the proxy has a size that varies with its
+// type. We read it without using it: it's of no use here, but any
+// unconsumed byte would pollute the first Noise message.
 [[nodiscard]] std::size_t measure_bound_address(std::uint8_t address_type,
                                                 std::uint8_t first_byte)
 {
@@ -123,9 +134,8 @@ bool perform_socks5_connect(tcp_client_socket &socket,
                             std::string const &target_host,
                             std::uint16_t target_port, std::string &error_out)
 {
-    if (!negotiate_no_auth(socket, error_out)
-        || !send_connect_request(socket, target_host, target_port,
-                                 error_out)) {
+    if (!negotiate_no_auth(socket, error_out) ||
+        !send_connect_request(socket, target_host, target_port, error_out)) {
         return false;
     }
     std::vector<std::uint8_t> reply;
@@ -145,8 +155,9 @@ bool perform_socks5_connect(tcp_client_socket &socket,
         error_out = "proxy SOCKS5 : type d'adresse inattendu dans la reponse";
         return false;
     }
-    // 4 octets d'entete + l'adresse + 2 octets de port. Le cinquieme octet
-    // deja lu fait partie de l'adresse, d'ou le calcul a partir de 4.
+    // 4 header bytes + the address + 2 port bytes. The fifth byte already
+    // read is part of the address, hence the calculation starting from
+    // 4.
     return read_exactly(socket, reply, 4 + address_size + 2, error_out);
 }
 

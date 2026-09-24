@@ -1,20 +1,20 @@
 #pragma once
 
-#include <array>
-#include <vector>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/social_records.hpp"
 #include "common/protocol/wire_key.hpp"
 
+#include <array>
+#include <vector>
+
 namespace hypercom::proto {
 
-// Le « top 8 » de MySpace : huit emplacements ordonnes.
+// MySpace's "top 8": eight ordered slots.
 //
-// Tableau de taille fixe plutot que liste, un emplacement vide se notant par
-// une cle nulle. Accessoirement, il n'y a alors aucun plafond a verifier a la
-// lecture.
+// A fixed-size array rather than a list, with an empty slot denoted by a
+// null key. Incidentally, that also means there's no cap to check on
+// read.
 struct top8_set_request {
     std::array<wire_public_key, TOP8_SLOT_COUNT> slots{};
 
@@ -23,9 +23,9 @@ struct top8_set_request {
     [[nodiscard]] bool read_from(byte_reader &reader);
 };
 
-// Cible dont on consulte le top 8. Sans ce champ, le message ne peut
-// renvoyer que le sien propre -- ce qui viderait le concept de son sens
-// social : voir le top 8 des autres, pas seulement geree le sien.
+// Target whose top 8 is being queried. Without this field, the message
+// could only return one's own -- which would empty the concept of its
+// social meaning: seeing others' top 8, not just managing one's own.
 struct top8_get_request {
     wire_public_key target_pubkey{};
 

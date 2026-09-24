@@ -1,16 +1,16 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/forum_record.hpp"
 
+#include <cstdint>
+#include <vector>
+
 namespace hypercom::proto {
 
-// limit est une demande, pas un ordre : le serveur la rabat sur MAX_LIST_ITEMS.
-// C'est au serveur de decider combien il envoie, jamais au client.
+// limit is a request, not an order: the server clamps it to MAX_LIST_ITEMS.
+// It's the server's call how many it sends, never the client's.
 struct forum_list_request {
     std::uint32_t offset = 0;
     std::uint16_t limit = DEFAULT_LIST_ITEMS;

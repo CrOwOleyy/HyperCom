@@ -1,16 +1,16 @@
 #pragma once
 
-#include <string>
-#include <string_view>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 
+#include <string>
+#include <string_view>
+
 namespace hypercom::proto {
 
-// Creation de compte, envoyee apres l'authentification : la signature du defi
-// a deja prouve qu'on detient la cle privee, il ne reste qu'a choisir un
-// pseudo. Ni email, ni telephone, ni mot de passe.
+// Account creation, sent after authentication: the challenge signature
+// has already proven possession of the private key, all that's left is
+// choosing a handle. No email, no phone, no password.
 struct register_request {
     std::string handle;
 
@@ -19,12 +19,12 @@ struct register_request {
     [[nodiscard]] bool read_from(byte_reader &reader);
 };
 
-// ASCII restreint : lettres, chiffres, tiret, souligne. Entre 3 et
-// MAX_HANDLE_LENGTH caracteres, sans commencer par un chiffre.
+// Restricted ASCII: letters, digits, hyphen, underscore. Between 3 and
+// MAX_HANDLE_LENGTH characters, must not start with a digit.
 //
-// La restriction sert a bloquer les homoglyphes. Un "alice" ecrit en
-// cyrillique s'affiche pareil mais designe un autre compte, et ici personne
-// n'est la pour arbitrer une usurpation.
+// The restriction exists to block homoglyphs. An "alice" written in
+// Cyrillic displays identically but designates a different account, and
+// here nobody is around to arbitrate an impersonation.
 [[nodiscard]] bool validate_handle(std::string_view handle);
 
 } // namespace hypercom::proto

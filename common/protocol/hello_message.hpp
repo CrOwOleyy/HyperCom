@@ -1,15 +1,15 @@
 #pragma once
 
-#include <cstdint>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/wire_key.hpp"
 
+#include <cstdint>
+
 namespace hypercom::proto {
 
-// Ouverture de session, envoyee sur le canal DEJA chiffre par Noise.
-// Le client annonce sa cle publique d'identite ; aucun secret ne circule.
+// Session opening, sent over the channel ALREADY encrypted by Noise.
+// The client announces its identity public key; no secret is transmitted.
 struct hello_request {
     std::uint16_t protocol_version = PROTOCOL_VERSION;
     wire_public_key client_pubkey{};
@@ -19,12 +19,12 @@ struct hello_request {
     [[nodiscard]] bool read_from(byte_reader &reader);
 };
 
-// Reponse du serveur : le defi a signer.
+// Server response: the challenge to sign.
 //
-// account_exists dit au client s'il doit s'authentifier ou s'enregistrer.
-// On ne cherche pas a le cacher : n'importe qui peut deja tester l'existence
-// d'une cle publique, et le client a besoin de l'info pour savoir s'il doit
-// demander un pseudo.
+// account_exists tells the client whether it should authenticate or
+// register. No attempt is made to hide it: anyone can already probe
+// whether a public key exists, and the client needs the info to know
+// whether to ask for a handle.
 struct auth_challenge {
     std::uint16_t protocol_version = PROTOCOL_VERSION;
     wire_nonce nonce{};

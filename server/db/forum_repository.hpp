@@ -1,11 +1,11 @@
 #pragma once
 
+#include "common/protocol/forum_record.hpp"
+#include "server/db/database_handle.hpp"
+
 #include <cstdint>
 #include <string_view>
 #include <vector>
-
-#include "common/protocol/forum_record.hpp"
-#include "server/db/database_handle.hpp"
 
 namespace hypercom::server {
 
@@ -13,8 +13,8 @@ class forum_repository {
 public:
     explicit forum_repository(database_handle &database);
 
-    // La creation est libre : le createur devient fondateur de son espace, et
-    // le serveur n'a aucun avis sur le sujet du forum.
+    // Creation is unrestricted: the creator becomes the founder of their
+    // space, and the server has no opinion on the forum's topic.
     [[nodiscard]] bool create_forum(std::int64_t founder_id,
                                     std::string_view name,
                                     std::string_view description,

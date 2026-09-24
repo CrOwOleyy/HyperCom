@@ -2,12 +2,12 @@
 
 namespace hypercom::server {
 
-// Possession d'un descripteur de fichier POSIX.
+// Ownership of a POSIX file descriptor.
 //
-// Declarer le constructeur de deplacement supprime implicitement la copie :
-// un descripteur ne peut donc pas etre duplique par accident, ce qui evite la
-// double fermeture -- et surtout la fermeture d'un descripteur qui a entre
-// temps ete reattribue a une autre connexion.
+// Declaring the move constructor implicitly deletes the copy: a descriptor
+// can therefore never be duplicated by accident, which avoids a double
+// close -- and especially closing a descriptor that has since been
+// reassigned to another connection.
 class unique_descriptor {
 public:
     explicit unique_descriptor(int descriptor = -1) noexcept;

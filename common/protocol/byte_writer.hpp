@@ -1,21 +1,21 @@
 #pragma once
 
+#include "common/protocol/endian_codec.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <vector>
 
-#include "common/protocol/endian_codec.hpp"
-
 namespace hypercom::proto {
 
-// Pendant du byte_reader, en ecriture.
+// Write-side counterpart to byte_reader.
 //
-// Il ne verifie aucun plafond, contrairement au lecteur. La raison : il ne
-// serialise que des donnees qu'on a construites et deja validees. Le seul
-// controle de taille se fait dans encode_frame, qui refuse un payload trop
-// gros. Si vous vous retrouvez a ecrire ici des donnees venues du reseau,
-// c'est probablement le signe qu'il faut revoir le decoupage.
+// Unlike the reader, it checks no cap. The reason: it only serializes data
+// that we've already built and validated ourselves. The only size check
+// happens in encode_frame, which rejects an oversized payload. If you find
+// yourself writing network-sourced data here, that's probably a sign the
+// split needs rethinking.
 class byte_writer {
 public:
     explicit byte_writer(std::vector<std::uint8_t> &target);
@@ -25,7 +25,7 @@ public:
     {
         std::size_t const offset = target_.size();
         target_.resize(offset + sizeof(T));
-        // La place fait exactement sizeof(T), l'ecriture ne peut pas echouer.
+        // The space is exactly sizeof(T), so the write cannot fail.
         static_cast<void>(store_little_endian(
             value, std::span<std::uint8_t>{target_}.subspan(offset)));
     }

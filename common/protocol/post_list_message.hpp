@@ -1,11 +1,11 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/content_records.hpp"
+
+#include <cstdint>
+#include <vector>
 
 namespace hypercom::proto {
 
@@ -19,8 +19,9 @@ struct post_list_request {
     [[nodiscard]] bool read_from(byte_reader &reader);
 };
 
-// Dans une liste, le serveur tronque le corps a MAX_POST_PREVIEW_LENGTH.
-// Sinon une seule requete tirerait 200 x 16 KiB et ferait deborder la trame.
+// In a list, the server truncates the body to MAX_POST_PREVIEW_LENGTH.
+// Otherwise a single request could pull 200 x 16 KiB and overflow the
+// frame.
 struct post_list_response {
     std::vector<post_record> posts;
     std::uint32_t total_count = 0;

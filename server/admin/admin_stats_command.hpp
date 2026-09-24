@@ -1,15 +1,16 @@
 #pragma once
 
-#include <string>
-
 #include "server/admin/admin_context.hpp"
+
+#include <string>
 
 namespace hypercom::server {
 
-// `stats` : etat du serveur et volumetrie de la base.
+// `stats`: server state and database volume metrics.
 //
-// Rien de nominatif ici, que des agregats. Un administrateur doit pouvoir
-// surveiller la sante du service sans rien apprendre sur qui l'utilise.
+// Nothing identifying here, only aggregates. An administrator must be able
+// to monitor the service's health without learning anything about who uses
+// it.
 [[nodiscard]] std::string run_stats_command(admin_context &context);
 
 } // namespace hypercom::server

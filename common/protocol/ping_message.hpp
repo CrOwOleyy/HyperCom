@@ -1,14 +1,14 @@
 #pragma once
 
-#include <cstdint>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 
+#include <cstdint>
+
 namespace hypercom::proto {
 
-// Le jeton est renvoye tel quel : il permet au client d'apparier reponse et
-// requete, et de mesurer une latence sans horloge partagee.
+// The token is echoed back unchanged: it lets the client match response to
+// request, and measure latency without a shared clock.
 struct ping_request {
     std::uint64_t token = 0;
 

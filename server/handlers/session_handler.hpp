@@ -5,17 +5,17 @@
 
 namespace hypercom::server {
 
-// Ouverture de session et authentification par defi-reponse.
+// Session opening and challenge-response authentication.
 //
-// Deroule complet, au-dessus du canal Noise deja etabli :
-//   1. hello_request     le client annonce sa cle publique
-//   2. auth_challenge    le serveur renvoie un nonce de 32 octets
-//   3. auth_response     le client signe le nonce avec sa cle privee
-//   4. auth_accepted     le serveur verifie la signature
+// Full sequence, on top of the already-established Noise channel:
+//   1. hello_request     the client announces its public key
+//   2. auth_challenge    the server returns a 32-byte nonce
+//   3. auth_response     the client signs the nonce with its private key
+//   4. auth_accepted     the server verifies the signature
 //
-// Aucun mot de passe n'est transmis, stocke, ni meme existant cote serveur.
-// Le retour false ferme la connexion, il ne signale pas une erreur metier --
-// celles-ci partent en status_error et la session continue.
+// No password is ever transmitted, stored, or even exists server-side.
+// Returning false closes the connection, it does not signal a business
+// error -- those go out as status_error and the session continues.
 
 [[nodiscard]] bool handle_hello_request(handler_context &context,
                                         proto::byte_reader &reader);

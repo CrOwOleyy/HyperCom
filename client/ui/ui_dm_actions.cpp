@@ -1,7 +1,5 @@
 #include "client/ui/ui_dm_actions.hpp"
 
-#include <algorithm>
-
 #include "client/dm/dm_courier.hpp"
 #include "client/net/message_exchange.hpp"
 #include "client/ui/connection_guard.hpp"
@@ -12,6 +10,8 @@
 #include "common/protocol/prekey_publish_message.hpp"
 #include "common/util/hex_codec.hpp"
 #include "common/util/unix_clock.hpp"
+
+#include <algorithm>
 
 namespace hypercom::client {
 namespace {
@@ -42,8 +42,7 @@ void publish_own_prekey(cli_context &context, ui_state &state)
     }
     proto::prekey_publish_request request;
     crypto::x25519_secret_key prekey_secret{};
-    if (!derive_local_prekey(context.identity, request.prekey,
-                             prekey_secret)) {
+    if (!derive_local_prekey(context.identity, request.prekey, prekey_secret)) {
         report_failure(state, "derivation de la prekey impossible");
         return;
     }
@@ -58,10 +57,10 @@ void publish_own_prekey(cli_context &context, ui_state &state)
     proto::status_ok_response response;
     if (!send_typed_message(context.connection,
                             proto::message_type::prekey_publish_request,
-                            request)
-        || !receive_typed_message(context.connection,
-                                  proto::message_type::status_ok, response,
-                                  failure)) {
+                            request) ||
+        !receive_typed_message(context.connection,
+                               proto::message_type::status_ok, response,
+                               failure)) {
         report_failure(state, failure);
         return;
     }
@@ -78,10 +77,10 @@ void refresh_inbox(cli_context &context, ui_state &state)
     std::string failure;
     proto::dm_list_response response;
     if (!send_typed_message(context.connection,
-                            proto::message_type::dm_fetch_request, request)
-        || !receive_typed_message(context.connection,
-                                  proto::message_type::dm_list_response,
-                                  response, failure)) {
+                            proto::message_type::dm_fetch_request, request) ||
+        !receive_typed_message(context.connection,
+                               proto::message_type::dm_list_response, response,
+                               failure)) {
         report_failure(state, failure);
         return;
     }
@@ -90,11 +89,11 @@ void refresh_inbox(cli_context &context, ui_state &state)
         decrypted_message entry;
         util::encode_hex(envelope.sender_pubkey, entry.sender_hex);
         std::string reason;
-        // La date vient du chiffre, pas du serveur : elle est donc absente si
-        // le message n'a pas pu etre ouvert.
-        entry.readable = open_direct_message(context.identity,
-                                             envelope.ciphertext, entry.text,
-                                             entry.received_at, reason);
+        // The date comes from the ciphertext, not the server: it is
+        // therefore missing if the message couldn't be opened.
+        entry.readable =
+            open_direct_message(context.identity, envelope.ciphertext,
+                                entry.text, entry.received_at, reason);
         if (!entry.readable) {
             entry.text = reason;
         } else {
@@ -109,9 +108,9 @@ void refresh_inbox(cli_context &context, ui_state &state)
     if (send_typed_message(context.connection,
                            proto::message_type::dm_ack_request,
                            acknowledgement)) {
-        static_cast<void>(receive_typed_message(
-            context.connection, proto::message_type::status_ok, acknowledged,
-            failure));
+        static_cast<void>(receive_typed_message(context.connection,
+                                                proto::message_type::status_ok,
+                                                acknowledged, failure));
     }
 }
 
@@ -121,8 +120,7 @@ void submit_direct_message(cli_context &context, ui_state &state)
         return;
     }
     proto::dm_send_request request;
-    if (!parse_public_key(state.dm_recipient_input,
-                          request.recipient_pubkey)) {
+    if (!parse_public_key(state.dm_recipient_input, request.recipient_pubkey)) {
         report_failure(state, "cle publique du destinataire invalide");
         return;
     }
@@ -131,15 +129,16 @@ void submit_direct_message(cli_context &context, ui_state &state)
     std::string failure;
     proto::prekey_bundle_response bundle;
     if (!send_typed_message(context.connection,
-                            proto::message_type::prekey_fetch_request, fetch)
-        || !receive_typed_message(context.connection,
-                                  proto::message_type::prekey_bundle_response,
-                                  bundle, failure)) {
+                            proto::message_type::prekey_fetch_request, fetch) ||
+        !receive_typed_message(context.connection,
+                               proto::message_type::prekey_bundle_response,
+                               bundle, failure)) {
         report_failure(state, failure);
         return;
     }
-    // Le chiffrement precede l'envoi. Ce qui quitte cette machine est deja
-    // opaque, et le serveur n'aura jamais rien d'autre que ces octets.
+    // Encryption happens before sending. What leaves this machine is
+    // already opaque, and the server will never have anything but
+    // these bytes.
     if (!seal_direct_message(context.identity, bundle, state.dm_text_input,
                              request.ciphertext, failure)) {
         report_failure(state, failure);
@@ -147,10 +146,10 @@ void submit_direct_message(cli_context &context, ui_state &state)
     }
     proto::status_ok_response response;
     if (!send_typed_message(context.connection,
-                            proto::message_type::dm_send_request, request)
-        || !receive_typed_message(context.connection,
-                                  proto::message_type::status_ok, response,
-                                  failure)) {
+                            proto::message_type::dm_send_request, request) ||
+        !receive_typed_message(context.connection,
+                               proto::message_type::status_ok, response,
+                               failure)) {
         report_failure(state, failure);
         return;
     }

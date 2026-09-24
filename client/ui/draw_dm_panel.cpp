@@ -1,7 +1,5 @@
 #include "client/ui/draw_dm_panel.hpp"
 
-#include <imgui.h>
-
 #include "client/net/message_exchange.hpp"
 #include "client/ui/aero_theme.hpp"
 #include "client/ui/connection_guard.hpp"
@@ -10,15 +8,20 @@
 #include "client/ui/ui_dm_actions.hpp"
 #include "common/protocol/profile_set_message.hpp"
 
+#include <imgui.h>
+
 namespace hypercom::client {
 namespace {
 
-void draw_profile_editor(cli_context &context, ui_state &state, float bio_height)
+void draw_profile_editor(cli_context &context, ui_state &state,
+                         float bio_height)
 {
     draw_section_heading(tr("profile_heading", state.current_lang));
-    ImGui::InputText(tr("profile_name", state.current_lang), state.display_name_input,
+    ImGui::InputText(tr("profile_name", state.current_lang),
+                     state.display_name_input,
                      sizeof(state.display_name_input));
-    ImGui::InputTextMultiline(tr("profile_bio", state.current_lang), state.bio_input, sizeof(state.bio_input),
+    ImGui::InputTextMultiline(tr("profile_bio", state.current_lang),
+                              state.bio_input, sizeof(state.bio_input),
                               ImVec2{0.0f, bio_height});
     if (!ImGui::Button(tr("profile_btn_save", state.current_lang))) {
         return;
@@ -32,10 +35,10 @@ void draw_profile_editor(cli_context &context, ui_state &state, float bio_height
     std::string failure;
     proto::status_ok_response response;
     if (send_typed_message(context.connection,
-                           proto::message_type::profile_set_request, request)
-        && receive_typed_message(context.connection,
-                                 proto::message_type::status_ok, response,
-                                 failure)) {
+                           proto::message_type::profile_set_request, request) &&
+        receive_typed_message(context.connection,
+                              proto::message_type::status_ok, response,
+                              failure)) {
         state.status_message = "profil enregistre";
         state.status_is_error = false;
     } else {
@@ -55,7 +58,9 @@ void draw_inbox(ui_state const &state, float inbox_height)
             ImGui::TextWrapped("%s", entry.text.c_str());
         } else {
             ImGui::PushStyleColor(ImGuiCol_Text, AERO_ALERT);
-            ImGui::TextWrapped("%s : %s", tr("dm_unreadable", state.current_lang), entry.text.c_str());
+            ImGui::TextWrapped("%s : %s",
+                               tr("dm_unreadable", state.current_lang),
+                               entry.text.c_str());
             ImGui::PopStyleColor();
         }
         ImGui::Separator();
@@ -65,7 +70,8 @@ void draw_inbox(ui_state const &state, float inbox_height)
 
 } // namespace
 
-void draw_identity_panel(cli_context &context, ui_state &state, float bio_height)
+void draw_identity_panel(cli_context &context, ui_state &state,
+                         float bio_height)
 {
     draw_section_heading(tr("identity_heading", state.current_lang));
     ImGui::Text("@%s", state.handle.c_str());
@@ -75,8 +81,9 @@ void draw_identity_panel(cli_context &context, ui_state &state, float bio_height
     if (ImGui::Button(tr("identity_copy_key", state.current_lang))) {
         ImGui::SetClipboardText(state.identity_hex.c_str());
     }
-    // Consequence directe d'une cle par serveur : mieux vaut l'expliquer ici
-    // que laisser l'utilisateur s'etonner de ne pas etre reconnu ailleurs.
+    // A direct consequence of having one key per server: better to
+    // explain it here than leave the user puzzled about not being
+    // recognized elsewhere.
     ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK_MUTED);
     ImGui::TextWrapped("%s", tr("identity_per_server", state.current_lang));
     ImGui::PopStyleColor();
@@ -84,7 +91,8 @@ void draw_identity_panel(cli_context &context, ui_state &state, float bio_height
     draw_profile_editor(context, state, bio_height);
 }
 
-void draw_dm_panel(cli_context &context, ui_state &state, float inbox_height, float input_height)
+void draw_dm_panel(cli_context &context, ui_state &state, float inbox_height,
+                   float input_height)
 {
     draw_section_heading(tr("dm_heading", state.current_lang));
     draw_status_dot(true, tr("dm_status", state.current_lang));
@@ -100,7 +108,8 @@ void draw_dm_panel(cli_context &context, ui_state &state, float inbox_height, fl
         refresh_inbox(context, state);
     }
     draw_inbox(state, inbox_height);
-    ImGui::InputText(tr("dm_recipient", state.current_lang), state.dm_recipient_input,
+    ImGui::InputText(tr("dm_recipient", state.current_lang),
+                     state.dm_recipient_input,
                      sizeof(state.dm_recipient_input));
     ImGui::InputTextMultiline("##dm", state.dm_text_input,
                               sizeof(state.dm_text_input),

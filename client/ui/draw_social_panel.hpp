@@ -5,9 +5,10 @@
 
 namespace hypercom::client {
 
-// Volet social de la colonne laterale : amis, profil consulte, top 8.
-// Seule entree publique -- le decoupage interne (liste d'amis, profil
-// consulte, editeur de top 8) reste prive, sur le modele de draw_dm_panel().
+// Social pane of the side column: friends, viewed profile, top 8.
+// The only public entry point -- the internal breakdown (friend list,
+// viewed profile, top 8 editor) stays private, following the pattern
+// of draw_dm_panel().
 void draw_social_panel(cli_context &context, ui_state &state, float height);
 
 } // namespace hypercom::client

@@ -6,19 +6,20 @@
 
 namespace hypercom::client {
 
-// Actions reseau du volet social. Meme discipline que ui_actions.hpp :
-// synchrones, un aller-retour par appel, aucune erreur avalee en silence.
+// Network actions for the social pane. Same discipline as
+// ui_actions.hpp: synchronous, one round trip per call, no error
+// swallowed silently.
 
 void refresh_friend_list(cli_context &context, ui_state &state);
 
-// Lit state.friend_add_input, ajoute la cle en ami (statut accepte -- meme
-// comportement que le CLI, pas de flux de demande a confirmer), puis
-// rafraichit la liste.
+// Reads state.friend_add_input, adds the key as a friend (accepted
+// status -- same behavior as the CLI, no request flow to confirm),
+// then refreshes the list.
 void add_friend(cli_context &context, ui_state &state);
 
-// Charge le profil ET le top 8 de la cible dans state.viewed_profile /
-// viewed_top8_*. Les deux vont ensemble : consulter quelqu'un, c'est voir
-// les deux a la fois.
+// Loads both the profile AND the top 8 of the target into
+// state.viewed_profile / viewed_top8_*. The two go together: viewing
+// someone means seeing both at once.
 void view_profile(cli_context &context, ui_state &state,
                   proto::wire_public_key const &target_pubkey);
 

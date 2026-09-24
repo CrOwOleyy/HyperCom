@@ -1,17 +1,17 @@
 #pragma once
 
-#include <string>
-
 #include "common/crypto/key_types.hpp"
+
+#include <string>
 
 namespace hypercom::server {
 
-// Paire statique X25519 du serveur, celle que le client epingle (motif NK).
+// The server's static X25519 keypair, the one the client pins (NK pattern).
 //
-// Elle est generee au premier demarrage si le fichier n'existe pas, avec les
-// droits 0600. Cette cle est l'equivalent d'un certificat serveur : la
-// remplacer casse l'epinglage de tous les clients, exactement comme prevu --
-// c'est ce qui rend une substitution de serveur visible plutot que silencieuse.
+// It's generated on first startup if the file doesn't exist, with 0600
+// permissions. This key is the equivalent of a server certificate:
+// replacing it breaks the pinning of every client, exactly as intended --
+// that's what makes a server substitution visible instead of silent.
 [[nodiscard]] bool load_or_create_server_key(
     std::string const &path, crypto::x25519_public_key &public_key,
     crypto::x25519_secret_key &secret_key, std::string &error_out);

@@ -1,18 +1,18 @@
 #include "server/db/forum_repository.hpp"
 
-#include <string>
-
 #include "common/util/unix_clock.hpp"
 #include "server/db/sql_binder.hpp"
 #include "server/db/sql_column_reader.hpp"
 #include "server/db/sql_statement.hpp"
 
+#include <string>
+
 namespace hypercom::server {
 namespace {
 
-// Le nombre de posts est calcule par sous-requete plutot que maintenu dans une
-// colonne : un compteur denormalise finit toujours par diverger, et a cette
-// echelle le cout est negligeable.
+// The post count is computed via a subquery rather than maintained in a
+// column: a denormalized counter always ends up drifting, and at this
+// scale the cost is negligible.
 constexpr char const *SELECT_FORUM =
     "SELECT f.id, f.name, f.description, u.pubkey, u.handle, f.theme_json,"
     "       f.created_at,"
@@ -39,8 +39,7 @@ constexpr char const *SELECT_FORUM =
 
 forum_repository::forum_repository(database_handle &database)
     : database_{database}
-{
-}
+{}
 
 bool forum_repository::create_forum(std::int64_t founder_id,
                                     std::string_view name,
@@ -52,13 +51,12 @@ bool forum_repository::create_forum(std::int64_t founder_id,
         database_,
         "INSERT INTO forums (name, founder_id, description, theme_json,"
         "                    created_at) VALUES (?1, ?2, ?3, ?4, ?5)"};
-    if (!bind_text(statement, 1, name)
-        || !bind_integer(statement, 2, founder_id)
-        || !bind_text(statement, 3, description)
-        || !bind_text(statement, 4, theme_json)
-        || !bind_integer(statement, 5,
-                         static_cast<std::int64_t>(
-                             util::get_unix_timestamp()))) {
+    if (!bind_text(statement, 1, name) ||
+        !bind_integer(statement, 2, founder_id) ||
+        !bind_text(statement, 3, description) ||
+        !bind_text(statement, 4, theme_json) ||
+        !bind_integer(statement, 5,
+                      static_cast<std::int64_t>(util::get_unix_timestamp()))) {
         return false;
     }
     if (statement.step_row() != step_result::done) {
@@ -72,8 +70,8 @@ bool forum_repository::find_by_id(std::int64_t id, proto::forum_record &out)
 {
     sql_statement statement{database_,
                             std::string{SELECT_FORUM} + "WHERE f.id = ?1"};
-    if (!bind_integer(statement, 1, id)
-        || statement.step_row() != step_result::row) {
+    if (!bind_integer(statement, 1, id) ||
+        statement.step_row() != step_result::row) {
         return false;
     }
     return read_forum_record(statement, out);
@@ -84,8 +82,8 @@ bool forum_repository::find_by_name(std::string_view name,
 {
     sql_statement statement{database_,
                             std::string{SELECT_FORUM} + "WHERE f.name = ?1"};
-    if (!bind_text(statement, 1, name)
-        || statement.step_row() != step_result::row) {
+    if (!bind_text(statement, 1, name) ||
+        statement.step_row() != step_result::row) {
         return false;
     }
     return read_forum_record(statement, out);
@@ -100,11 +98,11 @@ bool forum_repository::list_forums(std::uint32_t offset, std::uint16_t limit,
         return false;
     }
     total_count = static_cast<std::uint32_t>(read_integer(counter, 0));
-    sql_statement statement{database_, std::string{SELECT_FORUM}
-                                           + "ORDER BY f.created_at DESC "
-                                             "LIMIT ?1 OFFSET ?2"};
-    if (!bind_integer(statement, 1, limit)
-        || !bind_integer(statement, 2, offset)) {
+    sql_statement statement{database_, std::string{SELECT_FORUM} +
+                                           "ORDER BY f.created_at DESC "
+                                           "LIMIT ?1 OFFSET ?2"};
+    if (!bind_integer(statement, 1, limit) ||
+        !bind_integer(statement, 2, offset)) {
         return false;
     }
     out.clear();

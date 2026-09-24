@@ -1,9 +1,9 @@
 #include "server/admin/admin_session_command.hpp"
 
-#include <charconv>
-
 #include "common/util/unix_clock.hpp"
 #include "server/admin/admin_text_format.hpp"
+
+#include <charconv>
 
 namespace hypercom::server {
 namespace {
@@ -11,30 +11,34 @@ namespace {
 [[nodiscard]] std::string_view describe_phase(session_phase phase)
 {
     switch (phase) {
-        case session_phase::awaiting_handshake: return "handshake";
-        case session_phase::awaiting_hello:     return "hello";
-        case session_phase::awaiting_auth:      return "auth";
-        case session_phase::authenticated:      return "authentifiee";
+        case session_phase::awaiting_handshake:
+            return "handshake";
+        case session_phase::awaiting_hello:
+            return "hello";
+        case session_phase::awaiting_auth:
+            return "auth";
+        case session_phase::authenticated:
+            return "authentifiee";
     }
     return "inconnue";
 }
 
-// Volontairement sans identite : ni pseudo, ni cle publique. Un administrateur
-// qui pourrait lister qui est en ligne, depuis quand, aurait un tableau de
-// bord de presence -- exactement l'outil de surveillance que le projet existe
-// pour rendre impossible. Il n'y a pas de reglage pour reactiver la colonne :
-// ce n'est pas une politique qu'on ouvre au cas par cas, comme
-// log_peer_addresses, c'est une fonctionnalite qui n'existe pas.
+// Deliberately without identity: no username, no public key. An
+// administrator who could list who's online, and since when, would have a
+// presence dashboard -- exactly the surveillance tool the project exists to
+// make impossible. There's no setting to bring the column back: this isn't
+// a policy that gets opened up case by case, like log_peer_addresses, it's
+// a feature that doesn't exist.
 //
-// Ce qui reste sert un besoin operationnel reel sans jamais retomber sur une
-// personne : combien de connexions, dans quel etat, depuis combien de temps --
-// de quoi reperer un handshake bloque ou un slot de connexion qui traine, pas
-// de quoi savoir qui parle au reseau.
+// What's left serves a real operational need without ever pointing back to
+// a person: how many connections, in what state, for how long -- enough to
+// spot a stuck handshake or a lingering connection slot, not enough to know
+// who's talking on the network.
 [[nodiscard]] std::string list_sessions(admin_context &context)
 {
     std::uint64_t const now = util::get_unix_timestamp();
-    std::string text = pad_right("DESCR", 6) + pad_right("ETAT", 14)
-                       + pad_right("DEPUIS", 14) + "INACTIF\n";
+    std::string text = pad_right("DESCR", 6) + pad_right("ETAT", 14) +
+                       pad_right("DEPUIS", 14) + "INACTIF\n";
     for (auto const &entry : context.registry.connections) {
         session_state const &session = entry.second->session;
         text += pad_right(std::to_string(entry.first), 6);
@@ -59,8 +63,8 @@ namespace {
     if (parsed.ec != std::errc{}) {
         return "usage : sessions close <descripteur>\n";
     }
-    if (context.registry.connections.find(descriptor)
-        == context.registry.connections.end()) {
+    if (context.registry.connections.find(descriptor) ==
+        context.registry.connections.end()) {
         return "descripteur inconnu : " + argument + "\n";
     }
     close_requests.push_back(descriptor);

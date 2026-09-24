@@ -1,7 +1,5 @@
 #include "server/handlers/content_handler.hpp"
 
-#include <algorithm>
-
 #include "common/protocol/comment_create_message.hpp"
 #include "common/protocol/post_create_message.hpp"
 #include "common/protocol/post_list_message.hpp"
@@ -11,6 +9,8 @@
 #include "server/db/post_repository.hpp"
 #include "server/handlers/response_builder.hpp"
 #include "server/handlers/session_guard.hpp"
+
+#include <algorithm>
 
 namespace hypercom::server {
 namespace {
@@ -136,10 +136,10 @@ bool handle_comment_create_request(handler_context &context,
                                  proto::error_code::not_found);
     }
     comment_repository comments{context.database};
-    // Un parent doit appartenir au meme post : sans ce controle, un client
-    // pourrait greffer sa reponse sous le fil de quelqu'un d'autre.
-    if (request.parent_comment_id != 0
-        && !comments.check_parent_belongs_to_post(
+    // A parent must belong to the same post: without this check, a client
+    // could graft its reply under someone else's thread.
+    if (request.parent_comment_id != 0 &&
+        !comments.check_parent_belongs_to_post(
             static_cast<std::int64_t>(request.parent_comment_id),
             static_cast<std::int64_t>(request.post_id))) {
         return send_status_error(context.connection,

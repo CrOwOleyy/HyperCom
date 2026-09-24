@@ -1,11 +1,11 @@
 #pragma once
 
+#include "common/protocol/content_records.hpp"
+#include "server/db/database_handle.hpp"
+
 #include <cstdint>
 #include <string_view>
 #include <vector>
-
-#include "common/protocol/content_records.hpp"
-#include "server/db/database_handle.hpp"
 
 namespace hypercom::server {
 
@@ -16,31 +16,31 @@ public:
     [[nodiscard]] bool create_post(std::int64_t forum_id,
                                    std::int64_t author_id,
                                    std::string_view title,
-                                   std::string_view body,
-                                   std::int64_t &out_id);
+                                   std::string_view body, std::int64_t &out_id);
 
     [[nodiscard]] bool find_by_id(std::int64_t id, proto::post_record &out);
 
-    // Le corps est tronque a MAX_POST_PREVIEW_LENGTH dans une liste : c'est la
-    // requete qui tronque, pas le C++, pour ne pas transporter 16 KiB par post
-    // depuis sqlite avant de les jeter.
+    // The body is truncated to MAX_POST_PREVIEW_LENGTH in a listing: the
+    // query does the truncating, not the C++, to avoid hauling 16 KiB per
+    // post out of sqlite just to discard it.
     [[nodiscard]] bool list_by_forum(std::int64_t forum_id,
                                      std::uint32_t offset, std::uint16_t limit,
                                      std::vector<proto::post_record> &out,
                                      std::uint32_t &total_count);
 
-    // La propriete se verifie dans le WHERE, pas en C++ : un post qui n'est pas
-    // celui de author_id ne correspond a aucune ligne. Renvoie false si rien
-    // n'a ete touche -- inexistant, deja supprime, ou pas le sien. Le texte est
-    // efface, la ligne survit pour que l'arborescence du fil tienne.
+    // Ownership is checked in the WHERE clause, not in C++: a post that
+    // doesn't belong to author_id matches no row. Returns false if nothing
+    // was touched -- nonexistent, already deleted, or not theirs. The text
+    // is wiped, the row survives so the thread's tree structure holds
+    // together.
     [[nodiscard]] bool delete_own_post(std::int64_t post_id,
                                        std::int64_t author_id);
 
-    // Reserve a la commande d'administration `reports delete-post`
-    // (BRIEF.md 13). N'existe deliberement pas cote protocole -- voir
-    // content_delete_handler.hpp. Inconditionnel, contrairement a
-    // delete_own_post : c'est a l'appelant de s'assurer qu'un signalement
-    // legitime en est la cause.
+    // Reserved for the admin command `reports delete-post` (BRIEF.md 13).
+    // Deliberately absent from the protocol side -- see
+    // content_delete_handler.hpp. Unconditional, unlike delete_own_post:
+    // it's up to the caller to make sure a legitimate report is the reason
+    // behind it.
     [[nodiscard]] bool admin_delete_post(std::int64_t post_id);
 
 private:

@@ -1,20 +1,20 @@
 #pragma once
 
+#include "client/net/server_connection.hpp"
+#include "common/crypto/key_types.hpp"
+
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include "client/net/server_connection.hpp"
-#include "common/crypto/key_types.hpp"
-
 namespace hypercom::client {
 
-// D'ou vient l'identite utilisee sur un serveur donne.
+// Where the identity used on a given server comes from.
 //
-// derived : deduite de la graine maitresse, rien de plus a stocker.
-// imported : une paire de cles anterieure au multi-serveurs, tiree au hasard et
-//   donc non reproductible depuis une graine. Son fichier reste utilise tel
-//   quel, ce qui evite de perdre les comptes crees avant ce changement.
+// derived: deduced from the master seed, nothing more to store.
+// imported: a key pair predating multi-server support, drawn at random
+//   and therefore not reproducible from a seed. Its file keeps being used
+//   as is, which avoids losing accounts created before this change.
 enum class identity_source : std::uint8_t {
     derived = 0,
     imported = 1,
@@ -26,17 +26,16 @@ struct server_entry {
     crypto::x25519_public_key server_key{};
     identity_source source = identity_source::derived;
     std::string imported_identity_path;
-    // Faux tant que l'utilisateur n'a pas vu l'avertissement expliquant ce que
-    // l'operateur de ce serveur pourra observer. Persiste pour ne l'afficher
-    // qu'une fois par serveur.
+    // False until the user has seen the warning explaining what this
+    // server's operator will be able to observe. Persisted so it's shown
+    // only once per server.
     bool trust_acknowledged = false;
 };
 
-// La liste des serveurs frequentes, scellee sur le disque.
+// The list of servers you've joined, sealed on disk.
 //
-// Elle est chiffree parce qu'elle revele des appartenances : savoir sur quels
-// serveurs quelqu'un se connecte en dit souvent plus long que le contenu de ce
-// qu'il y publie.
+// It's encrypted because it reveals affiliations: knowing which servers
+// someone connects to often says more than the content they post there.
 class server_registry {
 public:
     explicit server_registry(std::string path);

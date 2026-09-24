@@ -4,9 +4,9 @@
 
 namespace hypercom::util {
 
-// Horodatage unique du projet : secondes depuis l'epoque UNIX, UTC.
-// Toutes les dates stockees ou transmises utilisent cette unite, jamais une
-// heure locale ni un format textuel.
+// The project's single timestamp format: seconds since the UNIX epoch,
+// UTC. Every date stored or transmitted uses this unit, never a local
+// time or a textual format.
 [[nodiscard]] std::uint64_t get_unix_timestamp();
 
 } // namespace hypercom::util

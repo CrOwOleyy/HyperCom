@@ -13,8 +13,8 @@ bool insert_connection(connection_registry &registry,
     }
     std::string const &address = entry->session.peer_address;
     auto const existing = registry.address_counts.find(address);
-    if (existing != registry.address_counts.end()
-        && existing->second >= registry.max_connections_per_address) {
+    if (existing != registry.address_counts.end() &&
+        existing->second >= registry.max_connections_per_address) {
         return false;
     }
     int const descriptor = entry->socket.get_descriptor();
@@ -33,8 +33,8 @@ void remove_connection(connection_registry &registry, int descriptor)
         registry.address_counts.find(entry->second->session.peer_address);
     if (counted != registry.address_counts.end()) {
         if (counted->second <= 1) {
-            // L'entree est retiree plutot que laissee a zero : la table ne doit
-            // pas accumuler les adresses deja vues.
+            // The entry is removed rather than left at zero: the table must
+            // not accumulate addresses it has already seen.
             registry.address_counts.erase(counted);
         } else {
             counted->second -= 1;
@@ -47,33 +47,31 @@ client_connection *find_connection(connection_registry &registry,
                                    int descriptor)
 {
     auto const entry = registry.connections.find(descriptor);
-    return entry == registry.connections.end() ? nullptr
-                                               : entry->second.get();
+    return entry == registry.connections.end() ? nullptr : entry->second.get();
 }
 
-std::vector<int> collect_expired_descriptors(
-    connection_registry const &registry, std::uint64_t now,
-    limits_config const &limits)
+std::vector<int>
+collect_expired_descriptors(connection_registry const &registry,
+                            std::uint64_t now, limits_config const &limits)
 {
     std::vector<int> expired;
     for (auto const &entry : registry.connections) {
         session_state const &session = entry.second->session;
-        bool const handshaking =
-            session.phase != session_phase::authenticated;
-        // idle_timeout_seconds == 0 signifie desactive : une session
-        // authentifiee reste ouverte tant que le pair est la, seul le
-        // keepalive TCP recupere une connexion vraiment morte (BRIEF.md 9,
-        // "pas de timeout applicatif"). Le handshake, lui, reste borne : une
-        // connexion qui ne finit jamais son Noise est le cout d'attaque le
-        // plus bas qui soit.
+        bool const handshaking = session.phase != session_phase::authenticated;
+        // idle_timeout_seconds == 0 means disabled: an authenticated
+        // session stays open for as long as the peer is there, only TCP
+        // keepalive reclaims a truly dead connection (BRIEF.md 9, "no
+        // application-level timeout"). The handshake, on the other hand,
+        // stays bounded: a connection that never finishes its Noise
+        // handshake is the cheapest possible attack.
         if (!handshaking && limits.idle_timeout_seconds == 0) {
             continue;
         }
-        std::uint64_t const budget =
-            handshaking ? limits.handshake_timeout_seconds
-                        : limits.idle_timeout_seconds;
-        if (now > session.last_activity_at
-            && now - session.last_activity_at > budget) {
+        std::uint64_t const budget = handshaking
+                                         ? limits.handshake_timeout_seconds
+                                         : limits.idle_timeout_seconds;
+        if (now > session.last_activity_at &&
+            now - session.last_activity_at > budget) {
             expired.push_back(entry.first);
         }
     }

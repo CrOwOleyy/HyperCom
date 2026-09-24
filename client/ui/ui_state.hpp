@@ -1,10 +1,5 @@
 #pragma once
 
-#include <array>
-#include <cstdint>
-#include <string>
-#include <vector>
-
 #include "client/net/server_connection.hpp"
 #include "client/ui/i18n.hpp"
 #include "common/protocol/content_records.hpp"
@@ -13,20 +8,26 @@
 #include "common/protocol/social_records.hpp"
 #include "common/protocol/top8_message.hpp"
 
+#include <array>
+#include <cstdint>
+#include <string>
+#include <vector>
+
 namespace hypercom::client {
 
-// Deux onglets pour la colonne laterale : messages prives, ou social (amis,
-// profils consultes, top 8). Evite d'empiler les trois dans le meme espace.
+// Two tabs for the side column: direct messages, or social (friends,
+// viewed profiles, top 8). Avoids stacking all three in the same
+// space.
 enum class side_panel_tab {
     direct_messages,
     social,
 };
 
-// Un message prive deja dechiffre, tel qu'il s'affiche.
+// A direct message already decrypted, as it's displayed.
 //
-// Il n'existe que dans cette structure, en memoire, pendant la duree de la
-// session. Rien n'ecrit le clair sur le disque : fermer le client, c'est
-// effacer la conversation.
+// It only exists in this structure, in memory, for the duration of
+// the session. Nothing ever writes the plaintext to disk: closing the
+// client erases the conversation.
 struct decrypted_message {
     std::string sender_hex;
     std::string text;
@@ -34,11 +35,12 @@ struct decrypted_message {
     bool readable = false;
 };
 
-// Tout l'etat affichable du client.
+// All of the client's displayable state.
 //
-// Structure sans methode, passee explicitement aux fonctions de dessin. ImGui
-// est en mode immediat : chaque image relit cet etat et le redessine, il n'y a
-// donc rien a synchroniser entre un modele et une vue.
+// A method-less structure, passed explicitly to the drawing
+// functions. ImGui runs in immediate mode: every frame re-reads this
+// state and redraws it, so there's nothing to synchronize between a
+// model and a view.
 struct ui_state {
     language current_lang = language::french;
     bool connected = false;
@@ -46,14 +48,14 @@ struct ui_state {
     std::string handle;
     std::string identity_hex;
     std::string server_key_hex;
-    // Conserve pour la reconnexion : elle refait un handshake complet, donc il
-    // lui faut de nouveau l'adresse ET le chemin (proxy Tor le cas echeant).
+    // Kept for reconnection: it redoes a full handshake, so it needs
+    // the address AND the route (Tor proxy where applicable) again.
     server_endpoint endpoint;
     std::string status_message;
     bool status_is_error = false;
-    // Leve une seule fois, par draw_auth_modal, juste apres la creation du
-    // compte. gui_main le consomme pour lancer la musique et la sequence
-    // d'accueil : une connexion ordinaire ne declenche donc rien.
+    // Raised only once, by draw_auth_modal, right after account
+    // creation. gui_main consumes it to start the music and the
+    // welcome sequence: an ordinary login therefore triggers nothing.
     bool intro_requested = false;
 
     std::vector<proto::forum_record> forums;
@@ -72,15 +74,14 @@ struct ui_state {
         viewed_top8_slots{};
     std::vector<proto::friend_record> viewed_top8_details;
 
-    std::array<proto::wire_public_key, proto::TOP8_SLOT_COUNT>
-        own_top8_slots{};
+    std::array<proto::wire_public_key, proto::TOP8_SLOT_COUNT> own_top8_slots{};
     std::vector<proto::friend_record> own_top8_details;
 
     std::vector<decrypted_message> inbox;
     std::string dm_recipient_hex;
 
-    // Tampons de saisie. ImGui ecrit directement dedans, d'ou les tableaux de
-    // taille fixe plutot que des std::string.
+    // Input buffers. ImGui writes directly into them, hence the
+    // fixed-size arrays rather than std::string.
     char forum_name_input[64] = {};
     char forum_description_input[256] = {};
     char post_title_input[256] = {};

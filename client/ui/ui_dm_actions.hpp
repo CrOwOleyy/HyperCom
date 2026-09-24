@@ -5,13 +5,14 @@
 
 namespace hypercom::client {
 
-// A lancer une fois par identite : sans prekey publiee, personne ne peut
-// ouvrir de conversation chiffree avec vous.
+// To run once per identity: without a published prekey, no one can
+// open an encrypted conversation with you.
 void publish_own_prekey(cli_context &context, ui_state &state);
 
-// Releve la boite, dechiffre EN LOCAL, puis acquitte -- ce qui supprime les
-// enveloppes du serveur. Un message illisible n'est jamais acquitte : il reste
-// disponible pour un diagnostic plutot que d'etre perdu silencieusement.
+// Checks the inbox, decrypts LOCALLY, then acknowledges -- which
+// removes the envelopes from the server. An unreadable message is
+// never acknowledged: it stays available for diagnosis instead of
+// being silently lost.
 void refresh_inbox(cli_context &context, ui_state &state);
 
 void submit_direct_message(cli_context &context, ui_state &state);

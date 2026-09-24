@@ -1,11 +1,10 @@
 #include "server/net/server_static_key.hpp"
 
-#include <sys/stat.h>
+#include "common/crypto/x25519_exchange.hpp"
 
 #include <filesystem>
 #include <fstream>
-
-#include "common/crypto/x25519_exchange.hpp"
+#include <sys/stat.h>
 
 namespace hypercom::server {
 namespace {
@@ -19,8 +18,9 @@ namespace {
     }
     input.read(reinterpret_cast<char *>(out.data()),
                static_cast<std::streamsize>(out.size()));
-    // Un fichier plus court qu'attendu est un fichier corrompu, pas une cle a
-    // completer : on refuse plutot que de deriver une identite tronquee.
+    // A file shorter than expected is a corrupted file, not a key that
+    // needs completing: it's rejected rather than deriving a truncated
+    // identity.
     return input.gcount() == static_cast<std::streamsize>(out.size());
 }
 
@@ -43,8 +43,8 @@ namespace {
     output.close();
 #if defined(_WIN32)
     std::filesystem::permissions(target,
-                                 std::filesystem::perms::owner_read
-                                     | std::filesystem::perms::owner_write,
+                                 std::filesystem::perms::owner_read |
+                                     std::filesystem::perms::owner_write,
                                  failure);
 #else
     if (::chmod(path.c_str(), S_IRUSR | S_IWUSR) != 0) {
@@ -63,8 +63,8 @@ bool load_or_create_server_key(std::string const &path,
                                std::string &error_out)
 {
     if (read_secret_file(path, secret_key)) {
-        // La cle publique se recalcule a partir de la privee : elle n'a pas a
-        // etre stockee, et ne peut donc pas se desynchroniser.
+        // The public key is recomputed from the private one: it doesn't
+        // need to be stored, so it can't get out of sync.
         if (!crypto::compute_public_from_secret(secret_key, public_key)) {
             error_out = "cle serveur illisible ou invalide : " + path;
             return false;

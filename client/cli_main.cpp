@@ -1,8 +1,3 @@
-#include <algorithm>
-#include <iostream>
-#include <string>
-#include <vector>
-
 #include "client/cli/cli_content_commands.hpp"
 #include "client/cli/cli_content_delete_commands.hpp"
 #include "client/cli/cli_dm_commands.hpp"
@@ -19,6 +14,11 @@
 #include "common/crypto/secure_memory.hpp"
 #include "common/crypto/sodium_runtime.hpp"
 #include "common/util/hex_codec.hpp"
+
+#include <algorithm>
+#include <iostream>
+#include <string>
+#include <vector>
 
 namespace {
 
@@ -37,9 +37,9 @@ using namespace hypercom;
     return true;
 }
 
-// Sans --server, on reste en mode direct : hote, port et cle donnes a la main,
-// identite lue dans --identity. C'est ce que fait encore le client graphique,
-// et ce que font les scripts existants.
+// Without --server, we stay in direct mode: host, port, and key given by
+// hand, identity read from --identity. This is still what the graphical
+// client does, and what existing scripts do.
 [[nodiscard]] bool resolve_server(client::cli_options const &options,
                                   std::string_view passphrase,
                                   client::server_entry &out,
@@ -69,8 +69,9 @@ using namespace hypercom;
     return false;
 }
 
-// Une identite importee vient de son propre fichier ; une identite derivee se
-// recalcule depuis la graine maitresse et la cle du serveur, sans rien stocker.
+// An imported identity comes from its own file; a derived identity is
+// recomputed from the master seed and the server key, without storing
+// anything.
 [[nodiscard]] bool resolve_identity(client::cli_options const &options,
                                     client::server_entry const &entry,
                                     std::string_view passphrase,
@@ -177,7 +178,8 @@ using namespace hypercom;
     return false;
 }
 
-// Etablit le canal, authentifie, enregistre si besoin, puis execute.
+// Establishes the channel, authenticates, registers if needed, then
+// executes.
 [[nodiscard]] bool run_cli(client::cli_options const &options,
                            std::string &error_out)
 {
@@ -187,9 +189,8 @@ using namespace hypercom;
     }
     client::server_entry entry;
     crypto::identity_keypair identity;
-    if (!resolve_server(options, passphrase, entry, error_out)
-        || !resolve_identity(options, entry, passphrase, identity,
-                             error_out)) {
+    if (!resolve_server(options, passphrase, entry, error_out) ||
+        !resolve_identity(options, entry, passphrase, identity, error_out)) {
         return false;
     }
     client::server_connection connection{entry.server_key};
@@ -235,8 +236,8 @@ int main(int argc, char **argv)
         client::print_cli_usage();
         return 2;
     }
-    // Les commandes de registre n'ouvrent aucune connexion : elles se traitent
-    // avant tout ce qui touche au reseau.
+    // Registry commands open no connection: they're handled before
+    // anything that touches the network.
     if (client::is_registry_command(options.command)) {
         bool const done =
             options.command == "server-add"

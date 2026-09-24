@@ -12,7 +12,7 @@ bool peek_body_size(std::span<std::uint8_t const> input, std::uint32_t &out)
     if (!load_little_endian(input, announced)) {
         return false;
     }
-    // Une trame vide n'existe pas : il y a toujours au moins l'octet de type.
+    // An empty frame doesn't exist: there's always at least the type byte.
     if (announced < FRAME_TYPE_FIELD_SIZE || announced > MAX_BODY_SIZE) {
         return false;
     }
@@ -20,8 +20,7 @@ bool peek_body_size(std::span<std::uint8_t const> input, std::uint32_t &out)
     return true;
 }
 
-bool decode_frame_header(std::span<std::uint8_t const> input,
-                         frame_header &out)
+bool decode_frame_header(std::span<std::uint8_t const> input, frame_header &out)
 {
     if (input.size() < FRAME_HEADER_SIZE) {
         return false;

@@ -1,11 +1,10 @@
 #include "common/crypto/noise_symmetric_state.hpp"
 
-#include <algorithm>
-
-#include <sodium.h>
-
 #include "common/crypto/hkdf_sha256.hpp"
 #include "common/crypto/secure_memory.hpp"
+
+#include <algorithm>
+#include <sodium.h>
 
 namespace hypercom::crypto {
 
@@ -14,9 +13,9 @@ void initialize_symmetric_state(std::string_view protocol_name,
 {
     out.handshake_hash.fill(0);
     if (protocol_name.size() <= out.handshake_hash.size()) {
-        // Nom assez court : il sert directement d'etat initial, complete de
-        // zeros. C'est ce que prescrit la specification, et le nom de notre
-        // suite fait exactement 32 octets.
+        // Short enough name: it serves directly as the initial state, padded
+        // with zeros. This is what the specification prescribes, and our
+        // suite's name is exactly 32 bytes.
         std::copy(protocol_name.begin(), protocol_name.end(),
                   out.handshake_hash.begin());
     } else {
