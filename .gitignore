@@ -75,3 +75,7 @@ hypercom_master.key
 CLAUDE.md
 PLAN.md
 SPEC.md
+
+# Etat de disposition des fenetres ImGui, regenere a chaque lancement du
+# client -- rien a partager, chacun garde le sien.
+imgui.ini
