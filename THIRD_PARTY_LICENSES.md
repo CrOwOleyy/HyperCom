@@ -1,26 +1,27 @@
-# Dépendances tierces
+# Third-party dependencies
 
-HyperCom lui-même est sous licence MIT (voir `LICENSE`).
+HyperCom itself is MIT licensed (see `LICENSE`).
 
-Aucune de ces dépendances n'est versionnée dans ce dépôt : elles sont
-récupérées par `scripts/fetch_third_party.sh` (ou `.ps1` sous Windows), qui
-vérifie l'empreinte SHA-256 de chaque archive contre `third_party/checksums.txt`
-avant installation. Voir `third_party/README.md` pour le détail.
+None of these dependencies is vendored in this repository: they're
+fetched by `scripts/fetch_third_party.sh` (or `.ps1` on Windows), which
+verifies the SHA-256 checksum of each archive against
+`third_party/checksums.txt` before installing. See `third_party/README.md`
+for details.
 
-| Dépendance | Licence | Rôle |
+| Dependency | License | Role |
 |---|---|---|
-| [libsodium](https://libsodium.org) | ISC | Toute la cryptographie : Ed25519, X25519, XChaCha20-Poly1305, Argon2id |
-| [SQLite](https://sqlite.org) | Domaine public | Stockage, amalgamation compilée dans le binaire serveur |
-| [Dear ImGui](https://github.com/ocornut/imgui) | MIT | Interface du client graphique natif |
-| [GLFW](https://www.glfw.org) | zlib/libpng | Fenêtrage et contexte OpenGL du client graphique (Linux, et build GLFW sous Windows) |
-| [miniaudio](https://github.com/mackron/miniaudio) | Domaine public (ou MIT-0, au choix) | Lecture du thème d'accueil, client graphique uniquement |
+| [libsodium](https://libsodium.org) | ISC | All cryptography: Ed25519, X25519, XChaCha20-Poly1305, Argon2id |
+| [SQLite](https://sqlite.org) | Public domain | Storage, amalgamation compiled into the server binary |
+| [Dear ImGui](https://github.com/ocornut/imgui) | MIT | Native graphical client interface |
+| [GLFW](https://www.glfw.org) | zlib/libpng | Windowing and OpenGL context for the graphical client (Linux, and GLFW builds on Windows) |
+| [miniaudio](https://github.com/mackron/miniaudio) | Public domain (or MIT-0, at your option) | Welcome theme playback, graphical client only |
 
-Le texte complet de chaque licence accompagne la distribution officielle de la
-dépendance concernée, récupérée par le script ci-dessus.
+The full text of each license ships with the official distribution of the
+dependency in question, fetched by the script above.
 
-## Périmètre
+## Scope
 
-`libsodium` et `SQLite` sont liés au serveur, au client CLI et au client
-graphique. `Dear ImGui`, `GLFW` et `miniaudio` ne sont liés qu'au client
-graphique — ni le serveur ni le client CLI n'en dépendent, et leur absence
-n'empêche pas de les construire.
+`libsodium` and `SQLite` are linked into the server, the CLI client, and
+the graphical client. `Dear ImGui`, `GLFW` and `miniaudio` are linked only
+into the graphical client — neither the server nor the CLI client depends
+on them, and their absence doesn't prevent building those.
