@@ -1,18 +1,18 @@
 #pragma once
 
+#include "server/db/sql_statement.hpp"
+
 #include <cstdint>
 #include <span>
 #include <string_view>
 
-#include "server/db/sql_statement.hpp"
-
 namespace hypercom::server {
 
-// Liaison des parametres. Les index commencent a 1, comme dans sqlite.
+// Parameter binding. Indices start at 1, as in sqlite.
 //
-// Toutes les valeurs sont copiees par sqlite (SQLITE_TRANSIENT) : l'appelant
-// n'a pas a maintenir ses tampons vivants jusqu'au step, ce qui elimine une
-// classe entiere d'usage-apres-liberation dans les depots.
+// All values are copied by sqlite (SQLITE_TRANSIENT): the caller doesn't
+// have to keep its buffers alive until the step, which eliminates a whole
+// class of use-after-free bugs in the repositories.
 
 [[nodiscard]] bool bind_integer(sql_statement &statement, int index,
                                 std::int64_t value);

@@ -5,11 +5,12 @@
 
 namespace hypercom::server {
 
-// Amis et « top 8 ».
+// Friends and "top 8".
 //
-// La relation est declarative et unilaterale : personne n'a a accepter, et le
-// serveur n'arbitre rien. Ajouter quelqu'un revient a le noter dans son propre
-// carnet -- ce que le client affiche ensuite comme il veut.
+// The relationship is declarative and one-sided: nobody has to accept, and
+// the server doesn't arbitrate anything. Adding someone amounts to noting
+// it in your own address book -- which the client then displays however it
+// wants.
 
 [[nodiscard]] bool handle_friend_add_request(handler_context &context,
                                              proto::byte_reader &reader);

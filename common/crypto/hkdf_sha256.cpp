@@ -1,17 +1,16 @@
 #include "common/crypto/hkdf_sha256.hpp"
 
+#include "common/crypto/secure_memory.hpp"
+
 #include <algorithm>
 #include <array>
-
 #include <sodium.h>
-
-#include "common/crypto/secure_memory.hpp"
 
 namespace hypercom::crypto {
 namespace {
 
-// HMAC-SHA256 dont la cle fait toujours 32 octets dans ce projet, ce qui
-// correspond exactement a crypto_auth_hmacsha256_KEYBYTES.
+// HMAC-SHA256 whose key is always 32 bytes in this project, which matches
+// crypto_auth_hmacsha256_KEYBYTES exactly.
 [[nodiscard]] bool compute_hmac(symmetric_key const &key,
                                 std::span<std::uint8_t const> first_part,
                                 std::span<std::uint8_t const> second_part,
@@ -34,12 +33,13 @@ namespace {
 
 } // namespace
 
-bool extract_pseudo_random_key(
-    std::span<std::uint8_t const> salt,
-    std::span<std::uint8_t const> input_key_material, symmetric_key &out)
+bool extract_pseudo_random_key(std::span<std::uint8_t const> salt,
+                               std::span<std::uint8_t const> input_key_material,
+                               symmetric_key &out)
 {
-    // RFC 5869 : le sel joue le role de cle HMAC a l'extraction. Un sel absent
-    // vaut 32 octets nuls, ce que produit deja l'initialisation du tableau.
+    // RFC 5869: the salt acts as the HMAC key during extraction. A missing
+    // salt is equivalent to 32 zero bytes, which the array's initialization
+    // already produces.
     symmetric_key salt_key{};
     if (salt.size() > salt_key.size()) {
         return false;
@@ -68,7 +68,7 @@ bool derive_key_pair(symmetric_key const &chaining_key,
     }
     bool succeeded = expand_key_block(temporary_key, {}, 0x01, first);
     if (succeeded) {
-        // Le second bloc chaine sur le premier, conformement a HKDF-Expand.
+        // The second block chains on the first, per HKDF-Expand.
         succeeded = expand_key_block(temporary_key, first, 0x02, second);
     }
     wipe_bytes(temporary_key);

@@ -1,12 +1,12 @@
 #include "common/crypto/noise_handshake_responder.hpp"
 
-#include <algorithm>
-#include <string_view>
-
 #include "common/crypto/noise_parameters.hpp"
 #include "common/crypto/noise_payload_codec.hpp"
 #include "common/crypto/secure_memory.hpp"
 #include "common/crypto/x25519_exchange.hpp"
+
+#include <algorithm>
+#include <string_view>
 
 namespace hypercom::crypto {
 namespace {
@@ -21,8 +21,11 @@ namespace {
 noise_handshake_responder::noise_handshake_responder(
     x25519_public_key const &static_public,
     x25519_secret_key const &static_secret)
-    : state_{}, static_secret_{static_secret}, remote_ephemeral_{},
-      first_message_read_{false}, complete_{false}
+    : state_{},
+      static_secret_{static_secret},
+      remote_ephemeral_{},
+      first_message_read_{false},
+      complete_{false}
 {
     initialize_symmetric_state(NOISE_PROTOCOL_NAME, state_);
     mix_hash(state_, as_bytes(NOISE_PROLOGUE));
@@ -98,9 +101,12 @@ bool noise_handshake_responder::export_transport_keys(
     if (!complete_) {
         return false;
     }
-    // Ordre inverse de l'initiateur : sa cle d'emission est notre cle de
-    // reception. Se tromper ici produit un canal qui s'etablit puis echoue au
-    // premier message, d'ou le test bidirectionnel dans tests/.
+    // Reverse order from the initiator: its send key is our receive key.
+    // Getting this wrong is genuinely infuriating to debug -- the handshake
+    // completes fine, both sides think they're connected, and the whole
+    // thing only falls apart on the very first application message, by
+    // which point the actual bug is three layers removed from the error.
+    // Hence the bidirectional test in tests/.
     return split_transport_keys(state_, receive_key, send_key);
 }
 

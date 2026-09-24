@@ -6,16 +6,16 @@
 
 namespace hypercom::client {
 
-// Ligne d'invitation collable : hypercom://hote:port#cle_hex
+// Pasteable invite line: hypercom://host:port#key_hex
 //
-// C'est le seul moyen de rejoindre un serveur : il n'existe aucun annuaire, on
-// recoit ce lien de quelqu'un en qui on a confiance. Rien n'y est secret -- la
-// cle du serveur est publique par nature -- mais elle doit arriver par un canal
-// de confiance, sinon l'epinglage ne protege plus de rien.
+// It's the only way to join a server: there's no directory, you get this
+// link from someone you trust. Nothing in it is secret -- the server's
+// key is public by nature -- but it must arrive over a trusted channel,
+// otherwise pinning no longer protects anything.
 //
-// Le fragment (#) porte la cle par convention : c'est la partie d'une URL qui
-// n'est jamais transmise a un serveur web, ce qui rappelle qu'elle n'a rien a
-// faire ailleurs que dans le client.
+// The fragment (#) carries the key by convention: it's the part of a URL
+// that's never sent to a web server, a reminder that it has no business
+// being anywhere but in the client.
 struct invite_link {
     std::string host;
     std::uint16_t port = 0;

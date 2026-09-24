@@ -1,8 +1,3 @@
-#include <cstdint>
-#include <span>
-#include <string>
-#include <vector>
-
 #include "common/protocol/comment_create_message.hpp"
 #include "common/protocol/content_delete_message.hpp"
 #include "common/protocol/forum_create_message.hpp"
@@ -12,11 +7,16 @@
 #include "common/protocol/thread_fetch_message.hpp"
 #include "tests/test_harness.hpp"
 
-// Aller-retour des messages de forum, de post et de commentaire.
+#include <cstdint>
+#include <span>
+#include <string>
+#include <vector>
+
+// Round trip for forum, post, and comment messages.
 //
-// Ces messages transportent des listes, donc le point sensible n'est pas le
-// champ isole mais le plafond de la liste : un pair qui annonce plus
-// d'elements que le maximum doit etre refuse avant toute allocation.
+// These messages carry lists, so the sensitive point isn't an isolated
+// field but the list cap: a peer announcing more elements than the maximum
+// must be rejected before any allocation happens.
 
 namespace {
 
@@ -85,8 +85,7 @@ void check_forum_messages(tests::test_report &report)
     HYPERCOM_CHECK(report, decoded_create.read_from(reader));
     HYPERCOM_CHECK(report, reader.count_remaining_bytes() == 0);
     HYPERCOM_CHECK(report, decoded_create.name == create.name);
-    HYPERCOM_CHECK(report,
-                   decoded_create.description == create.description);
+    HYPERCOM_CHECK(report, decoded_create.description == create.description);
     HYPERCOM_CHECK(report, decoded_create.theme_json == create.theme_json);
     proto::forum_info_response info;
     info.forum = make_forum_record(1);
@@ -98,9 +97,8 @@ void check_forum_messages(tests::test_report &report)
     HYPERCOM_CHECK(report, decoded_info.read_from(info_reader));
     HYPERCOM_CHECK(report, info_reader.count_remaining_bytes() == 0);
     HYPERCOM_CHECK(report, decoded_info.forum.name == info.forum.name);
-    HYPERCOM_CHECK(report,
-                   decoded_info.forum.founder_pubkey
-                       == info.forum.founder_pubkey);
+    HYPERCOM_CHECK(report, decoded_info.forum.founder_pubkey ==
+                               info.forum.founder_pubkey);
     HYPERCOM_CHECK(report,
                    decoded_info.forum.post_count == info.forum.post_count);
 }
@@ -165,9 +163,8 @@ void check_post_messages(tests::test_report &report)
     HYPERCOM_CHECK(report, decoded_response.posts.size() == 1);
     HYPERCOM_CHECK(report,
                    decoded_response.posts[0].body == response.posts[0].body);
-    HYPERCOM_CHECK(report,
-                   decoded_response.posts[0].author_pubkey
-                       == response.posts[0].author_pubkey);
+    HYPERCOM_CHECK(report, decoded_response.posts[0].author_pubkey ==
+                               response.posts[0].author_pubkey);
 }
 
 void check_comment_messages(tests::test_report &report)
@@ -194,10 +191,9 @@ void check_comment_messages(tests::test_report &report)
     proto::comment_info_response decoded_info;
     HYPERCOM_CHECK(report, decoded_info.read_from(info_reader));
     HYPERCOM_CHECK(report, info_reader.count_remaining_bytes() == 0);
-    HYPERCOM_CHECK(report,
-                   decoded_info.comment.depth == info.comment.depth);
+    HYPERCOM_CHECK(report, decoded_info.comment.depth == info.comment.depth);
     HYPERCOM_CHECK(report, decoded_info.comment.body == info.comment.body);
-    // Un corps au-dela du plafond ne doit pas franchir le decodeur.
+    // A body beyond the cap must not make it past the decoder.
     proto::comment_create_request oversized;
     oversized.body = std::string(proto::MAX_COMMENT_BODY_LENGTH + 1, 'a');
     std::vector<std::uint8_t> oversized_buffer;
@@ -234,13 +230,12 @@ void check_thread_messages(tests::test_report &report)
     HYPERCOM_CHECK(report, response_reader.count_remaining_bytes() == 0);
     HYPERCOM_CHECK(report, decoded_response.post.id == response.post.id);
     HYPERCOM_CHECK(report, decoded_response.comments.size() == 2);
-    HYPERCOM_CHECK(report,
-                   decoded_response.truncated == response.truncated);
+    HYPERCOM_CHECK(report, decoded_response.truncated == response.truncated);
 }
 
-// Le point le plus important du fichier : un nombre d'elements annonce
-// au-dela du plafond doit etre refuse sur l'annonce seule, sans que le
-// decodeur attende ni reserve les elements correspondants.
+// The most important point in this file: an element count announced beyond
+// the cap must be rejected on the announcement alone, without the decoder
+// waiting for or reserving the corresponding elements.
 void check_list_caps(tests::test_report &report)
 {
     std::vector<std::uint8_t> hostile;
@@ -261,9 +256,9 @@ void check_list_caps(tests::test_report &report)
     HYPERCOM_CHECK(report, refused_thread.comments.empty());
 }
 
-// Les messages de retrait ne portent qu'un identifiant : l'auteur vient de la
-// session, jamais du message. Un lecteur a court d'octets doit echouer plutot
-// que de laisser un identifiant a zero passer pour une cible valide.
+// Delete messages carry only an identifier: the author comes from the
+// session, never from the message. A reader that runs short of bytes must
+// fail rather than let a zero identifier pass for a valid target.
 void check_delete_messages(tests::test_report &report)
 {
     proto::post_delete_request post_request;

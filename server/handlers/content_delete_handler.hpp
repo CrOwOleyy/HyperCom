@@ -5,21 +5,21 @@
 
 namespace hypercom::server {
 
-// Retrait de son propre contenu.
+// Removing one's own content.
 //
-// Fichier separe de content_handler : celui-ci est deja a quatre fonctions
-// exposees, et la regle O3 en plafonne cinq.
+// File kept separate from content_handler: that one is already at four
+// exposed functions, and rule O3 caps it at five.
 //
-// Il n'existe deliberement aucun equivalent cote protocole : aucun message
-// reseau ne permet d'effacer le contenu d'autrui, la propriete se verifie
-// dans le SQL, pas par un droit qu'un client pourrait exercer. C'est la porte
-// que le projet existe pour ne pas avoir ouverte au reseau.
+// There is deliberately no protocol-side equivalent: no network message
+// allows deleting someone else's content, ownership is checked in SQL, not
+// through a permission a client could exercise. That's the door the project
+// exists to keep closed to the network.
 //
-// La seule exception, posee au BRIEF.md 13, vit ailleurs : la commande
-// d'administration `reports delete-post`, sur le socket Unix local -- jamais
-// joignable depuis le reseau, reservee a la reaction a un signalement legal.
-// post_repository::admin_delete_post() n'est appelee que depuis la, jamais
-// depuis un handler qui lit un message client.
+// The only exception, laid out in BRIEF.md 13, lives elsewhere: the
+// `reports delete-post` admin command, on the local Unix socket -- never
+// reachable from the network, reserved for responding to a legal report.
+// post_repository::admin_delete_post() is only ever called from there, never
+// from a handler that reads a client message.
 
 [[nodiscard]] bool handle_post_delete_request(handler_context &context,
                                               proto::byte_reader &reader);

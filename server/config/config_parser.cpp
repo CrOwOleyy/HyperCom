@@ -12,8 +12,8 @@ namespace {
     while (!text.empty() && (text.front() == ' ' || text.front() == '\t')) {
         text.remove_prefix(1);
     }
-    while (!text.empty() && (text.back() == ' ' || text.back() == '\t'
-                             || text.back() == '\r')) {
+    while (!text.empty() &&
+           (text.back() == ' ' || text.back() == '\t' || text.back() == '\r')) {
         text.remove_suffix(1);
     }
     return text;
@@ -39,8 +39,9 @@ namespace {
     return false;
 }
 
-// Renvoie false si la cle est inconnue ou la valeur mal formee. La distinction
-// entre les deux est faite par l'appelant, qui connait le numero de ligne.
+// Returns false if the key is unknown or the value malformed. The
+// distinction between the two is made by the caller, which knows the line
+// number.
 [[nodiscard]] bool apply_setting(std::string_view section, std::string_view key,
                                  std::string_view value, server_config &out)
 {
@@ -169,9 +170,8 @@ void handle_config_line(std::string_view line, std::size_t line_number,
         return;
     }
     if (!apply_setting(section, key, value, out)) {
-        errors.push_back({line_number,
-                          "cle inconnue ou valeur invalide : [" + section
-                              + "] " + std::string{key}});
+        errors.push_back({line_number, "cle inconnue ou valeur invalide : [" +
+                                           section + "] " + std::string{key}});
     }
 }
 

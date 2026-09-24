@@ -1,27 +1,27 @@
 #pragma once
 
+#include "common/crypto/key_types.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <vector>
 
-#include "common/crypto/key_types.hpp"
-
 namespace hypercom::crypto {
 
 constexpr std::uint8_t DM_ENVELOPE_VERSION = 1;
 
-// [u8 version][32 identite expediteur][32 ephemere expediteur][u32 compteur]
+// [u8 version][32 sender identity][32 sender ephemeral][u32 counter]
 constexpr std::size_t DM_ENVELOPE_HEADER_SIZE =
     1 + ED25519_PUBLIC_KEY_SIZE + X25519_PUBLIC_KEY_SIZE + 4;
 
-// Ce que le serveur stocke sans pouvoir l'ouvrir.
+// What the server stores without being able to open it.
 //
-// L'en-tete circule en clair -- il le faut, le destinataire en a besoin pour
-// deriver la cle -- mais il est integralement authentifie comme donnee
-// associee. Modifier un seul de ses octets, y compris le compteur, fait echouer
-// le dechiffrement. Un serveur ne peut donc ni rejouer un message a un autre
-// compteur, ni maquiller l'expediteur.
+// The header travels in the clear -- it has to, the recipient needs it to
+// derive the key -- but it is fully authenticated as associated data.
+// Changing a single one of its bytes, including the counter, makes
+// decryption fail. A server can therefore neither replay a message under a
+// different counter nor spoof the sender.
 struct dm_envelope_header {
     std::uint8_t version = DM_ENVELOPE_VERSION;
     ed25519_public_key sender_identity{};
@@ -29,10 +29,11 @@ struct dm_envelope_header {
     std::uint32_t counter = 0;
 };
 
-// Le destinataire lit l'en-tete d'abord : c'est lui qui indique quelle cle
-// deriver. La lecture est bornee et ne suppose rien du reste.
-[[nodiscard]] bool parse_dm_envelope_header(
-    std::span<std::uint8_t const> envelope, dm_envelope_header &out);
+// The recipient reads the header first: it indicates which key to derive.
+// The read is bounds-checked and assumes nothing about the rest.
+[[nodiscard]] bool
+parse_dm_envelope_header(std::span<std::uint8_t const> envelope,
+                         dm_envelope_header &out);
 
 [[nodiscard]] bool seal_dm_envelope(dm_envelope_header const &header,
                                     symmetric_key const &message_key,

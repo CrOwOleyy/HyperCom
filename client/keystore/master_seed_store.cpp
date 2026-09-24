@@ -1,20 +1,18 @@
 #include "client/keystore/master_seed_store.hpp"
 
-#include <algorithm>
-#include <filesystem>
-#include <vector>
-
 #include "client/keystore/sealed_file.hpp"
 #include "common/crypto/keystore_envelope.hpp"
 #include "common/crypto/secure_memory.hpp"
 #include "common/crypto/sodium_runtime.hpp"
 
+#include <algorithm>
+#include <filesystem>
+#include <vector>
+
 namespace hypercom::client {
 
-master_seed_store::master_seed_store(std::string path)
-    : path_{std::move(path)}
-{
-}
+master_seed_store::master_seed_store(std::string path) : path_{std::move(path)}
+{}
 
 bool master_seed_store::has_stored_seed() const
 {
@@ -27,9 +25,9 @@ bool master_seed_store::create_seed(std::string_view passphrase,
                                     std::string &error_out)
 {
     if (has_stored_seed()) {
-        error_out = "une graine existe deja dans " + path_
-                    + " : l'ecraser reviendrait a perdre toutes les identites "
-                      "qui en derivent, sur tous les serveurs";
+        error_out = "une graine existe deja dans " + path_ +
+                    " : l'ecraser reviendrait a perdre toutes les identites "
+                    "qui en derivent, sur tous les serveurs";
         return false;
     }
     if (passphrase.empty()) {
@@ -61,10 +59,11 @@ bool master_seed_store::unlock_seed(std::string_view passphrase,
         return false;
     }
     std::vector<std::uint8_t> plaintext;
-    // Passphrase fausse et fichier altere donnent le meme echec : le poly1305
-    // ne les distingue pas, et il n'y a rien a gagner a le faire croire.
-    bool const opened = crypto::open_blob(passphrase, sealed, plaintext)
-                        && plaintext.size() == out.size();
+    // A wrong passphrase and a tampered file produce the same failure:
+    // poly1305 doesn't distinguish them, and there's nothing to gain by
+    // pretending otherwise.
+    bool const opened = crypto::open_blob(passphrase, sealed, plaintext) &&
+                        plaintext.size() == out.size();
     if (opened) {
         std::copy(plaintext.begin(), plaintext.end(), out.begin());
     } else {

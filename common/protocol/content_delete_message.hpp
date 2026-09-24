@@ -1,19 +1,19 @@
 #pragma once
 
-#include <cstdint>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 
+#include <cstdint>
+
 namespace hypercom::proto {
 
-// Retrait de son propre contenu. La cible n'est designee que par son
-// identifiant : l'auteur n'est PAS un champ du message, il vient de la session
-// authentifiee. Un expediteur ne peut donc pas se declarer auteur de ce qu'il
-// n'a pas ecrit.
+// Removal of one's own content. The target is designated only by its
+// identifier: the author is NOT a field of the message, it comes from the
+// authenticated session. A sender therefore cannot claim authorship of
+// something they didn't write.
 //
-// La reponse est status_ok ou status_error, sans structure dediee : il n'y a
-// rien a renvoyer qu'un acquittement.
+// The response is status_ok or status_error, with no dedicated structure:
+// there's nothing to return besides an acknowledgment.
 
 struct post_delete_request {
     std::uint64_t post_id = 0;

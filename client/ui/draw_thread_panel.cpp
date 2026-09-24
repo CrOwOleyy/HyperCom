@@ -1,35 +1,37 @@
 #include "client/ui/draw_thread_panel.hpp"
 
-#include <imgui.h>
-
 #include "client/ui/aero_theme.hpp"
 #include "client/ui/i18n.hpp"
 #include "client/ui/ui_actions.hpp"
 #include "client/ui/ui_delete_actions.hpp"
 #include "client/ui/ui_report_actions.hpp"
 
+#include <imgui.h>
+
 namespace hypercom::client {
 namespace {
 
-// Le bouton n'est propose que sur son propre contenu. Ce n'est pas ce qui
-// protege celui des autres -- le serveur verifie de son cote -- ca evite
-// seulement d'afficher une action vouee au refus.
+// The button is only offered on one's own content. This isn't what
+// protects other people's content -- the server checks that on its
+// own side -- it only avoids showing an action that's bound to be
+// refused.
 [[nodiscard]] bool is_own_content(cli_context const &context,
                                   proto::wire_public_key const &author)
 {
     return author == context.identity.get_public_key();
 }
 
-// Un contenu retire garde sa ligne pour que le fil tienne, mais son texte est
-// vide : c'est ce vide qui le signale, aucun drapeau ne circule sur le fil.
+// Removed content keeps its row so the thread still holds together,
+// but its text is empty: that emptiness is what signals it, no flag
+// travels through the thread.
 [[nodiscard]] bool is_removed(std::string const &body)
 {
     return body.empty();
 }
 
-// Profondeur d'indentation plafonnee a l'affichage. Le serveur borne deja
-// l'arbre, mais l'UI ne doit pas dependre de cette borne pour rester lisible :
-// au-dela, on cesse simplement de decaler.
+// Indentation depth capped for display. The server already bounds the
+// tree, but the UI shouldn't rely on that bound to stay readable:
+// beyond it, indentation simply stops increasing.
 constexpr std::uint16_t MAX_VISUAL_DEPTH = 8;
 
 void draw_post_header(cli_context &context, ui_state &state)
@@ -69,8 +71,7 @@ void draw_comment_tree(cli_context &context, ui_state &state)
 {
     for (proto::comment_record const &comment : state.comments) {
         std::uint16_t const depth =
-            comment.depth > MAX_VISUAL_DEPTH ? MAX_VISUAL_DEPTH
-                                             : comment.depth;
+            comment.depth > MAX_VISUAL_DEPTH ? MAX_VISUAL_DEPTH : comment.depth;
         ImGui::Indent(static_cast<float>(depth) * 16.0f);
         ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK_MUTED);
         ImGui::Text("@%s", comment.author_handle.c_str());
@@ -95,8 +96,8 @@ void draw_comment_tree(cli_context &context, ui_state &state)
                 }
             } else {
                 ImGui::SameLine();
-                // Un commentaire n'a pas d'identifiant signalable a lui : ce
-                // qu'on signale, c'est son auteur.
+                // A comment has no reportable identifier of its own:
+                // what gets reported is its author.
                 if (ImGui::SmallButton(
                         tr("report_action", state.current_lang))) {
                     report_account(context, state, comment.author_pubkey);
@@ -111,7 +112,8 @@ void draw_comment_tree(cli_context &context, ui_state &state)
 
 } // namespace
 
-void draw_thread_column(cli_context &context, ui_state &state, float column_width)
+void draw_thread_column(cli_context &context, ui_state &state,
+                        float column_width)
 {
     ImGui::BeginChild("colonne_fil", ImVec2{column_width, 0.0f}, true);
     if (state.selected_post_id == 0) {
@@ -124,7 +126,7 @@ void draw_thread_column(cli_context &context, ui_state &state, float column_widt
 
     float const avail_h = ImGui::GetContentRegionAvail().y;
     float const input_h = std::max(45.0f, avail_h * 0.15f);
-    float const tree_h  = std::max(80.0f, avail_h - input_h - 75.0f);
+    float const tree_h = std::max(80.0f, avail_h - input_h - 75.0f);
 
     ImGui::BeginChild("comment_tree", ImVec2{0.0f, tree_h}, false);
     draw_comment_tree(context, state);

@@ -1,8 +1,3 @@
-#include <cstdint>
-#include <span>
-#include <string>
-#include <vector>
-
 #include "common/protocol/dm_ack_message.hpp"
 #include "common/protocol/dm_fetch_message.hpp"
 #include "common/protocol/dm_send_message.hpp"
@@ -15,12 +10,17 @@
 #include "common/protocol/top8_message.hpp"
 #include "tests/test_harness.hpp"
 
-// Aller-retour des messages de compte, de profil et de message prive.
+#include <cstdint>
+#include <span>
+#include <string>
+#include <vector>
+
+// Round trip for account, profile, and direct message messages.
 //
-// Cote DM, le decodeur ne doit rien comprendre au ciphertext : il le traite
-// comme un blob opaque et se contente de le borner. Un test qui passerait
-// seulement sur un chiffre bien forme masquerait cette propriete, donc les
-// octets utilises ici sont volontairement arbitraires.
+// On the DM side, the decoder must understand nothing about the ciphertext:
+// it treats it as an opaque blob and only bounds it. A test that only
+// passed on a well-formed cipher would mask that property, so the bytes
+// used here are deliberately arbitrary.
 
 namespace {
 
@@ -55,7 +55,7 @@ void check_account_messages(tests::test_report &report)
     HYPERCOM_CHECK(report, decoded.read_from(reader));
     HYPERCOM_CHECK(report, reader.count_remaining_bytes() == 0);
     HYPERCOM_CHECK(report, decoded.handle == registration.handle);
-    // Un pseudo plus long que le plafond ne doit pas franchir le decodeur.
+    // A handle longer than the cap must not make it past the decoder.
     proto::register_request oversized;
     oversized.handle = std::string(proto::MAX_HANDLE_LENGTH + 1, 'a');
     std::vector<std::uint8_t> oversized_buffer;
@@ -89,8 +89,7 @@ void check_prekey_messages(tests::test_report &report)
     proto::prekey_fetch_request decoded_fetch;
     HYPERCOM_CHECK(report, decoded_fetch.read_from(fetch_reader));
     HYPERCOM_CHECK(report, fetch_reader.count_remaining_bytes() == 0);
-    HYPERCOM_CHECK(report,
-                   decoded_fetch.target_pubkey == fetch.target_pubkey);
+    HYPERCOM_CHECK(report, decoded_fetch.target_pubkey == fetch.target_pubkey);
     proto::prekey_bundle_response bundle;
     fill_pattern(bundle.owner_pubkey, 0xAA);
     fill_pattern(bundle.prekey, 0xBB);
@@ -103,8 +102,7 @@ void check_prekey_messages(tests::test_report &report)
     proto::prekey_bundle_response decoded_bundle;
     HYPERCOM_CHECK(report, decoded_bundle.read_from(bundle_reader));
     HYPERCOM_CHECK(report, bundle_reader.count_remaining_bytes() == 0);
-    HYPERCOM_CHECK(report,
-                   decoded_bundle.owner_pubkey == bundle.owner_pubkey);
+    HYPERCOM_CHECK(report, decoded_bundle.owner_pubkey == bundle.owner_pubkey);
     HYPERCOM_CHECK(report, decoded_bundle.created_at == bundle.created_at);
 }
 
@@ -136,11 +134,9 @@ void check_profile_messages(tests::test_report &report)
     HYPERCOM_CHECK(report,
                    decoded_settings.display_name == settings.display_name);
     HYPERCOM_CHECK(report, decoded_settings.bio == settings.bio);
-    HYPERCOM_CHECK(report,
-                   decoded_settings.theme_json == settings.theme_json);
-    HYPERCOM_CHECK(report,
-                   decoded_settings.banner_reference
-                       == settings.banner_reference);
+    HYPERCOM_CHECK(report, decoded_settings.theme_json == settings.theme_json);
+    HYPERCOM_CHECK(report, decoded_settings.banner_reference ==
+                               settings.banner_reference);
 }
 
 void check_friend_messages(tests::test_report &report)
@@ -169,12 +165,10 @@ void check_friend_messages(tests::test_report &report)
     HYPERCOM_CHECK(report, decoded_response.read_from(response_reader));
     HYPERCOM_CHECK(report, response_reader.count_remaining_bytes() == 0);
     HYPERCOM_CHECK(report, decoded_response.friends.size() == 2);
-    HYPERCOM_CHECK(report,
-                   decoded_response.friends[0].handle
-                       == response.friends[0].handle);
-    HYPERCOM_CHECK(report,
-                   decoded_response.friends[1].pubkey
-                       == response.friends[1].pubkey);
+    HYPERCOM_CHECK(report, decoded_response.friends[0].handle ==
+                               response.friends[0].handle);
+    HYPERCOM_CHECK(report, decoded_response.friends[1].pubkey ==
+                               response.friends[1].pubkey);
 }
 
 void check_top8_messages(tests::test_report &report)
@@ -190,7 +184,7 @@ void check_top8_messages(tests::test_report &report)
     HYPERCOM_CHECK(report, decoded_request.read_from(reader));
     HYPERCOM_CHECK(report, reader.count_remaining_bytes() == 0);
     HYPERCOM_CHECK(report, decoded_request.slots == request.slots);
-    // Un emplacement vide reste une cle nulle apres l'aller-retour.
+    // An empty slot remains a null key after the round trip.
     proto::wire_public_key const empty_slot{};
     HYPERCOM_CHECK(report, decoded_request.slots[1] == empty_slot);
     proto::top8_response response;
@@ -246,8 +240,8 @@ void check_dm_messages(tests::test_report &report)
     HYPERCOM_CHECK(report, decoded_ack.envelope_ids == ack.envelope_ids);
 }
 
-// Le ciphertext est opaque mais borne. Un pair qui annonce plus que
-// MAX_DM_CIPHERTEXT_SIZE doit etre refuse sans allocation.
+// The ciphertext is opaque but bounded. A peer announcing more than
+// MAX_DM_CIPHERTEXT_SIZE must be rejected without any allocation.
 void check_dm_caps(tests::test_report &report)
 {
     proto::dm_send_request oversized;

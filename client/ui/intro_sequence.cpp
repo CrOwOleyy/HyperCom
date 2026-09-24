@@ -3,8 +3,9 @@
 namespace hypercom::client {
 namespace {
 
-// Les blocs ne s'echelonnent que sur une fraction de la phase : le dernier doit
-// avoir fini d'apparaitre avant la fin du morceau, pas pile dessus.
+// The blocks only stagger over a fraction of the phase: the last one
+// must have finished appearing before the end of the track, not
+// exactly at it.
 constexpr double REVEAL_STAGGER_SHARE = 0.45;
 constexpr double REVEAL_DURATION_SHARE = 0.50;
 
@@ -14,8 +15,9 @@ void begin_intro(intro_state &state, double track_seconds)
 {
     state.active = true;
     state.elapsed_seconds = 0.0;
-    // Une piste plus courte que le message d'accueil donnerait une phase de
-    // revelation de duree nulle, donc une interface qui surgit d'un coup.
+    // A track shorter than the welcome message would give a
+    // zero-length reveal phase, so an interface that pops up all at
+    // once.
     state.total_seconds = track_seconds > INTRO_WELCOME_SECONDS + 1.0
                               ? track_seconds
                               : INTRO_FALLBACK_TOTAL_SECONDS;
@@ -58,8 +60,8 @@ float compute_element_reveal(intro_state const &state, int index, int count)
     }
     double const stagger =
         span * REVEAL_STAGGER_SHARE / static_cast<double>(count);
-    double const local = state.elapsed_seconds - INTRO_WELCOME_SECONDS
-                         - stagger * static_cast<double>(index);
+    double const local = state.elapsed_seconds - INTRO_WELCOME_SECONDS -
+                         stagger * static_cast<double>(index);
     if (local <= 0.0) {
         return 0.0f;
     }

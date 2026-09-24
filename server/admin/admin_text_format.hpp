@@ -6,10 +6,10 @@
 
 namespace hypercom::server {
 
-// Mise en forme du texte rendu par l'administration.
+// Formatting for text rendered by the admin CLI.
 //
-// Sortie alignee en colonnes plutot que du JSON : la CLI s'adresse d'abord a
-// un humain devant un terminal, et reste lisible par awk ou cut si besoin.
+// Output aligned in columns rather than JSON: the CLI speaks to a human at
+// a terminal first, and stays readable with awk or cut if needed.
 
 [[nodiscard]] std::string format_duration(std::uint64_t seconds);
 

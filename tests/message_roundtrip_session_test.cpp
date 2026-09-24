@@ -1,8 +1,3 @@
-#include <cstdint>
-#include <span>
-#include <string>
-#include <vector>
-
 #include "common/protocol/auth_message.hpp"
 #include "common/protocol/hello_message.hpp"
 #include "common/protocol/motd_message.hpp"
@@ -11,12 +6,17 @@
 #include "common/protocol/status_message.hpp"
 #include "tests/test_harness.hpp"
 
-// Aller-retour des messages de session et de compte.
+#include <cstdint>
+#include <span>
+#include <string>
+#include <vector>
+
+// Round trip for session and account messages.
 //
-// Un encodeur et un decodeur qui divergent d'un seul champ produisent un
-// desalignement silencieux : les champs suivants se decalent et le message
-// reste « valide ». On verifie donc aussi que le lecteur finit a zero octet
-// restant, seule facon de detecter ce cas.
+// An encoder and a decoder that diverge on a single field produce a silent
+// misalignment: the following fields shift, yet the message still reads as
+// "valid". So we also check that the reader ends with zero bytes remaining,
+// the only way to catch this case.
 
 namespace {
 
@@ -44,7 +44,7 @@ void check_hello_round_trip(tests::test_report &report)
     HYPERCOM_CHECK(report,
                    decoded.protocol_version == original.protocol_version);
     HYPERCOM_CHECK(report, decoded.client_pubkey == original.client_pubkey);
-    // Un tampon tronque d'un octet doit echouer, pas produire un demi-message.
+    // A buffer truncated by one byte must fail, not yield a half-message.
     buffer.pop_back();
     proto::byte_reader truncated{buffer};
     proto::hello_request refused;
@@ -66,8 +66,7 @@ void check_auth_challenge_round_trip(tests::test_report &report)
     HYPERCOM_CHECK(report, decoded.read_from(reader));
     HYPERCOM_CHECK(report, reader.count_remaining_bytes() == 0);
     HYPERCOM_CHECK(report, decoded.nonce == original.nonce);
-    HYPERCOM_CHECK(report,
-                   decoded.account_exists == original.account_exists);
+    HYPERCOM_CHECK(report, decoded.account_exists == original.account_exists);
     HYPERCOM_CHECK(report, decoded.server_time == original.server_time);
 }
 
@@ -100,9 +99,9 @@ void check_auth_signature_messages(tests::test_report &report)
                    decoded_accepted.server_time == accepted.server_time);
 }
 
-// Les deux constructeurs d'entree a signer doivent etre deterministes et lier
-// la signature a son contexte : c'est ce qui empeche de rejouer ailleurs une
-// signature produite ici.
+// Both signing-input builders must be deterministic and bind the signature
+// to its context: that's what prevents a signature produced here from being
+// replayed elsewhere.
 void check_signing_inputs(tests::test_report &report)
 {
     proto::wire_nonce nonce{};
@@ -114,8 +113,8 @@ void check_signing_inputs(tests::test_report &report)
     proto::build_auth_signing_input(nonce, pubkey, first);
     proto::build_auth_signing_input(nonce, pubkey, second);
     HYPERCOM_CHECK(report, first == second);
-    HYPERCOM_CHECK(report, first.size() == proto::AUTH_SIGNATURE_DOMAIN.size()
-                                               + nonce.size() + pubkey.size());
+    HYPERCOM_CHECK(report, first.size() == proto::AUTH_SIGNATURE_DOMAIN.size() +
+                                               nonce.size() + pubkey.size());
     proto::wire_public_key other_pubkey{};
     fill_pattern(other_pubkey, 0x66);
     std::vector<std::uint8_t> third;
@@ -125,8 +124,8 @@ void check_signing_inputs(tests::test_report &report)
     std::vector<std::uint8_t> prekey_other;
     proto::build_prekey_signing_input(pubkey, other_pubkey, prekey_input);
     proto::build_prekey_signing_input(other_pubkey, pubkey, prekey_other);
-    // Intervertir identite et prekey doit changer l'entree, sinon une prekey
-    // signee pourrait etre recollee sur une autre identite.
+    // Swapping identity and prekey must change the input, otherwise a
+    // signed prekey could be reattached to a different identity.
     HYPERCOM_CHECK(report, prekey_input != prekey_other);
 }
 
@@ -171,7 +170,7 @@ void check_motd_round_trip(tests::test_report &report)
     HYPERCOM_CHECK(report, reader.count_remaining_bytes() == 0);
     HYPERCOM_CHECK(report, decoded.revision == original.revision);
     HYPERCOM_CHECK(report, decoded.body == original.body);
-    // Un MOTD au-dela du plafond doit etre refuse a la lecture.
+    // A MOTD beyond the cap must be rejected on read.
     proto::motd_push oversized;
     oversized.body = std::string(proto::MAX_MOTD_LENGTH + 1, 'a');
     std::vector<std::uint8_t> oversized_buffer;

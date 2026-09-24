@@ -15,8 +15,8 @@ void wipe_bytes(std::span<std::uint8_t> destination)
 bool compare_in_constant_time(std::span<std::uint8_t const> left,
                               std::span<std::uint8_t const> right)
 {
-    // La difference de longueur n'est pas un secret : deux tampons de tailles
-    // differentes ne peuvent pas etre egaux, et la taille est deja publique.
+    // A length difference isn't a secret: two buffers of different sizes
+    // can't be equal, and the size is already public.
     if (left.size() != right.size()) {
         return false;
     }

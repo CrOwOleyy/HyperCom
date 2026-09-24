@@ -1,15 +1,15 @@
 #pragma once
 
+#include "server/net/unique_descriptor.hpp"
+
 #include <cstdint>
 #include <string>
 
-#include "server/net/unique_descriptor.hpp"
-
 namespace hypercom::server {
 
-// Socket d'ecoute. Le meme code sert au clearnet et au service cache : Tor se
-// contente de relayer vers un listener sur la boucle locale, il n'y a donc
-// aucune logique specifique a l'oignon.
+// Listening socket. The same code serves both clearnet and the hidden
+// service: Tor simply relays to a listener on the loopback interface, so
+// there is no onion-specific logic at all.
 class tcp_listener {
 public:
     tcp_listener();
@@ -18,9 +18,9 @@ public:
                                      std::uint16_t port,
                                      std::string &error_out);
 
-    // Renvoie -1 quand il n'y a plus rien a accepter. peer_address n'est
-    // renseignee que pour etre passee au logger, qui la masquera si la
-    // politique de journalisation ne l'autorise pas.
+    // Returns -1 when there's nothing left to accept. peer_address is only
+    // filled in to be passed to the logger, which will redact it if the
+    // logging policy doesn't allow it.
     [[nodiscard]] int accept_connection(std::string &peer_address) const;
 
     [[nodiscard]] int get_descriptor() const;

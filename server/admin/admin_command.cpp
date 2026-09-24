@@ -10,8 +10,8 @@ constexpr std::size_t MAX_COMMAND_TOKENS = 16;
     return character == ' ' || character == '\t' || character == '\r';
 }
 
-// Lit un mot a partir de offset, entre guillemets ou non. Avance offset au
-// caractere suivant. Renvoie false sur un guillemet ouvert et jamais ferme.
+// Reads a word starting at offset, quoted or not. Advances offset to the
+// next character. Returns false on a quote that opens but never closes.
 [[nodiscard]] bool take_token(std::string_view line, std::size_t &offset,
                               std::string &out)
 {

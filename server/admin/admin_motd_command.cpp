@@ -14,19 +14,20 @@ namespace {
     if (!repository.find_active_motd(active)) {
         return "aucune annonce active\n";
     }
-    return "revision " + std::to_string(active.revision) + "\n" + active.body
-           + "\n";
+    return "revision " + std::to_string(active.revision) + "\n" + active.body +
+           "\n";
 }
 
 [[nodiscard]] std::string set_motd(admin_context &context,
                                    std::string const &body)
 {
-    // Meme validation que pour un message venu du reseau : l'annonce sera
-    // resservie a tous les clients, et un administrateur distrait n'a pas plus
-    // le droit qu'un inconnu d'y glisser des octets de controle.
+    // Same validation as for a message coming from the network: the
+    // announcement will be served back to every client, and a distracted
+    // administrator has no more right than a stranger to slip control bytes
+    // into it.
     if (body.size() > proto::MAX_MOTD_LENGTH) {
-        return "refus : annonce trop longue (max "
-               + std::to_string(proto::MAX_MOTD_LENGTH) + " octets)\n";
+        return "refus : annonce trop longue (max " +
+               std::to_string(proto::MAX_MOTD_LENGTH) + " octets)\n";
     }
     if (!proto::validate_text_field(body)) {
         return "refus : l'annonce doit etre de l'UTF-8 valide, sans "

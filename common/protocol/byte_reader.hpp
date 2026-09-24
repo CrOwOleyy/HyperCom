@@ -1,23 +1,24 @@
 #pragma once
 
+#include "common/protocol/endian_codec.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <vector>
 
-#include "common/protocol/endian_codec.hpp"
-
 namespace hypercom::proto {
 
-// Lecteur borne. Tout ce qui vient du reseau passe par ici, sans exception.
+// Bounds-checked reader. Everything coming from the network goes through
+// here, no exceptions.
 //
-// Trois choses a savoir avant de le modifier :
-//   - il ne lit jamais au-dela du tampon, tout passe par take_slice ;
-//   - il signale l'echec par la valeur de retour, et laisse la sortie intacte ;
-//   - il ne fait aucune allocation avant d'avoir verifie la taille annoncee.
+// Three things to know before modifying it:
+//   - it never reads past the buffer, everything goes through take_slice;
+//   - it reports failure via the return value, leaving the output untouched;
+//   - it never allocates before checking the announced size.
 //
-// Cette derniere regle est la plus importante. Si vous ajoutez une methode qui
-// alloue, verifiez le plafond AVANT, pas apres.
+// The last rule is the most important one. If you add a method that
+// allocates, check the cap BEFORE, not after.
 class byte_reader {
 public:
     explicit byte_reader(std::span<std::uint8_t const> buffer);
@@ -32,11 +33,11 @@ public:
         return load_little_endian(slice, out);
     }
 
-    // Pour les champs de taille connue : cles publiques, signatures, nonces.
+    // For fields of known size: public keys, signatures, nonces.
     [[nodiscard]] bool read_fixed_bytes(std::span<std::uint8_t> destination);
 
-    // Lit [u32 taille][octets]. La taille est comparee a maximum_length et au
-    // reste du tampon avant qu'on reserve quoi que ce soit.
+    // Reads [u32 size][bytes]. The size is compared against maximum_length
+    // and the remaining buffer before anything gets reserved.
     [[nodiscard]] bool read_length_prefixed(std::vector<std::uint8_t> &out,
                                             std::size_t maximum_length);
 

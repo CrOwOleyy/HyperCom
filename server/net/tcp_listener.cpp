@@ -21,11 +21,12 @@ namespace {
 
 constexpr int LISTEN_BACKLOG = 128;
 
-// Le protocole n'a pas de timeout applicatif : une session reste ouverte tant
-// que le pair est la. Le keepalive TCP est donc le SEUL mecanisme qui recupere
-// une connexion dont le pair a disparu sans FIN (coupure reseau, crash, sortie
-// de portee Tor). Sans reglage, Linux attend deux heures avant la premiere
-// sonde, ce qui laisserait s'accumuler des sessions mortes.
+// The protocol has no application-level timeout: a session stays open for
+// as long as the peer is there. TCP keepalive is therefore the ONLY
+// mechanism that reclaims a connection whose peer vanished without a FIN
+// (network drop, crash, dropping out of Tor's reach). Left unconfigured,
+// Linux waits two hours before the first probe, which would let dead
+// sessions pile up.
 constexpr int KEEPALIVE_IDLE_SECONDS = 120;
 constexpr int KEEPALIVE_INTERVAL_SECONDS = 30;
 constexpr int KEEPALIVE_PROBE_COUNT = 4;
@@ -40,8 +41,8 @@ void enable_keepalive(int descriptor)
     int const idle = KEEPALIVE_IDLE_SECONDS;
     int const interval = KEEPALIVE_INTERVAL_SECONDS;
     int const probes = KEEPALIVE_PROBE_COUNT;
-    static_cast<void>(::setsockopt(descriptor, IPPROTO_TCP, TCP_KEEPIDLE,
-                                   &idle, sizeof(idle)));
+    static_cast<void>(::setsockopt(descriptor, IPPROTO_TCP, TCP_KEEPIDLE, &idle,
+                                   sizeof(idle)));
     static_cast<void>(::setsockopt(descriptor, IPPROTO_TCP, TCP_KEEPINTVL,
                                    &interval, sizeof(interval)));
     static_cast<void>(::setsockopt(descriptor, IPPROTO_TCP, TCP_KEEPCNT,
@@ -71,8 +72,8 @@ void enable_keepalive(int descriptor)
 #endif
 }
 
-[[nodiscard]] bool build_address(std::string const &address,
-                                 std::uint16_t port, sockaddr_in &out)
+[[nodiscard]] bool build_address(std::string const &address, std::uint16_t port,
+                                 sockaddr_in &out)
 {
     out = {};
     out.sin_family = AF_INET;
@@ -82,10 +83,11 @@ void enable_keepalive(int descriptor)
 
 } // namespace
 
-tcp_listener::tcp_listener() : descriptor_{} {}
+tcp_listener::tcp_listener() : descriptor_{}
+{}
 
-bool tcp_listener::open_listener(std::string const &address,
-                                 std::uint16_t port, std::string &error_out)
+bool tcp_listener::open_listener(std::string const &address, std::uint16_t port,
+                                 std::string &error_out)
 {
 #if defined(_WIN32)
     if (!start_windows_sockets()) {
@@ -98,25 +100,25 @@ bool tcp_listener::open_listener(std::string const &address,
         error_out = "adresse IPv4 invalide : " + address;
         return false;
     }
-    unique_descriptor socket_handle{static_cast<int>(::socket(AF_INET, SOCK_STREAM, 0))};
+    unique_descriptor socket_handle{
+        static_cast<int>(::socket(AF_INET, SOCK_STREAM, 0))};
     if (socket_handle.get_value() < 0) {
         error_out = "socket() a echoue";
         return false;
     }
     int const enable = 1;
-    static_cast<void>(::setsockopt(socket_handle.get_value(), SOL_SOCKET,
-                                   SO_REUSEADDR,
-                                   reinterpret_cast<char const *>(&enable),
-                                   sizeof(enable)));
+    static_cast<void>(
+        ::setsockopt(socket_handle.get_value(), SOL_SOCKET, SO_REUSEADDR,
+                     reinterpret_cast<char const *>(&enable), sizeof(enable)));
     if (::bind(socket_handle.get_value(),
                reinterpret_cast<sockaddr const *>(&bound_address),
-               sizeof(bound_address))
-        != 0) {
-        error_out = "bind " + address + ":" + std::to_string(port) + " a echoue";
+               sizeof(bound_address)) != 0) {
+        error_out =
+            "bind " + address + ":" + std::to_string(port) + " a echoue";
         return false;
     }
-    if (!make_non_blocking(socket_handle.get_value())
-        || ::listen(socket_handle.get_value(), LISTEN_BACKLOG) != 0) {
+    if (!make_non_blocking(socket_handle.get_value()) ||
+        ::listen(socket_handle.get_value(), LISTEN_BACKLOG) != 0) {
         error_out = "listen() a echoue";
         return false;
     }
@@ -128,9 +130,9 @@ int tcp_listener::accept_connection(std::string &peer_address) const
 {
     sockaddr_in remote{};
     socklen_t length = sizeof(remote);
-    int const accepted = static_cast<int>(::accept(descriptor_.get_value(),
-                                                   reinterpret_cast<sockaddr *>(&remote),
-                                                   &length));
+    int const accepted = static_cast<int>(
+        ::accept(descriptor_.get_value(), reinterpret_cast<sockaddr *>(&remote),
+                 &length));
     if (accepted < 0) {
         return -1;
     }

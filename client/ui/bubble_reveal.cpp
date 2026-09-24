@@ -27,21 +27,21 @@ float ease_out_cubic(float progress)
 float ease_out_back(float progress)
 {
     float const inverted = clamp_unit(progress) - 1.0f;
-    return 1.0f + (BACK_OVERSHOOT + 1.0f) * inverted * inverted * inverted
-           + BACK_OVERSHOOT * inverted * inverted;
+    return 1.0f + (BACK_OVERSHOOT + 1.0f) * inverted * inverted * inverted +
+           BACK_OVERSHOOT * inverted * inverted;
 }
 
 void begin_bubble_reveal(float progress, float scale)
 {
     float const clamped = clamp_unit(progress);
-    // L'opacite monte plus vite que la position : le bloc est deja lisible
-    // pendant qu'il finit de se placer, ce qui evite l'impression de lenteur.
+    // Opacity rises faster than position: the block is already
+    // readable while it's still settling into place, which avoids
+    // any feeling of sluggishness.
     float const opacity = ease_out_cubic(clamped * 1.45f);
     float const placement = ease_out_back(clamped);
-    ImGui::PushStyleVar(ImGuiStyleVar_Alpha,
-                        ImGui::GetStyle().Alpha * opacity);
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY()
-                         + (1.0f - placement) * REVEAL_RISE_PIXELS * scale);
+    ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * opacity);
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() +
+                         (1.0f - placement) * REVEAL_RISE_PIXELS * scale);
 }
 
 void end_bubble_reveal()

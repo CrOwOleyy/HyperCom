@@ -1,16 +1,16 @@
 #pragma once
 
-#include <cstdint>
-#include <string>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/content_records.hpp"
 
+#include <cstdint>
+#include <string>
+
 namespace hypercom::proto {
 
-// Texte et liens uniquement en v1, aucun media n'est stocke. Un lien reste du
-// texte brut ; c'est au client de decider s'il le rend cliquable.
+// Text and links only in v1, no media is stored. A link stays plain text;
+// it's up to the client to decide whether to render it clickable.
 struct post_create_request {
     std::uint64_t forum_id = 0;
     std::string title;

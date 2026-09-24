@@ -5,7 +5,7 @@
 
 namespace hypercom::server {
 
-// Posts et commentaires imbriques -- le premier des trois blocs de la v1.
+// Posts and nested comments -- the first of v1's three blocks.
 
 [[nodiscard]] bool handle_post_create_request(handler_context &context,
                                               proto::byte_reader &reader);

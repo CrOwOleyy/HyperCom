@@ -3,11 +3,12 @@
 namespace hypercom::client {
 namespace {
 
-// Tout est multiplie par scale, arrondis compris : sinon l'interface grossit
-// mais les cadres restent fins et l'ensemble a l'air casse.
+// Everything is multiplied by scale, rounding included: otherwise the
+// interface grows but the frames stay thin and the whole thing looks
+// broken.
 //
-// Les rayons sont volumineux compares a l'ancienne D.A. -- c'est ce qui donne
-// l'impression de galet mouille plutot que de fiche cartonnee.
+// The radii are large compared to the old art direction -- that's what
+// gives the impression of a wet pebble rather than a cardboard card.
 void apply_geometry(ImGuiStyle &style, float scale)
 {
     style.WindowRounding = 16.0f * scale;
@@ -33,8 +34,8 @@ void apply_surfaces(ImVec4 *colors)
 {
     colors[ImGuiCol_Text] = AERO_INK;
     colors[ImGuiCol_TextDisabled] = AERO_INK_MUTED;
-    // La fenetre principale est transparente : le degrade et les bulles sont
-    // peints en dessous par draw_aero_backdrop.
+    // The main window is transparent: the gradient and bubbles are
+    // painted underneath by draw_aero_backdrop.
     colors[ImGuiCol_WindowBg] = ImVec4{0.0f, 0.0f, 0.0f, 0.0f};
     colors[ImGuiCol_ChildBg] = AERO_GLASS;
     colors[ImGuiCol_PopupBg] = AERO_GLASS_STRONG;

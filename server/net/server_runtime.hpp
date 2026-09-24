@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 #include "common/crypto/key_types.hpp"
 #include "common/util/logger.hpp"
 #include "server/admin/admin_service.hpp"
@@ -12,15 +10,17 @@
 #include "server/net/rate_tracker.hpp"
 #include "server/net/tcp_listener.hpp"
 
+#include <string>
+
 namespace hypercom::server {
 
-// Assemblage du serveur : listeners, boucle epoll, registre des connexions.
+// Server assembly: listeners, epoll loop, connection registry.
 //
-// L'arret propre passe par signalfd plutot que par un drapeau atomique global.
-// La raison est simple : la regle G4 interdit toute globale mutable, et
-// un gestionnaire de signal classique en exigerait une. signalfd transforme le
-// signal en descripteur, donc en simple evenement de la boucle -- plus de
-// globale, et plus de code asynchrone reentrant a auditer.
+// Clean shutdown goes through signalfd rather than a global atomic flag.
+// The reason is simple: rule G4 forbids any mutable global, and a classic
+// signal handler would require one. signalfd turns the signal into a
+// descriptor, so into a plain loop event -- no more global, and no more
+// reentrant asynchronous code to audit.
 class server_runtime {
 public:
     server_runtime(server_config const &config, util::logger &logger,
@@ -33,13 +33,13 @@ public:
     [[nodiscard]] bool run_until_stopped(std::string &error_out);
 
 private:
-    // Aiguille un descripteur vers son proprietaire : listener clearnet,
-    // listener onion, socket d'admin, ou connexion client.
+    // Routes a descriptor to its owner: clearnet listener, onion listener,
+    // admin socket, or client connection.
     void dispatch_event(int descriptor, std::uint32_t events);
 
-    // is_clearnet distingue le listener a l'origine de l'appel : c'est ce qui
-    // permet de ne jamais journaliser une connexion oignon, meme si
-    // log_peer_addresses est actif -- voir BRIEF.md 13.
+    // is_clearnet identifies the listener behind the call: it's what
+    // guarantees an onion connection is never logged, even if
+    // log_peer_addresses is on -- see BRIEF.md 13.
     void accept_pending_connections(tcp_listener const &listener,
                                     bool is_clearnet);
 

@@ -1,22 +1,22 @@
 #pragma once
 
-#include <string>
-#include <unordered_map>
-#include <vector>
-
 #include "server/admin/admin_context.hpp"
 #include "server/admin/admin_listener.hpp"
 #include "server/net/event_loop.hpp"
 #include "server/net/unique_descriptor.hpp"
 
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 namespace hypercom::server {
 
-// Une connexion d'administration : une commande, une reponse, puis fermeture.
+// An admin connection: one command, one response, then close.
 //
-// output est bufferise plutot qu'ecrit d'un bloc. Une liste de sessions peut
-// depasser ce qu'une seule ecriture accepte, et bloquer la boucle d'evenements
-// pour attendre la place reviendrait a suspendre tout le serveur le temps
-// qu'un administrateur lise sa sortie.
+// output is buffered rather than written in one block. A session list can
+// exceed what a single write accepts, and blocking the event loop to wait
+// for room would suspend the whole server while an administrator reads
+// their output.
 struct admin_connection {
     unique_descriptor socket;
     std::string input;
@@ -29,11 +29,10 @@ struct admin_service {
     std::unordered_map<int, admin_connection> connections;
 };
 
-// Chemin vide = administration desactivee. Ce n'est pas une erreur : un
-// serveur peut tourner sans, il perd juste la CLI.
+// Empty path = admin disabled. This isn't an error: a server can run
+// without it, it just loses the CLI.
 [[nodiscard]] bool open_admin_service(admin_service &service,
-                                      std::string const &path,
-                                      event_loop &loop,
+                                      std::string const &path, event_loop &loop,
                                       std::string &error_out);
 
 void accept_admin_connections(admin_service &service, event_loop &loop);
@@ -41,9 +40,9 @@ void accept_admin_connections(admin_service &service, event_loop &loop);
 [[nodiscard]] bool owns_admin_descriptor(admin_service const &service,
                                          int descriptor);
 
-// close_requests recueille les descripteurs de sessions CLIENT que la commande
-// demande de fermer. L'appelant les applique ensuite : fermer pendant le
-// parcours du registre invaliderait l'iterateur.
+// close_requests collects the CLIENT session descriptors the command asks
+// to close. The caller applies them afterward: closing while iterating the
+// registry would invalidate the iterator.
 void service_admin_connection(admin_service &service, event_loop &loop,
                               int descriptor, admin_context &context,
                               std::vector<int> &close_requests);

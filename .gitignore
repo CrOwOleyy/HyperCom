@@ -66,16 +66,4 @@ run/
 *.sock
 hypercom_servers.dat
 hypercom_master.key
-
-# Pilotage du travail avec un assistant (audit, plan, instructions) --
-# utile en local, hors de propos pour un contributeur qui clone le depot.
-# BRIEF.md et SECURITY_AUDIT.md restent publics : ce sont de vraies
-# decisions d'architecture et un rapport de securite, pas de la mecanique
-# de session.
-CLAUDE.md
-PLAN.md
-SPEC.md
-
-# Etat de disposition des fenetres ImGui, regenere a chaque lancement du
-# client -- rien a partager, chacun garde le sien.
 imgui.ini

@@ -1,34 +1,32 @@
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
-
-#include <GLFW/glfw3.h>
-
-#include <algorithm>
-#include <iostream>
-#include <string>
-
 #include "client/cli/cli_options.hpp"
 #include "client/keystore/server_registry.hpp"
 #include "client/ui/aero_decorations.hpp"
-#include "client/ui/app_state.hpp"
-#include "client/ui/draw_server_bar.hpp"
-#include "client/ui/server_actions.hpp"
-#include "client/ui/server_slot.hpp"
 #include "client/ui/aero_theme.hpp"
+#include "client/ui/app_state.hpp"
 #include "client/ui/audio_player.hpp"
 #include "client/ui/bubble_reveal.hpp"
 #include "client/ui/draw_auth_modal.hpp"
 #include "client/ui/draw_dm_panel.hpp"
 #include "client/ui/draw_forum_panel.hpp"
+#include "client/ui/draw_server_bar.hpp"
 #include "client/ui/draw_thread_panel.hpp"
 #include "client/ui/draw_welcome_overlay.hpp"
 #include "client/ui/gui_startup.hpp"
 #include "client/ui/intro_sequence.hpp"
+#include "client/ui/server_actions.hpp"
+#include "client/ui/server_slot.hpp"
 #include "client/ui/ui_actions.hpp"
 #include "client/ui/ui_scale.hpp"
 #include "common/crypto/sodium_runtime.hpp"
 #include "common/util/hex_codec.hpp"
+
+#include <GLFW/glfw3.h>
+#include <algorithm>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+#include <iostream>
+#include <string>
 
 namespace {
 
@@ -39,22 +37,23 @@ constexpr int WINDOW_MIN_HEIGHT = 600;
 constexpr char const *THEME_FILE_NAME = "menu.mp3";
 constexpr int REVEAL_BLOCK_COUNT = 3;
 
-void draw_top_bar(client::ui_state &state,
-                  client::ui_scale_state &scale_state)
+void draw_top_bar(client::ui_state &state, client::ui_scale_state &scale_state)
 {
-    client::draw_status_dot(state.connected,
-                            state.connected
-                                ? client::tr("status_encrypted", state.current_lang)
-                                : client::tr("status_offline", state.current_lang));
+    client::draw_status_dot(
+        state.connected,
+        state.connected ? client::tr("status_encrypted", state.current_lang)
+                        : client::tr("status_offline", state.current_lang));
     ImGui::SameLine();
     ImGui::TextDisabled("|");
     ImGui::SameLine();
-    ImGui::TextDisabled("%s %s", client::tr("status_server", state.current_lang),
+    ImGui::TextDisabled("%s %s",
+                        client::tr("status_server", state.current_lang),
                         state.server_key_hex.substr(0, 16).c_str());
     ImGui::SameLine();
     ImGui::TextDisabled("|");
     ImGui::SameLine();
-    ImGui::TextDisabled("%s %s", client::tr("status_identity", state.current_lang),
+    ImGui::TextDisabled("%s %s",
+                        client::tr("status_identity", state.current_lang),
                         state.identity_hex.substr(0, 16).c_str());
     ImGui::SameLine();
     ImGui::TextDisabled("|");
@@ -88,16 +87,16 @@ void draw_top_bar(client::ui_state &state,
     ImGui::Separator();
 }
 
-// Les trois colonnes remontent l'une apres l'autre pendant la phase de
-// revelation. Le decalage vertical doit etre applique APRES SameLine, sinon
-// ImGui le remet a la ligne de base et l'effet disparait.
+// The three columns rise one after another during the reveal phase.
+// The vertical offset must be applied AFTER SameLine, otherwise ImGui
+// resets it to the baseline and the effect disappears.
 void draw_columns(client::cli_context &context, client::ui_state &state,
                   float scale, client::intro_state const &intro)
 {
     ImGuiViewport const *const viewport = ImGui::GetMainViewport();
     ImGuiStyle const &style = ImGui::GetStyle();
-    float const usable = viewport->WorkSize.x - style.WindowPadding.x * 2.0f
-                         - style.ItemSpacing.x * 2.0f;
+    float const usable = viewport->WorkSize.x - style.WindowPadding.x * 2.0f -
+                         style.ItemSpacing.x * 2.0f;
     float const forum_width = std::max(300.0f * scale, usable * 0.26f);
     float const side_width = std::max(330.0f * scale, usable * 0.28f);
     float const thread_width = usable - forum_width - side_width;
@@ -117,9 +116,10 @@ void draw_columns(client::cli_context &context, client::ui_state &state,
     client::end_bubble_reveal();
 }
 
-// Le registre s'il existe, sinon un serveur unique construit depuis --host,
-// --port et --server-key. Ce repli garde intacts les scripts et raccourcis
-// existants, qui ne connaissent pas encore le registre.
+// The registry if it exists, otherwise a single server built from
+// --host, --port and --server-key. This fallback keeps existing
+// scripts and shortcuts working, since they don't know about the
+// registry yet.
 [[nodiscard]] bool load_server_entries(client::cli_options const &options,
                                        std::string_view passphrase,
                                        std::vector<client::server_entry> &out,
@@ -140,25 +140,25 @@ void draw_columns(client::cli_context &context, client::ui_state &state,
     entry.endpoint = {options.host, options.port, options.socks5_host,
                       options.socks5_port};
     std::vector<std::uint8_t> decoded;
-    if (!util::decode_hex(options.server_key_hex, decoded)
-        || decoded.size() != entry.server_key.size()) {
+    if (!util::decode_hex(options.server_key_hex, decoded) ||
+        decoded.size() != entry.server_key.size()) {
         error_out = "--server-key doit faire 64 caracteres hexadecimaux.";
         return false;
     }
     std::copy(decoded.begin(), decoded.end(), entry.server_key.begin());
     entry.source = client::identity_source::imported;
     entry.imported_identity_path = options.identity_path;
-    // Le mode direct suppose un serveur deja choisi en connaissance de cause :
-    // reafficher l'avertissement a chaque lancement n'apprendrait rien.
+    // Direct mode assumes a server already chosen knowingly: showing
+    // the warning again on every launch wouldn't teach anything new.
     entry.trust_acknowledged = true;
     out.push_back(std::move(entry));
     return true;
 }
 
-// Le serveur affiche est connecte a la demande, jamais avant que son
-// avertissement ait ete acquitte. Les autres slots restent inactifs tant qu'on
-// ne bascule pas dessus : ouvrir N sessions Noise -- et N circuits Tor -- au
-// demarrage couterait plusieurs secondes par serveur.
+// The displayed server is connected on demand, never before its
+// warning has been acknowledged. The other slots stay inactive until
+// switched to: opening N Noise sessions -- and N Tor circuits -- at
+// startup would cost several seconds per server.
 void service_active_slot(client::app_state &app,
                          client::server_slot_list &slots)
 {
@@ -167,9 +167,9 @@ void service_active_slot(client::app_state &app,
     }
     client::server_slot &slot = *slots[app.active_slot];
     slot.view.current_lang = app.current_lang;
-    // L'accueil est leve par draw_auth_modal sur le slot qui vient de creer un
-    // compte, mais la sequence occupe toute la fenetre : elle se joue au niveau
-    // application.
+    // The welcome flag is raised by draw_auth_modal on the slot that
+    // just created an account, but the sequence occupies the whole
+    // window: it plays out at the application level.
     if (slot.view.intro_requested) {
         slot.view.intro_requested = false;
         app.intro_requested = true;
@@ -207,12 +207,12 @@ void draw_application_frame(client::app_state &app,
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGuiWindowFlags const flags =
-        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize
-        | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
-        | ImGuiWindowFlags_NoBringToFrontOnFocus;
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoBringToFrontOnFocus;
     ImGui::Begin("hypercom", nullptr, flags);
-    float const bar_width = std::max(150.0f * scale,
-                                     viewport->WorkSize.x * 0.11f);
+    float const bar_width =
+        std::max(150.0f * scale, viewport->WorkSize.x * 0.11f);
     client::draw_server_bar(app, slots, bar_width);
     ImGui::SameLine();
     ImGui::BeginChild("zone_serveur", ImVec2{0.0f, 0.0f}, false);
@@ -233,8 +233,8 @@ void draw_application_frame(client::app_state &app,
     static_cast<void>(client::draw_trust_warning(app, slots, scale));
 }
 
-// Une fenetre de 1280x800 codee en dur occupe un quart d'un ecran 4K. On part
-// donc d'une fraction de la surface reellement disponible.
+// A hardcoded 1280x800 window occupies a quarter of a 4K screen. So we
+// start from a fraction of the actually available area instead.
 void compute_initial_window_size(int &width, int &height)
 {
     width = WINDOW_MIN_WIDTH;
@@ -254,8 +254,9 @@ void compute_initial_window_size(int &width, int &height)
     }
     width = std::max(WINDOW_MIN_WIDTH,
                      static_cast<int>(static_cast<float>(work_width) * 0.82f));
-    height = std::max(WINDOW_MIN_HEIGHT,
-                      static_cast<int>(static_cast<float>(work_height) * 0.85f));
+    height =
+        std::max(WINDOW_MIN_HEIGHT,
+                 static_cast<int>(static_cast<float>(work_height) * 0.85f));
 }
 
 [[nodiscard]] GLFWwindow *create_window()
@@ -282,8 +283,8 @@ void compute_initial_window_size(int &width, int &height)
     return window;
 }
 
-// Reconstruire l'atlas de police detruit la texture du backend OpenGL.
-// L'operation ne peut donc avoir lieu qu'entre deux images.
+// Rebuilding the font atlas destroys the OpenGL backend's texture.
+// The operation can therefore only happen between two frames.
 void refresh_scaling_if_needed(client::ui_scale_state &scale_state)
 {
     if (!scale_state.font_rebuild_needed) {
@@ -307,8 +308,8 @@ void run_render_loop(GLFWwindow *window, client::app_state &app,
         if (app.intro_requested) {
             app.intro_requested = false;
             std::string audio_failure;
-            // L'echec audio n'interrompt rien : la sequence se deroule sur
-            // l'horloge, avec une duree de repli.
+            // An audio failure interrupts nothing: the sequence runs
+            // on the clock, with a fallback duration.
             bool const playing =
                 audio.start_track(THEME_FILE_NAME, audio_failure);
             client::begin_intro(intro, audio.get_track_length_seconds());
@@ -387,8 +388,8 @@ int main(int argc, char **argv)
     client::detect_display_scale(window, scale_state);
     std::cout << "affichage : echelle "
               << client::compute_effective_scale(scale_state) << " (police "
-              << client::BASE_FONT_SIZE
-                     * client::compute_effective_scale(scale_state)
+              << client::BASE_FONT_SIZE *
+                     client::compute_effective_scale(scale_state)
               << " px)\n"
               << std::flush;
     client::intro_state intro;

@@ -5,10 +5,10 @@
 
 namespace hypercom::crypto {
 
-// Tailles fixees par libsodium, redeclarees ici pour que les en-tetes du projet
-// n'imposent pas <sodium.h> a tout le monde. Les valeurs sont verifiees par
-// static_assert dans sodium_runtime.cpp : une divergence casse la compilation
-// plutot que de produire un depassement silencieux.
+// Sizes fixed by libsodium, redeclared here so the project's headers don't
+// force <sodium.h> on everyone. The values are checked with static_assert
+// in sodium_runtime.cpp: a mismatch breaks the build instead of producing
+// a silent overflow.
 
 constexpr std::size_t ED25519_PUBLIC_KEY_SIZE = 32;
 constexpr std::size_t ED25519_SECRET_KEY_SIZE = 64;

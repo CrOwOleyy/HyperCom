@@ -1,12 +1,11 @@
 #include "client/ui/draw_welcome_overlay.hpp"
 
-#include <algorithm>
-
-#include <imgui.h>
-
 #include "client/ui/aero_decorations.hpp"
 #include "client/ui/aero_theme.hpp"
 #include "client/ui/bubble_reveal.hpp"
+
+#include <algorithm>
+#include <imgui.h>
 
 namespace hypercom::client {
 namespace {
@@ -15,7 +14,8 @@ constexpr double CARD_FADE_SECONDS = 0.9;
 constexpr char const *WELCOME_TITLE = "Bienvenue dans l'espace HyperCom.";
 constexpr char const *WELCOME_SUBTITLE = "Amusez-vous et restez gentils !";
 
-// Monte au debut, redescend a la fin, pleine opacite entre les deux.
+// Rises at the start, fades back down at the end, full opacity in
+// between.
 [[nodiscard]] float compute_card_opacity(intro_state const &state)
 {
     double const elapsed = state.elapsed_seconds;
@@ -35,8 +35,8 @@ void draw_centered_line(char const *text, float font_scale, ImVec4 tint)
     ImGui::SetWindowFontScale(font_scale);
     float const width = ImGui::CalcTextSize(text).x;
     float const available = ImGui::GetContentRegionAvail().x;
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX()
-                         + std::max(0.0f, (available - width) * 0.5f));
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
+                         std::max(0.0f, (available - width) * 0.5f));
     ImGui::PushStyleColor(ImGuiCol_Text, tint);
     ImGui::TextUnformatted(text);
     ImGui::PopStyleColor();
@@ -60,9 +60,9 @@ void draw_welcome_overlay(intro_state const &state, float scale)
     ImGui::SetNextWindowSize(ImVec2{card_width, card_height});
     ImGui::PushStyleVar(ImGuiStyleVar_Alpha, opacity);
     ImGuiWindowFlags const flags =
-        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize
-        | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse
-        | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs;
+        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs;
     ImGui::Begin("accueil_hypercom", nullptr, flags);
     ImDrawList *const list = ImGui::GetWindowDrawList();
     draw_gloss_highlight(list, ImGui::GetWindowPos(),

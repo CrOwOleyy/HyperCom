@@ -7,38 +7,40 @@
 
 namespace hypercom::client {
 
-// Socket TCP portable Windows / Linux.
+// Portable Windows / Linux TCP socket.
 //
-// Elle est bloquante, avec un delai d'expiration en lecture. C'est un choix
-// assume : le client n'a qu'une seule connexion, et une boucle d'evenements
-// complete ne servirait a rien. Le delai court laisse l'UI en mode immediat
-// interroger le reseau a chaque image sans jamais se figer.
+// It's blocking, with a read timeout. This is a deliberate choice: the
+// client has only one connection, and a full event loop would serve no
+// purpose. The short timeout lets the immediate-mode UI poll the network
+// on every frame without ever freezing.
 class tcp_client_socket {
 public:
     tcp_client_socket();
 
     ~tcp_client_socket();
 
-    // Reconnectable : un appel sur une socket deja ouverte ferme la precedente
-    // avant de recommencer. C'est ce qui permet la reconnexion par
-    // re-handshake complet sans exposer de methode de fermeture publique, que
-    // la regle O3 ne laisserait pas passer.
+    // Reconnectable: calling this on an already-open socket closes the
+    // previous one before starting over. This is what enables
+    // reconnection via a full re-handshake without exposing a public
+    // close method, which rule O3 wouldn't allow.
     [[nodiscard]] bool connect_to_host(std::string const &host,
                                        std::uint16_t port,
                                        std::string &error_out);
 
-    // Ecrit la totalite du tampon, en bouclant sur les ecritures partielles.
+    // Writes the entire buffer, looping over partial writes.
     [[nodiscard]] bool send_all(std::span<std::uint8_t const> data);
 
-    // Ajoute ce qui est disponible. received_any distingue le silence normal
-    // (delai ecoule) d'une connexion fermee, qui est signalee par false.
+    // Appends what's available. received_any distinguishes normal
+    // silence (timeout elapsed) from a closed connection, which is
+    // signaled by false.
     [[nodiscard]] bool receive_available(std::vector<std::uint8_t> &destination,
                                          bool &received_any);
 
 private:
     void close_handle();
 
-    // Type large volontaire : SOCKET fait 64 bits sous Windows, int sous POSIX.
+    // Deliberately wide type: SOCKET is 64 bits on Windows, int on
+    // POSIX.
     std::intptr_t handle_;
 };
 

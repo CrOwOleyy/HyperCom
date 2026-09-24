@@ -1,9 +1,9 @@
 #include "common/crypto/dm_message_chain.hpp"
 
-#include <string_view>
-
 #include "common/crypto/hkdf_sha256.hpp"
 #include "common/crypto/secure_memory.hpp"
+
+#include <string_view>
 
 namespace hypercom::crypto {
 namespace {
@@ -20,8 +20,7 @@ constexpr std::string_view CHAIN_KEY_INFO = "hypercom-dm-chain";
 
 dm_message_chain::dm_message_chain(symmetric_key const &initial_chain_key)
     : chain_key_{initial_chain_key}, counter_{0}
-{
-}
+{}
 
 bool dm_message_chain::derive_next_message_key(symmetric_key &out)
 {
@@ -34,8 +33,8 @@ bool dm_message_chain::derive_next_message_key(symmetric_key &out)
         wipe_bytes(next_chain_key);
         return false;
     }
-    // L'ancienne cle de chaine est detruite ici, et nulle part ailleurs : c'est
-    // cette ligne, et elle seule, qui rend les messages passes irrecuperables.
+    // The old chain key is destroyed here, and nowhere else: this line, and
+    // this line alone, is what makes past messages unrecoverable.
     wipe_bytes(chain_key_);
     chain_key_ = next_chain_key;
     wipe_bytes(next_chain_key);

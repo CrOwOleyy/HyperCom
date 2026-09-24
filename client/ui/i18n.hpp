@@ -2,13 +2,11 @@
 
 namespace hypercom::client {
 
-enum class language {
-    french,
-    english
-};
+enum class language { french, english };
 
-// Renvoie la traduction correspondant a la cle dans la langue donnee.
-// Si la cle n'existe pas, renvoie la cle elle-meme pour aider au debug.
-const char* tr(const char* key, language lang);
+// Returns the translation matching the key in the given language.
+// If the key doesn't exist, returns the key itself to help with
+// debugging.
+const char *tr(const char *key, language lang);
 
 } // namespace hypercom::client

@@ -1,17 +1,17 @@
 #pragma once
 
-#include <string>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 
+#include <string>
+
 namespace hypercom::proto {
 
-// Le profil personnalisable, cote MySpace du projet.
+// The customizable profile, the MySpace side of the project.
 //
-// theme_json est stocke et resservi tel quel. Le serveur ne l'interprete pas
-// et ne valide que l'UTF-8 et la taille -- c'est donc au client de se defendre
-// d'un theme hostile.
+// theme_json is stored and served back as-is. The server doesn't
+// interpret it and only validates UTF-8 and size -- so it's up to the
+// client to defend itself against a hostile theme.
 struct profile_set_request {
     std::string display_name;
     std::string bio;

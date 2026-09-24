@@ -7,12 +7,12 @@
 
 namespace hypercom::server {
 
-// Tout ce dont un handler a besoin, passe explicitement.
+// Everything a handler needs, passed explicitly.
 //
-// C'est la forme que prend la regle G4 en pratique : il n'existe pas de
-// « serveur courant » ni de « connexion courante » accessible de n'importe ou.
-// Un handler ne peut toucher qu'a ce qu'on lui a remis, ce qui rend son
-// perimetre lisible dans sa signature.
+// This is what rule G4 looks like in practice: there is no "current server"
+// or "current connection" reachable from just anywhere. A handler can only
+// touch what it was handed, which makes its scope readable right in its
+// signature.
 struct handler_context {
     server_config const &config;
     util::logger &logger;

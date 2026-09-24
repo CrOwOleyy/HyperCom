@@ -1,19 +1,19 @@
 #include "client/ui/draw_social_panel.hpp"
 
-#include <algorithm>
-#include <imgui.h>
-
 #include "client/ui/aero_theme.hpp"
 #include "client/ui/i18n.hpp"
 #include "client/ui/ui_report_actions.hpp"
 #include "client/ui/ui_social_actions.hpp"
 
+#include <algorithm>
+#include <imgui.h>
+
 namespace hypercom::client {
 namespace {
 
-[[nodiscard]] proto::friend_record const *find_slot_detail(
-    proto::wire_public_key const &slot,
-    std::vector<proto::friend_record> const &details)
+[[nodiscard]] proto::friend_record const *
+find_slot_detail(proto::wire_public_key const &slot,
+                 std::vector<proto::friend_record> const &details)
 {
     if (slot == proto::wire_public_key{}) {
         return nullptr;
@@ -26,9 +26,9 @@ namespace {
     return nullptr;
 }
 
-// removable_owner non nul : chaque case occupee gagne un bouton "retirer" qui
-// vide la case correspondante dans son propre top 8. Nul : affichage seul,
-// pour le top 8 d'un profil consulte.
+// removable_owner non-null: each occupied slot gets a "remove" button
+// that clears the matching slot in its own top 8. Null: display only,
+// for the top 8 of a viewed profile.
 void draw_top8_grid(
     ui_state *removable_owner,
     std::array<proto::wire_public_key, proto::TOP8_SLOT_COUNT> const &slots,
@@ -40,7 +40,7 @@ void draw_top8_grid(
         ImGui::PushID(static_cast<int>(index));
         if (detail != nullptr) {
             ImGui::Text("%d. @%s", static_cast<int>(index + 1),
-                       detail->handle.c_str());
+                        detail->handle.c_str());
             if (removable_owner != nullptr) {
                 ImGui::SameLine();
                 if (ImGui::SmallButton("x")) {
@@ -100,7 +100,7 @@ void draw_viewed_profile_panel(cli_context &context, ui_state &state,
         return;
     }
     ImGui::Text("@%s  (%s)", state.viewed_profile.handle.c_str(),
-               state.viewed_profile.display_name.c_str());
+                state.viewed_profile.display_name.c_str());
     ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK_MUTED);
     ImGui::TextWrapped("%s", state.viewed_profile.bio.c_str());
     ImGui::PopStyleColor();

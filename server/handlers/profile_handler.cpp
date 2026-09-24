@@ -38,8 +38,8 @@ bool handle_profile_set_request(handler_context &context,
     if (!request.read_from(reader)) {
         return false;
     }
-    // On ne modifie que le profil de la session : la cible n'est pas un
-    // parametre, elle ne peut donc pas etre detournee.
+    // Only the session's own profile is modified: the target isn't a
+    // parameter, so it can't be hijacked.
     profile_repository profiles{context.database};
     if (!profiles.replace_profile(context.connection.session.user_id,
                                   request)) {

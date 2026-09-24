@@ -1,29 +1,29 @@
 #pragma once
 
+#include "common/crypto/identity_keypair.hpp"
+
 #include <string>
 #include <string_view>
 
-#include "common/crypto/identity_keypair.hpp"
-
 namespace hypercom::client {
 
-// La cle privee sur le disque de l'utilisateur, et nulle part ailleurs.
+// The private key on the user's disk, and nowhere else.
 //
-//   passphrase --Argon2id--> cle --XChaCha20-Poly1305--> cle privee scellee
+//   passphrase --Argon2id--> key --XChaCha20-Poly1305--> sealed private key
 //
-// Elle ne quitte JAMAIS la machine. C'est la raison pour laquelle le client est
-// un executable natif et non une page web : un client web recoit son code du
-// serveur a chaque chargement, donc un serveur compromis pourrait exfiltrer la
-// cle sans que personne ne s'en apercoive.
+// It NEVER leaves the machine. That's why the client is a native
+// executable rather than a web page: a web client gets its code from the
+// server on every load, so a compromised server could exfiltrate the key
+// without anyone noticing.
 class identity_store {
 public:
     explicit identity_store(std::string path);
 
     [[nodiscard]] bool has_stored_identity() const;
 
-    // Genere une identite et la scelle. Refuse d'ecraser un fichier existant :
-    // sur ce projet, ecraser une cle equivaut a supprimer un compte
-    // definitivement, sans aucun recours possible.
+    // Generates an identity and seals it. Refuses to overwrite an
+    // existing file: on this project, overwriting a key is equivalent to
+    // deleting an account permanently, with no possible recovery.
     [[nodiscard]] bool create_identity(std::string_view passphrase,
                                        crypto::identity_keypair &out,
                                        std::string &error_out);

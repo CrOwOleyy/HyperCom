@@ -1,28 +1,30 @@
 #pragma once
 
-#include <cstdint>
-#include <string>
-#include <string_view>
-
 #include "client/net/server_connection.hpp"
 #include "common/crypto/identity_keypair.hpp"
 #include "common/protocol/wire_key.hpp"
 
+#include <cstdint>
+#include <string>
+#include <string_view>
+
 namespace hypercom::client {
 
-// Authentification applicative par defi-reponse, au-dessus du canal Noise.
+// Application-level challenge-response authentication, on top of the
+// Noise channel.
 //
-// Aucun mot de passe ne circule : le serveur envoie un nonce, le client le
-// signe. La passphrase locale ne sert qu'a dechiffrer la cle privee sur ce
-// disque, elle n'est jamais transmise et le serveur n'en connait pas
-// l'existence.
+// No password ever travels over the wire: the server sends a nonce, the
+// client signs it. The local passphrase only serves to decrypt the
+// private key on this disk, it's never transmitted, and the server
+// doesn't even know it exists.
 class client_session {
 public:
     client_session(server_connection &connection,
                    crypto::identity_keypair const &identity);
 
-    // Renvoie true meme si la cle n'a pas encore de compte : consulter ensuite
-    // needs_registration() pour savoir s'il faut choisir un pseudo.
+    // Returns true even if the key doesn't have an account yet: check
+    // needs_registration() afterward to know whether a handle needs to be
+    // chosen.
     [[nodiscard]] bool authenticate(std::string &error_out);
 
     [[nodiscard]] bool register_handle(std::string_view handle,

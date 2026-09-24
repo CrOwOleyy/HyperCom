@@ -1,34 +1,34 @@
 #pragma once
 
-#include <string>
-
 #include "server/net/unique_descriptor.hpp"
+
+#include <string>
 
 namespace hypercom::server {
 
-// Socket d'ecoute de l'administration, en AF_UNIX.
+// Admin listening socket, over AF_UNIX.
 //
-// AF_UNIX et rien d'autre : il n'existe aucun chemin de code capable de
-// l'exposer au reseau. C'est la propriete qui compte ici -- l'administration
-// n'a pas d'authentification propre, elle s'appuie entierement sur les
-// permissions du fichier de socket. Ouvrir ca sur un port TCP donnerait le
-// controle du serveur au premier venu.
+// AF_UNIX and nothing else: there is no code path that could expose it to
+// the network. That's the property that matters here -- admin has no
+// authentication of its own, it relies entirely on the socket file's
+// permissions. Opening this on a TCP port would hand server control to
+// whoever showed up first.
 //
-// Le fichier est cree en 0600 : seul le compte qui fait tourner le serveur peut
-// s'y connecter.
+// The file is created with mode 0600: only the account running the server
+// can connect to it.
 class admin_listener {
 public:
     admin_listener();
 
-    // Supprime le fichier de socket a l'arret. Sans ca, un redemarrage
-    // echouerait sur un fichier residuel, et le socket resterait visible dans
-    // le systeme de fichiers alors que plus personne n'ecoute derriere.
+    // Removes the socket file on shutdown. Without this, a restart would
+    // fail on a leftover file, and the socket would stay visible in the
+    // filesystem even though nothing is listening behind it anymore.
     ~admin_listener();
 
     [[nodiscard]] bool open_listener(std::string const &path,
                                      std::string &error_out);
 
-    // Renvoie -1 quand il n'y a plus rien a accepter.
+    // Returns -1 when there's nothing left to accept.
     [[nodiscard]] int accept_connection() const;
 
     [[nodiscard]] int get_descriptor() const;

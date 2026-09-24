@@ -4,11 +4,11 @@
 
 namespace hypercom::tests {
 
-// Harnais de test minimal, ecrit a la main.
+// Minimal, hand-written test harness.
 //
-// Le projet s'interdit d'autres dependances que libsodium, SQLite et ImGui.
-// Un framework de test en ferait une quatrieme, pour un besoin qui tient en
-// trois fonctions : compter, signaler, resumer.
+// The project rules out any dependency beyond libsodium, SQLite, and
+// ImGui. A test framework would add a fourth one, for a need that fits in
+// three functions: count, report, summarize.
 class test_report {
 public:
     test_report();
@@ -16,7 +16,7 @@ public:
     void record_check(bool passed, char const *expression, char const *file,
                       int line);
 
-    // Renvoie le code de sortie du processus : 0 si tout passe.
+    // Returns the process exit code: 0 if everything passes.
     [[nodiscard]] int summarize(char const *suite_name) const;
 
 private:
@@ -26,5 +26,5 @@ private:
 
 } // namespace hypercom::tests
 
-#define HYPERCOM_CHECK(report, expression)                                    \
+#define HYPERCOM_CHECK(report, expression)                                     \
     (report).record_check((expression), #expression, __FILE__, __LINE__)

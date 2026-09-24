@@ -1,17 +1,18 @@
 #pragma once
 
-#include <cstdint>
-#include <string>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 
+#include <cstdint>
+#include <string>
+
 namespace hypercom::proto {
 
-// Message du jour, pousse a la connexion. Modifiable a chaud, sans redemarrer.
+// Message of the day, pushed on connection. Editable live, no restart
+// needed.
 //
-// revision evite au client de comparer des chaines pour savoir s'il a deja
-// affiche cette annonce.
+// revision saves the client from comparing strings to know whether it has
+// already displayed this announcement.
 struct motd_push {
     std::uint64_t revision = 0;
     std::string body;

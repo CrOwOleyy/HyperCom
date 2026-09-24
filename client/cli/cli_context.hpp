@@ -6,8 +6,8 @@
 
 namespace hypercom::client {
 
-// Ce dont dispose une commande du client en ligne de commande. Passe
-// explicitement, comme partout ailleurs (regle G4).
+// What a command line client command has available. Passed explicitly,
+// as everywhere else (rule G4).
 struct cli_context {
     server_connection &connection;
     crypto::identity_keypair const &identity;

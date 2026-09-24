@@ -1,21 +1,21 @@
 #pragma once
 
+#include "common/util/log_level.hpp"
+
 #include <cstdint>
 #include <iosfwd>
 #include <string_view>
 
-#include "common/util/log_level.hpp"
-
 namespace hypercom::util {
 
-// Journalisation explicite : aucune instance globale, aucun singleton (G4).
-// Le logger se passe en parametre a tout ce qui doit journaliser.
+// Explicit logging: no global instance, no singleton (G4). The logger
+// is passed as a parameter to anything that needs to log.
 //
-// Le logger porte aussi la politique d'adresses de pairs, et c'est la un choix
-// de conception plus qu'un detail : par defaut elle est a false, donc aucune IP
-// n'est journalisee. Les appelants n'ont pas a y penser -- ils passent par
-// redact_peer_address(), qui rend une chaine neutre tant que hypercom.conf
-// n'a pas explicitement ouvert la politique.
+// The logger also carries the peer-address policy, and that's a design
+// choice more than a detail: by default it's false, so no IP gets
+// logged. Callers don't have to think about it -- they go through
+// redact_peer_address(), which returns a neutral string until
+// hypercom.conf has explicitly opened up the policy.
 class logger {
 public:
     logger(log_level minimum, bool allow_peer_addresses, std::ostream &sink);
@@ -24,8 +24,8 @@ public:
 
     [[nodiscard]] bool is_level_enabled(log_level level) const;
 
-    // Rend l'adresse telle quelle si et seulement si la politique l'autorise,
-    // et "[redacted]" sinon. C'est le seul chemin autorise vers un journal.
+    // Returns the address as-is if and only if the policy allows it, and
+    // "[redacted]" otherwise. This is the only path allowed into a log.
     [[nodiscard]] std::string_view
     redact_peer_address(std::string_view address) const;
 

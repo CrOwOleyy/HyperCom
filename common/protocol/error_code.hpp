@@ -5,11 +5,11 @@
 
 namespace hypercom::proto {
 
-// Codes d'erreur applicatifs, transportes par status_error.
+// Application-level error codes, carried by status_error.
 //
-// Ils restent grossiers a dessein. « utilisateur inconnu » et « signature
-// invalide » renvoient tous deux authentication_failed : distinguer les deux
-// reviendrait a dire a un attaquant quelles cles publiques existent.
+// They stay coarse on purpose. "unknown user" and "invalid signature" both
+// map to authentication_failed: distinguishing the two would amount to
+// telling an attacker which public keys exist.
 enum class error_code : std::uint16_t {
     none = 0,
     malformed_frame = 1,

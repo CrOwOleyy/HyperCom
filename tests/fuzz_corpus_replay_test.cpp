@@ -1,20 +1,20 @@
+#include "tests/test_harness.hpp"
+
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
-#include "tests/test_harness.hpp"
-
-// Rejoue le corpus de fuzzing sans libFuzzer.
+// Replays the fuzzing corpus without libFuzzer.
 //
-// Le harnais tools/fuzz exige clang. Ce test appelle le meme point d'entree
-// depuis la suite ordinaire, pour que les cas limites deja connus soient
-// verifies a chaque build -- y compris sous gcc, et sous les sanitizers
-// actives par HYPERCOM_SANITIZER.
+// The tools/fuzz harness requires clang. This test calls the same entry
+// point from the regular suite, so already-known edge cases get checked on
+// every build -- including under gcc, and under the sanitizers enabled by
+// HYPERCOM_SANITIZER.
 //
-// Il ne remplace pas une campagne de fuzzing : il empeche seulement une
-// regression sur un cas qu'on a deja paye le prix de trouver.
+// It doesn't replace an actual fuzzing campaign: it only prevents a
+// regression on a case we already paid the price to find.
 
 extern "C" int LLVMFuzzerTestOneInput(std::uint8_t const *data,
                                       std::size_t size);
@@ -35,8 +35,8 @@ using namespace hypercom;
     return true;
 }
 
-// Le succes est l'absence de plantage : si le parseur deborde, le processus
-// meurt ici et ctest le signale. Il n'y a donc rien a comparer.
+// Success is the absence of a crash: if the parser overruns, the process
+// dies here and ctest reports it. So there's nothing to compare.
 void replay_corpus(tests::test_report &report)
 {
     std::filesystem::path const directory{HYPERCOM_FUZZ_CORPUS_DIR};

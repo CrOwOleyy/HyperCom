@@ -11,8 +11,8 @@
 namespace hypercom::server {
 namespace {
 
-// Le message Noise le plus long transporte une trame applicative complete plus
-// l'etiquette Poly1305.
+// The longest Noise message carries one full application frame plus the
+// Poly1305 tag.
 constexpr std::size_t MAX_NOISE_MESSAGE_SIZE =
     proto::MAX_FRAME_SIZE + crypto::AEAD_TAG_SIZE;
 
@@ -30,25 +30,25 @@ constexpr std::size_t MAX_NOISE_MESSAGE_SIZE =
     return true;
 }
 
-[[nodiscard]] bool dispatch_application_frame(handler_context &context,
-                                              rate_policy &policy,
-                                              std::span<std::uint8_t const> frame)
+[[nodiscard]] bool
+dispatch_application_frame(handler_context &context, rate_policy &policy,
+                           std::span<std::uint8_t const> frame)
 {
     proto::frame_header header{};
     if (!proto::decode_frame_header(frame, header)) {
         return false;
     }
-    // La longueur annoncee doit correspondre exactement a ce qui a ete
-    // dechiffre : un ecart signale une trame forgee ou un bug d'emetteur.
+    // The announced length must match exactly what was decrypted: any
+    // discrepancy signals a forged frame or a sender bug.
     if (frame.size() != proto::FRAME_LENGTH_FIELD_SIZE + header.body_size) {
         return false;
     }
     session_state &session = context.connection.session;
     std::uint64_t const now = util::get_unix_timestamp();
-    // L'adresse d'abord : elle couvre aussi les sessions pas encore
-    // enregistrees, qui n'ont pas d'identite a plafonner.
-    if (!allow_address_request(policy, session.peer_address, now)
-        || !allow_identity_request(policy, session.user_id, now)) {
+    // Address first: it also covers sessions that aren't registered yet,
+    // which don't have an identity to cap.
+    if (!allow_address_request(policy, session.peer_address, now) ||
+        !allow_identity_request(policy, session.user_id, now)) {
         return send_status_error(context.connection,
                                  proto::error_code::rate_limited);
     }

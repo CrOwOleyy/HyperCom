@@ -1,20 +1,23 @@
 #include "client/net/client_session.hpp"
 
-#include <vector>
-
 #include "client/net/message_exchange.hpp"
 #include "common/protocol/auth_message.hpp"
 #include "common/protocol/hello_message.hpp"
 #include "common/protocol/register_message.hpp"
 
+#include <vector>
+
 namespace hypercom::client {
 
 client_session::client_session(server_connection &connection,
                                crypto::identity_keypair const &identity)
-    : connection_{connection}, identity_{identity}, challenge_nonce_{},
-      handle_{}, user_id_{0}, needs_registration_{true}
-{
-}
+    : connection_{connection},
+      identity_{identity},
+      challenge_nonce_{},
+      handle_{},
+      user_id_{0},
+      needs_registration_{true}
+{}
 
 bool client_session::needs_registration() const
 {
@@ -54,17 +57,17 @@ bool client_session::authenticate(std::string &error_out)
         return false;
     }
     proto::auth_challenge challenge;
-    if (!receive_typed_message(connection_,
-                               proto::message_type::auth_challenge, challenge,
-                               error_out)) {
+    if (!receive_typed_message(connection_, proto::message_type::auth_challenge,
+                               challenge, error_out)) {
         return false;
     }
     challenge_nonce_ = challenge.nonce;
     if (!sign_and_send_response(error_out)) {
         return false;
     }
-    // Deux reponses possibles : auth_accepted si la cle a deja un compte,
-    // status_ok si elle vient d'etre prouvee mais n'en a pas encore.
+    // Two possible responses: auth_accepted if the key already has an
+    // account, status_ok if it has just been proven but doesn't have one
+    // yet.
     proto::frame_header header{};
     std::vector<std::uint8_t> payload;
     if (!connection_.receive_frame(header, payload, error_out)) {
@@ -101,15 +104,14 @@ bool client_session::register_handle(std::string_view handle,
     }
     proto::register_request request;
     request.handle = std::string{handle};
-    if (!send_typed_message(connection_,
-                            proto::message_type::register_request, request)) {
+    if (!send_typed_message(connection_, proto::message_type::register_request,
+                            request)) {
         error_out = "envoi de l'enregistrement impossible";
         return false;
     }
     proto::auth_accepted accepted;
-    if (!receive_typed_message(connection_,
-                               proto::message_type::auth_accepted, accepted,
-                               error_out)) {
+    if (!receive_typed_message(connection_, proto::message_type::auth_accepted,
+                               accepted, error_out)) {
         return false;
     }
     handle_ = accepted.handle;

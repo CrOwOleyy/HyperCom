@@ -1,8 +1,5 @@
 #include "client/dm/dm_courier.hpp"
 
-#include <algorithm>
-#include <string_view>
-
 #include "common/crypto/dm_envelope.hpp"
 #include "common/crypto/dm_message_chain.hpp"
 #include "common/crypto/dm_session_keys.hpp"
@@ -16,6 +13,9 @@
 #include "common/protocol/text_field_codec.hpp"
 #include "common/util/unix_clock.hpp"
 
+#include <algorithm>
+#include <string_view>
+
 namespace hypercom::client {
 namespace {
 
@@ -27,11 +27,13 @@ constexpr std::uint8_t DM_PAYLOAD_VERSION = 1;
     return {reinterpret_cast<std::uint8_t const *>(text.data()), text.size()};
 }
 
-// Contenu chiffre d'un message : [u8 version][u64 date d'envoi][texte].
+// Encrypted content of a message: [u8 version][u64 sent-at timestamp]
+// [text].
 //
-// La date est A L'INTERIEUR du chiffre, pas dans une colonne de la base. Le
-// serveur stocke donc une enveloppe dont il ignore jusqu'a la date -- il ne
-// peut plus tenir de registre horodate de qui echange avec qui.
+// The timestamp is INSIDE the ciphertext, not in a database column. The
+// server therefore stores an envelope whose timestamp it doesn't even
+// know -- it can no longer keep a time-stamped log of who exchanges
+// messages with whom.
 void build_dm_payload(std::uint64_t sent_at, std::string_view text,
                       std::vector<std::uint8_t> &out)
 {
@@ -47,8 +49,8 @@ void build_dm_payload(std::uint64_t sent_at, std::string_view text,
 {
     proto::byte_reader reader{payload};
     std::uint8_t version = 0;
-    if (!reader.read_integer(version) || version != DM_PAYLOAD_VERSION
-        || !reader.read_integer(sent_at_out)) {
+    if (!reader.read_integer(version) || version != DM_PAYLOAD_VERSION ||
+        !reader.read_integer(sent_at_out)) {
         return false;
     }
     std::vector<std::uint8_t> remaining(reader.count_remaining_bytes());
@@ -56,13 +58,13 @@ void build_dm_payload(std::uint64_t sent_at, std::string_view text,
         return false;
     }
     text_out.assign(remaining.begin(), remaining.end());
-    // Le texte vient d'un pair, pas du serveur : il se valide comme tout ce
-    // qui arrive de l'exterieur.
+    // The text comes from a peer, not the server: it's validated like
+    // anything arriving from outside.
     return proto::validate_text_field(text_out);
 }
 
-// Une cle de message unique suffit : chaque envoi cree une nouvelle cle
-// ephemere, donc une nouvelle racine, donc un cliquet neuf au compteur zero.
+// A single message key is enough: each send creates a new ephemeral key,
+// hence a new root, hence a fresh ratchet with the counter at zero.
 [[nodiscard]] bool derive_first_message_key(crypto::symmetric_key const &root,
                                             crypto::symmetric_key &out)
 {
@@ -76,7 +78,7 @@ bool derive_local_prekey(crypto::identity_keypair const &identity,
                          crypto::x25519_public_key &public_out,
                          crypto::x25519_secret_key &secret_out)
 {
-    // Les 32 premiers octets de la cle privee Ed25519 sont la graine.
+    // The first 32 bytes of the Ed25519 private key are the seed.
     crypto::ed25519_secret_key const &secret = identity.get_secret_key();
     crypto::symmetric_key seed_material{};
     std::copy_n(secret.begin(), seed_material.size(), seed_material.begin());
@@ -104,8 +106,7 @@ bool verify_prekey_bundle(proto::prekey_bundle_response const &bundle)
 
 bool seal_direct_message(crypto::identity_keypair const &sender,
                          proto::prekey_bundle_response const &recipient_bundle,
-                         std::string_view text,
-                         std::vector<std::uint8_t> &out,
+                         std::string_view text, std::vector<std::uint8_t> &out,
                          std::string &error_out)
 {
     if (!verify_prekey_bundle(recipient_bundle)) {
@@ -173,8 +174,7 @@ bool open_direct_message(crypto::identity_keypair const &recipient,
     crypto::wipe_bytes(root);
     std::vector<std::uint8_t> plaintext;
     if (succeeded) {
-        succeeded =
-            crypto::open_dm_envelope(envelope, message_key, plaintext);
+        succeeded = crypto::open_dm_envelope(envelope, message_key, plaintext);
     }
     crypto::wipe_bytes(message_key);
     if (!succeeded) {

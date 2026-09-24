@@ -1,10 +1,10 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include "common/protocol/top8_message.hpp"
 #include "server/db/database_handle.hpp"
+
+#include <cstdint>
+#include <vector>
 
 namespace hypercom::server {
 
@@ -17,9 +17,9 @@ class top8_repository {
 public:
     explicit top8_repository(database_handle &database);
 
-    // Remplacement integral plutot que mise a jour par emplacement : le client
-    // envoie l'etat complet des huit cases, ce qui evite toute divergence entre
-    // ce qu'il affiche et ce qui est stocke.
+    // Full replacement rather than a per-slot update: the client sends
+    // the complete state of all eight slots, which avoids any drift
+    // between what it displays and what's stored.
     [[nodiscard]] bool replace_slots(std::int64_t user_id,
                                      std::vector<top8_entry> const &entries);
 

@@ -12,9 +12,9 @@ enum class log_level : unsigned char {
     silent = 4,
 };
 
-// Rend le niveau nomme dans hypercom.conf. Renvoie false sur un nom inconnu :
-// le serveur refuse alors de demarrer plutot que de retomber sur une valeur
-// par defaut silencieuse.
+// Resolves the level named in hypercom.conf. Returns false on an unknown
+// name: the server then refuses to start rather than silently falling
+// back to a default value.
 [[nodiscard]] bool parse_log_level(std::string_view name, log_level &out);
 
 [[nodiscard]] std::string_view describe_log_level(log_level level);

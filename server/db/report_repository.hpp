@@ -1,12 +1,12 @@
 #pragma once
 
+#include "common/protocol/wire_key.hpp"
+#include "server/db/database_handle.hpp"
+
 #include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>
-
-#include "common/protocol/wire_key.hpp"
-#include "server/db/database_handle.hpp"
 
 namespace hypercom::server {
 
@@ -20,8 +20,8 @@ struct report_row {
     std::int64_t created_at = 0;
 };
 
-// Un depot par entite (regle O3). Enregistre des signalements, ne les
-// interprete jamais : c'est un canal de reception, pas un arbitre (BRIEF.md 13).
+// One repository per entity (rule O3). Records reports, never interprets
+// them: it's an intake channel, not an arbiter (BRIEF.md 13).
 class report_repository {
 public:
     explicit report_repository(database_handle &database);
@@ -30,14 +30,15 @@ public:
                                           std::int64_t reporter_id,
                                           std::string_view reason);
 
-    [[nodiscard]] bool record_account_report(
-        proto::wire_public_key const &target_pubkey, std::int64_t reporter_id,
-        std::string_view reason);
+    [[nodiscard]] bool
+    record_account_report(proto::wire_public_key const &target_pubkey,
+                          std::int64_t reporter_id, std::string_view reason);
 
     [[nodiscard]] bool list_reports(std::uint16_t limit,
                                     std::vector<report_row> &out);
 
-    // Traite : l'admin l'a lu et agi (ou a juge qu'il n'y avait rien a faire).
+    // Resolved: the admin has read it and acted (or decided there was
+    // nothing to do).
     [[nodiscard]] bool clear_report(std::int64_t id);
 
 private:

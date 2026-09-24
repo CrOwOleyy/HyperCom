@@ -8,8 +8,7 @@ namespace hypercom::server {
 
 profile_repository::profile_repository(database_handle &database)
     : database_{database}
-{
-}
+{}
 
 bool profile_repository::replace_profile(
     std::int64_t user_id, proto::profile_set_request const &request)
@@ -23,11 +22,11 @@ bool profile_repository::replace_profile(
         "  bio = excluded.bio,"
         "  theme_json = excluded.theme_json,"
         "  banner_ref = excluded.banner_ref"};
-    if (!bind_integer(statement, 1, user_id)
-        || !bind_text(statement, 2, request.display_name)
-        || !bind_text(statement, 3, request.bio)
-        || !bind_text(statement, 4, request.theme_json)
-        || !bind_text(statement, 5, request.banner_reference)) {
+    if (!bind_integer(statement, 1, user_id) ||
+        !bind_text(statement, 2, request.display_name) ||
+        !bind_text(statement, 3, request.bio) ||
+        !bind_text(statement, 4, request.theme_json) ||
+        !bind_text(statement, 5, request.banner_reference)) {
         return false;
     }
     return statement.step_row() == step_result::done;
@@ -36,18 +35,17 @@ bool profile_repository::replace_profile(
 bool profile_repository::find_by_pubkey(proto::wire_public_key const &pubkey,
                                         proto::profile_record &out)
 {
-    // LEFT JOIN : un compte existe des l'enregistrement, meme si son
-    // proprietaire n'a jamais rempli de profil. COALESCE rend alors des
-    // chaines vides plutot que de faire echouer la requete.
+    // LEFT JOIN: an account exists as soon as it's registered, even if its
+    // owner has never filled out a profile. COALESCE then returns empty
+    // strings instead of making the query fail.
     sql_statement statement{
-        database_,
-        "SELECT u.pubkey, u.handle, COALESCE(p.display_name, ''),"
-        "       COALESCE(p.bio, ''), COALESCE(p.theme_json, ''),"
-        "       COALESCE(p.banner_ref, '') "
-        "FROM users u LEFT JOIN profiles p ON p.user_id = u.id "
-        "WHERE u.pubkey = ?1"};
-    if (!bind_blob(statement, 1, pubkey)
-        || statement.step_row() != step_result::row) {
+        database_, "SELECT u.pubkey, u.handle, COALESCE(p.display_name, ''),"
+                   "       COALESCE(p.bio, ''), COALESCE(p.theme_json, ''),"
+                   "       COALESCE(p.banner_ref, '') "
+                   "FROM users u LEFT JOIN profiles p ON p.user_id = u.id "
+                   "WHERE u.pubkey = ?1"};
+    if (!bind_blob(statement, 1, pubkey) ||
+        statement.step_row() != step_result::row) {
         return false;
     }
     if (!read_fixed_bytes(statement, 0, out.pubkey)) {

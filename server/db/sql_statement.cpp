@@ -11,12 +11,11 @@ sql_statement::sql_statement(database_handle &database, std::string_view sql)
         return;
     }
     sqlite3_stmt *raw = nullptr;
-    // SQLITE_PREPARE_PERSISTENT : ces requetes sont reutilisees pendant toute
-    // la vie du serveur, autant le dire au planificateur.
-    if (sqlite3_prepare_v3(database.get_raw_handle(), sql.data(),
-                           static_cast<int>(sql.size()),
-                           SQLITE_PREPARE_PERSISTENT, &raw, nullptr)
-        != SQLITE_OK) {
+    // SQLITE_PREPARE_PERSISTENT: these statements get reused for the
+    // server's entire lifetime, might as well tell the query planner.
+    if (sqlite3_prepare_v3(
+            database.get_raw_handle(), sql.data(), static_cast<int>(sql.size()),
+            SQLITE_PREPARE_PERSISTENT, &raw, nullptr) != SQLITE_OK) {
         return;
     }
     statement_.reset(raw);
@@ -28,9 +27,12 @@ step_result sql_statement::step_row()
         return step_result::failed;
     }
     switch (sqlite3_step(statement_.get())) {
-        case SQLITE_ROW:  return step_result::row;
-        case SQLITE_DONE: return step_result::done;
-        default:          return step_result::failed;
+        case SQLITE_ROW:
+            return step_result::row;
+        case SQLITE_DONE:
+            return step_result::done;
+        default:
+            return step_result::failed;
     }
 }
 

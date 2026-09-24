@@ -1,19 +1,19 @@
 #pragma once
 
-#include <cstdint>
-#include <span>
-#include <vector>
-
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/error_code.hpp"
 #include "common/protocol/message_type.hpp"
 #include "server/net/client_connection.hpp"
 
+#include <cstdint>
+#include <span>
+#include <vector>
+
 namespace hypercom::server {
 
-// Chemin de sortie unique : encadrement, scellement Noise, prefixe de longueur,
-// mise en file. Aucun handler n'ecrit sur une socket directement, ce qui rend
-// structurellement impossible d'emettre une reponse en clair par megarde.
+// Single output path: framing, Noise sealing, length prefix, queuing. No
+// handler ever writes to a socket directly, which makes it structurally
+// impossible to accidentally send a response in the clear.
 [[nodiscard]] bool send_raw_message(client_connection &connection,
                                     proto::message_type type,
                                     std::span<std::uint8_t const> payload);

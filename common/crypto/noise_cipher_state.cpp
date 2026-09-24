@@ -1,15 +1,13 @@
 #include "common/crypto/noise_cipher_state.hpp"
 
 #include <limits>
-
 #include <sodium.h>
 
 namespace hypercom::crypto {
 
 noise_cipher_state::noise_cipher_state()
     : key_{}, nonce_counter_{0}, has_key_{false}
-{
-}
+{}
 
 void noise_cipher_state::initialize_key(symmetric_key const &key)
 {
@@ -26,8 +24,8 @@ bool noise_cipher_state::has_key() const
 void noise_cipher_state::build_nonce(
     std::array<std::uint8_t, CHACHA_IETF_NONCE_SIZE> &out) const
 {
-    // Specification Noise pour ChaChaPoly : quatre octets nuls, puis le
-    // compteur sur 8 octets en petit-boutiste.
+    // Noise specification for ChaChaPoly: four zero bytes, then the counter
+    // as 8 bytes little-endian.
     out.fill(0);
     for (std::size_t index = 0; index < sizeof(nonce_counter_); ++index) {
         out[4 + index] =
@@ -53,8 +51,7 @@ bool noise_cipher_state::encrypt_with_ad(
     if (crypto_aead_chacha20poly1305_ietf_encrypt(
             out.data(), &written, plaintext.data(), plaintext.size(),
             associated_data.data(), associated_data.size(), nullptr,
-            nonce.data(), key_.data())
-        != 0) {
+            nonce.data(), key_.data()) != 0) {
         return false;
     }
     out.resize(static_cast<std::size_t>(written));
@@ -83,14 +80,13 @@ bool noise_cipher_state::decrypt_with_ad(
     if (crypto_aead_chacha20poly1305_ietf_decrypt(
             decoded.data(), &written, nullptr, ciphertext.data(),
             ciphertext.size(), associated_data.data(), associated_data.size(),
-            nonce.data(), key_.data())
-        != 0) {
+            nonce.data(), key_.data()) != 0) {
         return false;
     }
     decoded.resize(static_cast<std::size_t>(written));
     out = std::move(decoded);
-    // Le compteur n'avance qu'en cas de succes : un message rejete ne doit pas
-    // faire sauter un nonce et desynchroniser la session.
+    // The counter only advances on success: a rejected message must not
+    // consume a nonce and desynchronize the session.
     ++nonce_counter_;
     return true;
 }

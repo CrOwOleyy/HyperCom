@@ -1,14 +1,14 @@
 #pragma once
 
+#include "client/cli/cli_context.hpp"
+
 #include <string>
 #include <vector>
 
-#include "client/cli/cli_context.hpp"
-
 namespace hypercom::client {
 
-// A lancer une fois par identite : publie la prekey signee sans laquelle
-// personne ne peut ouvrir de conversation chiffree avec vous.
+// Run once per identity: publishes the signed prekey without which no one
+// can open an encrypted conversation with you.
 [[nodiscard]] bool run_prekey_publish(cli_context &context,
                                       std::string &error_out);
 
@@ -16,8 +16,8 @@ namespace hypercom::client {
                                std::vector<std::string> const &arguments,
                                std::string &error_out);
 
-// Releve la boite, dechiffre localement, puis acquitte -- ce qui supprime les
-// enveloppes du serveur.
+// Fetches the mailbox, decrypts locally, then acknowledges -- which
+// deletes the envelopes from the server.
 [[nodiscard]] bool run_dm_fetch(cli_context &context, std::string &error_out);
 
 } // namespace hypercom::client

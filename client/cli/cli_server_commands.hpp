@@ -1,16 +1,16 @@
 #pragma once
 
+#include "client/cli/cli_options.hpp"
+
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include "client/cli/cli_options.hpp"
-
 namespace hypercom::client {
 
-// Commandes qui ne touchent QUE le registre local : elles n'ouvrent aucune
-// connexion et ne revelent donc rien a personne. C'est pour ca qu'elles ne
-// passent pas par cli_context, contrairement a toutes les autres.
+// Commands that touch ONLY the local registry: they open no connection
+// and therefore reveal nothing to anyone. That's why they don't go
+// through cli_context, unlike all the others.
 
 [[nodiscard]] bool is_registry_command(std::string_view command);
 
@@ -21,9 +21,10 @@ namespace hypercom::client {
 [[nodiscard]] bool run_server_list(cli_options const &options,
                                    std::string &error_out);
 
-// Rattache une identite anterieure au multi-serveurs a un serveur du registre.
-// Sans elle, les comptes crees avant ce changement seraient inaccessibles :
-// leur cle a ete tiree au hasard, aucune graine ne peut la reproduire.
+// Attaches an identity that predates multi-server support to a server in
+// the registry. Without it, accounts created before this change would be
+// unreachable: their key was drawn at random, and no seed can reproduce
+// it.
 [[nodiscard]] bool run_server_import(cli_options const &options,
                                      std::vector<std::string> const &arguments,
                                      std::string &error_out);

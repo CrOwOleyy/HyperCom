@@ -11,38 +11,37 @@
 #include <unistd.h>
 #endif
 
+#include "common/crypto/keystore_envelope.hpp"
+#include "common/crypto/secure_memory.hpp"
+
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <vector>
 
-#include "common/crypto/keystore_envelope.hpp"
-#include "common/crypto/secure_memory.hpp"
-
 namespace hypercom::client {
 namespace {
 
-// Ouvre le fichier avec des permissions restreintes au proprietaire des la
-// creation, plutot que de les resserrer apres coup avec un chmod separe.
-// Entre une creation a permissions larges et ce chmod, un autre utilisateur
-// local pourrait lire le blob scelle -- un mode explicite a l'ouverture
-// elimine cette fenetre au lieu de la refermer apres qu'elle ait existe.
+// Opens the file with permissions restricted to the owner right from
+// creation, rather than tightening them afterward with a separate chmod.
+// Between an open-permission creation and that chmod, another local user
+// could read the sealed blob -- an explicit mode at open time eliminates
+// that window instead of closing it after the fact.
 #if defined(_WIN32)
 [[nodiscard]] int open_owner_only(std::string const &path)
 {
     int descriptor = -1;
-    static_cast<void>(::_sopen_s(
-        &descriptor, path.c_str(),
-        _O_CREAT | _O_TRUNC | _O_WRONLY | _O_BINARY, _SH_DENYWR,
-        _S_IREAD | _S_IWRITE));
+    static_cast<void>(::_sopen_s(&descriptor, path.c_str(),
+                                 _O_CREAT | _O_TRUNC | _O_WRONLY | _O_BINARY,
+                                 _SH_DENYWR, _S_IREAD | _S_IWRITE));
     return descriptor;
 }
 
 [[nodiscard]] bool write_all(int descriptor, std::uint8_t const *data,
                              std::size_t size)
 {
-    return ::_write(descriptor, data, static_cast<unsigned int>(size))
-        == static_cast<int>(size);
+    return ::_write(descriptor, data, static_cast<unsigned int>(size)) ==
+           static_cast<int>(size);
 }
 #else
 [[nodiscard]] int open_owner_only(std::string const &path)
@@ -116,7 +115,8 @@ namespace {
 
 } // namespace
 
-identity_store::identity_store(std::string path) : path_{std::move(path)} {}
+identity_store::identity_store(std::string path) : path_{std::move(path)}
+{}
 
 bool identity_store::has_stored_identity() const
 {
@@ -134,9 +134,9 @@ bool identity_store::create_identity(std::string_view passphrase,
                                      std::string &error_out)
 {
     if (has_stored_identity()) {
-        error_out = "une identite existe deja dans " + path_
-                    + " : l'ecraser reviendrait a perdre le compte associe, "
-                      "sans aucun moyen de le recuperer";
+        error_out = "une identite existe deja dans " + path_ +
+                    " : l'ecraser reviendrait a perdre le compte associe, "
+                    "sans aucun moyen de le recuperer";
         return false;
     }
     if (passphrase.empty()) {
@@ -169,14 +169,15 @@ bool identity_store::unlock_identity(std::string_view passphrase,
     }
     crypto::ed25519_secret_key secret{};
     if (!crypto::open_identity_secret(passphrase, sealed, secret)) {
-        // Le poly1305 ne distingue pas mauvaise passphrase et fichier altere,
-        // et c'est tres bien ainsi : le message ne renseigne pas un attaquant.
+        // poly1305 doesn't distinguish a wrong passphrase from a
+        // tampered file, and that's exactly right: the message gives an
+        // attacker nothing to go on.
         crypto::wipe_bytes(secret);
         error_out = "passphrase incorrecte ou fichier d'identite altere";
         return false;
     }
-    // La graine Ed25519 occupe les 32 premiers octets de la cle privee
-    // libsodium : elle suffit a reconstruire la paire complete.
+    // The Ed25519 seed occupies the first 32 bytes of the libsodium
+    // private key: it's enough to reconstruct the full pair.
     crypto::ed25519_seed seed{};
     std::copy_n(secret.begin(), seed.size(), seed.begin());
     bool const derived = crypto::identity_keypair::derive_from_seed(seed, out);

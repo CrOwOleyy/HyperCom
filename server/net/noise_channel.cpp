@@ -7,8 +7,7 @@ namespace hypercom::server {
 noise_channel::noise_channel(crypto::x25519_public_key const &static_public,
                              crypto::x25519_secret_key const &static_secret)
     : handshake_{static_public, static_secret}, transport_{}
-{
-}
+{}
 
 bool noise_channel::accept_handshake_message(
     std::span<std::uint8_t const> input, std::vector<std::uint8_t> &reply)
@@ -30,7 +29,7 @@ bool noise_channel::accept_handshake_message(
     if (exported) {
         transport_.emplace(send_key, receive_key);
     }
-    // Les cles ne restent pas sur la pile une fois recopiees dans le transport.
+    // The keys don't stay on the stack once copied into the transport.
     crypto::wipe_bytes(send_key);
     crypto::wipe_bytes(receive_key);
     return exported;

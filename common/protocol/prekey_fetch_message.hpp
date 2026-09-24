@@ -1,10 +1,10 @@
 #pragma once
 
-#include <cstdint>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/wire_key.hpp"
+
+#include <cstdint>
 
 namespace hypercom::proto {
 
@@ -16,10 +16,10 @@ struct prekey_fetch_request {
     [[nodiscard]] bool read_from(byte_reader &reader);
 };
 
-// Le destinataire verifie la signature avec owner_pubkey avant d'utiliser la
-// prekey. Un serveur qui substituerait sa propre prekey pour se placer en
-// intercepteur echouerait a produire une signature valide -- il ne possede pas
-// la cle d'identite de la personne visee.
+// The recipient verifies the signature with owner_pubkey before using the
+// prekey. A server that swapped in its own prekey to place itself as an
+// interceptor would fail to produce a valid signature -- it doesn't own
+// the identity key of the targeted person.
 struct prekey_bundle_response {
     wire_public_key owner_pubkey{};
     wire_public_key prekey{};

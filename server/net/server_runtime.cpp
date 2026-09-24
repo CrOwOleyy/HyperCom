@@ -7,24 +7,24 @@
 #include <sys/signalfd.h>
 #endif
 
-#include <memory>
-
 #include "common/util/unix_clock.hpp"
 #include "server/handlers/connection_processor.hpp"
 #include "server/handlers/handler_context.hpp"
+
+#include <memory>
 
 namespace hypercom::server {
 namespace {
 
 constexpr int POLL_INTERVAL_MILLISECONDS = 1000;
 
-// Plafond volontaire sur le nombre d'acceptations traitees par appel. Sans
-// lui, un flux soutenu de nouvelles connexions viderait tout le backlog TCP
-// avant qu'un seul octet des connexions deja authentifiees ne soit lu,
-// affamant le service en cours pendant l'attaque. Le listener est
-// level-triggered (pas d'EPOLLET) : s'il reste des connexions en attente,
-// epoll_wait re-signale immediatement le descripteur au prochain tour, donc
-// rien n'est perdu -- seul l'ordre de service redevient equitable.
+// Deliberate cap on the number of accepts processed per call. Without it, a
+// sustained stream of new connections would drain the whole TCP backlog
+// before a single byte of already-authenticated connections got read,
+// starving the ongoing service during the attack. The listener is
+// level-triggered (no EPOLLET): if connections are still waiting,
+// epoll_wait immediately re-signals the descriptor on the next round, so
+// nothing is lost -- only the service order becomes fair again.
 constexpr int MAX_ACCEPTS_PER_CALL = 32;
 
 #if !defined(_WIN32)
@@ -42,8 +42,8 @@ constexpr int MAX_ACCEPTS_PER_CALL = 32;
 #endif
 
 [[nodiscard]] bool open_configured_listener(listener_config const &settings,
-                                             tcp_listener &listener,
-                                             std::string &error_out)
+                                            tcp_listener &listener,
+                                            std::string &error_out)
 {
     if (!settings.enabled) {
         return true;
@@ -55,23 +55,28 @@ constexpr int MAX_ACCEPTS_PER_CALL = 32;
 } // namespace
 
 server_runtime::server_runtime(server_config const &config,
-                               util::logger &logger,
-                               database_handle &database,
+                               util::logger &logger, database_handle &database,
                                crypto::x25519_public_key const &static_public,
                                crypto::x25519_secret_key const &static_secret)
-    : config_{config}, logger_{logger}, database_{database},
-      static_public_{static_public}, static_secret_{static_secret},
-      clearnet_listener_{}, onion_listener_{}, loop_{},
+    : config_{config},
+      logger_{logger},
+      database_{database},
+      static_public_{static_public},
+      static_secret_{static_secret},
+      clearnet_listener_{},
+      onion_listener_{},
+      loop_{},
       registry_{config.limits.max_connections,
                 config.limits.max_connections_per_address,
                 {},
                 {}},
       address_limiter_{config.limits.requests_per_minute_per_address},
       identity_limiter_{config.limits.requests_per_minute_per_identity},
-      rate_tracker_{}, admin_{},
-      started_at_{util::get_unix_timestamp()}, signal_descriptor_{}
-{
-}
+      rate_tracker_{},
+      admin_{},
+      started_at_{util::get_unix_timestamp()},
+      signal_descriptor_{}
+{}
 
 bool server_runtime::start_listeners(std::string &error_out)
 {
@@ -79,20 +84,19 @@ bool server_runtime::start_listeners(std::string &error_out)
         return false;
     }
     if (!open_configured_listener(config_.clearnet, clearnet_listener_,
-                                  error_out)
-        || !open_configured_listener(config_.onion, onion_listener_,
-                                     error_out)) {
+                                  error_out) ||
+        !open_configured_listener(config_.onion, onion_listener_, error_out)) {
         return false;
     }
-    if (clearnet_listener_.get_descriptor() >= 0
-        && !loop_.watch_descriptor(clearnet_listener_.get_descriptor(), false,
-                                   false)) {
+    if (clearnet_listener_.get_descriptor() >= 0 &&
+        !loop_.watch_descriptor(clearnet_listener_.get_descriptor(), false,
+                                false)) {
         error_out = "listener clearnet non enregistrable";
         return false;
     }
-    if (onion_listener_.get_descriptor() >= 0
-        && !loop_.watch_descriptor(onion_listener_.get_descriptor(), false,
-                                   false)) {
+    if (onion_listener_.get_descriptor() >= 0 &&
+        !loop_.watch_descriptor(onion_listener_.get_descriptor(), false,
+                                false)) {
         error_out = "listener onion non enregistrable";
         return false;
     }
@@ -102,9 +106,8 @@ bool server_runtime::start_listeners(std::string &error_out)
     }
 #if !defined(_WIN32)
     signal_descriptor_ = unique_descriptor{create_signal_descriptor()};
-    if (signal_descriptor_.get_value() < 0
-        || !loop_.watch_descriptor(signal_descriptor_.get_value(), false,
-                                   false)) {
+    if (signal_descriptor_.get_value() < 0 ||
+        !loop_.watch_descriptor(signal_descriptor_.get_value(), false, false)) {
         error_out = "signalfd indisponible : arret propre impossible";
         return false;
     }
@@ -121,27 +124,28 @@ void server_runtime::accept_pending_connections(tcp_listener const &listener,
         if (accepted < 0) {
             return;
         }
-        auto entry = std::make_unique<client_connection>(client_connection{
-            connection_socket{accepted},
-            noise_channel{static_public_, static_secret_}, session_state{},
-            {}});
+        auto entry = std::make_unique<client_connection>(
+            client_connection{connection_socket{accepted},
+                              noise_channel{static_public_, static_secret_},
+                              session_state{},
+                              {}});
         entry->session.peer_address = peer_address;
         entry->session.connected_at = util::get_unix_timestamp();
         entry->session.last_activity_at = entry->session.connected_at;
-        // Jamais sur l'oignon, meme si log_peer_addresses est actif : Tor
-        // relaie en boucle locale, il n'y a de toute facon pas de vraie IP a
-        // voir cote client. Sur clearnet, redact_peer_address applique deja la
-        // politique de hypercom.conf -- ecrire l'entree ici est ce qui rend
-        // cette politique reellement effective plutot qu'un reglage qui ne
-        // sert jamais a rien (BRIEF.md 13).
+        // Never for onion, even if log_peer_addresses is on: Tor relays over
+        // loopback, so there's no real client-side IP to see anyway. On
+        // clearnet, redact_peer_address already applies the policy from
+        // hypercom.conf -- writing the entry here is what makes that policy
+        // actually effective instead of a setting that's never used for
+        // anything (BRIEF.md 13).
         if (is_clearnet) {
             logger_.write_entry(
                 util::log_level::info,
-                "connexion acceptee depuis "
-                    + std::string{logger_.redact_peer_address(peer_address)});
+                "connexion acceptee depuis " +
+                    std::string{logger_.redact_peer_address(peer_address)});
         }
-        // En cas de refus, le unique_ptr est detruit par l'appele et la socket
-        // se ferme d'elle-meme : il n'y a rien a fermer ici.
+        // On rejection, the unique_ptr is destroyed by the callee and the
+        // socket closes itself: there is nothing to close here.
         if (!insert_connection(registry_, std::move(entry))) {
             continue;
         }
@@ -164,8 +168,7 @@ void server_runtime::service_connection(int descriptor, std::uint32_t events)
     }
     handler_context context{config_, logger_, database_, *connection};
     rate_policy policy{address_limiter_, identity_limiter_, rate_tracker_};
-    if ((events & EPOLLIN) != 0
-        && !process_connection_input(context, policy)) {
+    if ((events & EPOLLIN) != 0 && !process_connection_input(context, policy)) {
         close_connection(descriptor);
         return;
     }
@@ -174,8 +177,8 @@ void server_runtime::service_connection(int descriptor, std::uint32_t events)
         close_connection(descriptor);
         return;
     }
-    // EPOLLOUT n'est demande que s'il reste reellement des octets : sinon la
-    // boucle tournerait a vide en permanence.
+    // EPOLLOUT is only requested if bytes are actually still pending:
+    // otherwise the loop would spin idle forever.
     if (!loop_.watch_descriptor(descriptor, has_remaining, true)) {
         close_connection(descriptor);
     }
@@ -201,8 +204,8 @@ void server_runtime::dispatch_event(int descriptor, std::uint32_t events)
         std::vector<int> close_requests;
         service_admin_connection(admin_, loop_, descriptor, context,
                                  close_requests);
-        // Les fermetures demandees par `sessions close` sont appliquees ici,
-        // une fois le parcours du registre termine.
+        // Closures requested by `sessions close` are applied here, once the
+        // registry walk is finished.
         for (int const target : close_requests) {
             close_connection(target);
         }
@@ -224,9 +227,8 @@ void server_runtime::sweep_expired_connections()
          collect_expired_descriptors(registry_, now, config_.limits)) {
         close_connection(descriptor);
     }
-    // Meme balayage pour les fenetres de debit : sans ca, les deux tables
-    // grossiraient indefiniment et celle des adresses deviendrait un
-    // historique.
+    // Same sweep for the rate windows: without it, both tables would grow
+    // indefinitely and the address one would turn into a history.
     forget_expired_windows(rate_tracker_, now);
 }
 

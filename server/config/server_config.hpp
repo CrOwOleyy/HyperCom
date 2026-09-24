@@ -1,27 +1,26 @@
 #pragma once
 
+#include "common/util/log_level.hpp"
+
 #include <cstdint>
 #include <string>
 
-#include "common/util/log_level.hpp"
-
 namespace hypercom::server {
 
-// Tout ce qui pilote le serveur sans recompiler.
+// Everything that drives the server without recompiling.
 //
-// C'est une structure de donnees pure, passee explicitement a qui en a besoin.
-// La regle G4 interdit d'en faire un singleton : il n'existe pas de
-// "configuration courante" accessible de partout, il n'existe qu'un objet
-// qu'on se transmet.
+// This is a plain data structure, passed explicitly to whoever needs it.
+// Rule G4 forbids making it a singleton: there is no "current
+// configuration" reachable from everywhere, only an object that gets
+// passed around.
 struct listener_config {
     bool enabled = false;
     std::string bind_address;
     std::uint16_t port = 0;
-    // Adresse a annoncer aux clients, quand elle differe de celle d'ecoute.
-    // bind_address = 0.0.0.0 signifie "toutes les interfaces" et n'est
-    // joignable par personne : le serveur ne peut pas deviner son adresse
-    // publique, l'administrateur la declare ici. Vide = utiliser
-    // bind_address.
+    // Address to advertise to clients, when it differs from the listening
+    // one. bind_address = 0.0.0.0 means "all interfaces" and isn't
+    // reachable by anyone: the server can't guess its public address, the
+    // administrator declares it here. Empty = use bind_address.
     std::string advertised_host;
 };
 
@@ -30,17 +29,17 @@ struct limits_config {
     std::uint32_t max_connections_per_address = 8;
     std::uint32_t max_frame_size = 1024 * 1024;
     std::uint32_t handshake_timeout_seconds = 10;
-    // 0 = desactive : pas de timeout applicatif sur une session authentifiee,
-    // conformement au choix du projet (BRIEF.md 9). Seul le keepalive TCP
-    // recupere une connexion dont le pair a reellement disparu.
+    // 0 = disabled: no application-level timeout on an authenticated
+    // session, per the project's choice (BRIEF.md 9). Only TCP keepalive
+    // reclaims a connection whose peer has genuinely vanished.
     std::uint32_t idle_timeout_seconds = 0;
     std::uint32_t requests_per_minute_per_address = 240;
     std::uint32_t requests_per_minute_per_identity = 600;
 };
 
-// Politique de journalisation. log_peer_addresses est a false par defaut et
-// demande une action explicite pour passer a true -- un reseau qui se dit non
-// surveille ne journalise pas des IP par accident.
+// Logging policy. log_peer_addresses defaults to false and requires an
+// explicit action to flip to true -- a network that claims to be
+// unmonitored doesn't log IPs by accident.
 struct logging_config {
     util::log_level level = util::log_level::info;
     bool log_peer_addresses = false;
@@ -53,9 +52,9 @@ struct paths_config {
     std::string migrations_directory = "db/migrations";
     std::string server_key_path = "keys/server_static.key";
     std::string admin_socket_path = "run/hypercom-admin.sock";
-    // Vide = aucun fichier ecrit. Contenu non secret (host+port+cle publique) :
-    // ce que l'admin donnerait de toute facon a un nouvel utilisateur, sous une
-    // forme copiable telle quelle plutot que retapee a la main.
+    // Empty = no file written. Non-secret content (host+port+public key):
+    // what the admin would hand a new user anyway, in a form that can be
+    // copied as-is instead of retyped by hand.
     std::string connect_file_path = "run/hypercom-connect.txt";
 };
 

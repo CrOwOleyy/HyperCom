@@ -1,20 +1,20 @@
 #pragma once
 
+#include "common/crypto/noise_symmetric_state.hpp"
+
 #include <cstdint>
 #include <span>
 #include <vector>
 
-#include "common/crypto/noise_symmetric_state.hpp"
-
 namespace hypercom::crypto {
 
-// EncryptAndHash / DecryptAndHash de la specification Noise.
+// EncryptAndHash / DecryptAndHash from the Noise specification.
 //
-// Le hachage de handshake en cours sert de donnee associee. C'est ce qui lie
-// chaque message a tout ce qui a ete echange avant lui : modifier un octet
-// d'un message anterieur invalide l'authentification de tous les suivants.
-// Un attaquant ne peut donc pas retirer, reordonner ni substituer une etape du
-// handshake sans que la suite echoue.
+// The running handshake hash serves as associated data. This is what ties
+// each message to everything exchanged before it: changing one byte of an
+// earlier message invalidates the authentication of every message that
+// follows. An attacker therefore cannot remove, reorder, or substitute a
+// handshake step without the rest failing.
 
 [[nodiscard]] bool encrypt_and_hash(noise_symmetric_state &state,
                                     std::span<std::uint8_t const> plaintext,

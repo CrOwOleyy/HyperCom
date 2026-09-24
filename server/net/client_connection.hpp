@@ -1,21 +1,22 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include "server/net/connection_socket.hpp"
 #include "server/net/noise_channel.hpp"
 #include "server/net/session_state.hpp"
 
+#include <cstdint>
+#include <vector>
+
 namespace hypercom::server {
 
-// Une connexion = sa plomberie, son canal chiffre, son etat applicatif.
+// A connection = its plumbing, its encrypted channel, its application
+// state.
 //
-// Structure sans aucune methode. La regle O3
-// plafonne les classes a cinq methodes publiques, or une connexion touche a
-// trop de choses pour tenir dans ce budget. En separant les trois
-// responsabilites en trois types deja complets, l'agregat n'a plus rien a
-// faire lui-meme -- ce qui est exactement ce que la regle cherche a obtenir.
+// A structure with no methods at all. Rule O3 caps classes at five public
+// methods, and a connection touches too many things to fit that budget. By
+// splitting the three responsibilities into three already-complete types,
+// the aggregate has nothing left to do itself -- which is exactly what the
+// rule is meant to achieve.
 struct client_connection {
     connection_socket socket;
     noise_channel channel;

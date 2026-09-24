@@ -1,26 +1,25 @@
 #include "common/crypto/keystore_envelope.hpp"
 
-#include <algorithm>
-#include <array>
-
-#include <sodium.h>
-
 #include "common/crypto/secure_memory.hpp"
 #include "common/crypto/sodium_runtime.hpp"
+
+#include <algorithm>
+#include <array>
+#include <sodium.h>
 
 namespace hypercom::crypto {
 namespace {
 
 constexpr std::array<std::uint8_t, KEYSTORE_MAGIC_SIZE> KEYSTORE_MAGIC{
     'H', 'Y', 'P', 'C', 'K', 'E', 'Y', '1'};
-constexpr std::size_t KEYSTORE_HEADER_SIZE = KEYSTORE_MAGIC_SIZE + 1 + 4 + 4
-                                             + ARGON2ID_SALT_SIZE
-                                             + XCHACHA_NONCE_SIZE;
+constexpr std::size_t KEYSTORE_HEADER_SIZE =
+    KEYSTORE_MAGIC_SIZE + 1 + 4 + 4 + ARGON2ID_SALT_SIZE + XCHACHA_NONCE_SIZE;
 
 void append_u32(std::uint32_t value, std::vector<std::uint8_t> &out)
 {
     for (std::size_t index = 0; index < 4; ++index) {
-        out.push_back(static_cast<std::uint8_t>((value >> (index * 8U)) & 0xFFU));
+        out.push_back(
+            static_cast<std::uint8_t>((value >> (index * 8U)) & 0xFFU));
     }
 }
 
@@ -45,8 +44,7 @@ void append_u32(std::uint32_t value, std::vector<std::uint8_t> &out)
                          passphrase.size(), salt.data(),
                          static_cast<unsigned long long>(operations),
                          static_cast<std::size_t>(memory_kib) * 1024U,
-                         crypto_pwhash_ALG_ARGON2ID13)
-        == 0;
+                         crypto_pwhash_ALG_ARGON2ID13) == 0;
 }
 
 } // namespace
@@ -79,8 +77,8 @@ bool seal_blob(std::string_view passphrase,
     header.insert(header.end(), nonce.begin(), nonce.end());
     std::vector<std::uint8_t> sealed(plaintext.size() + AEAD_TAG_SIZE);
     unsigned long long written = 0;
-    // L'en-tete entier sert de donnee associee : personne ne peut abaisser le
-    // cout Argon2id d'un fichier existant pour le rendre attaquable.
+    // The entire header serves as associated data: no one can lower the
+    // Argon2id cost of an existing file to make it attackable.
     int const status = crypto_aead_xchacha20poly1305_ietf_encrypt(
         sealed.data(), &written, plaintext.data(), plaintext.size(),
         header.data(), header.size(), nullptr, nonce.data(),
@@ -111,11 +109,10 @@ bool open_blob(std::string_view passphrase,
     }
     std::uint32_t const operations = read_u32(sealed, KEYSTORE_MAGIC_SIZE + 1);
     std::uint32_t const memory_kib = read_u32(sealed, KEYSTORE_MAGIC_SIZE + 5);
-    auto const salt = sealed.subspan(KEYSTORE_MAGIC_SIZE + 9,
-                                     ARGON2ID_SALT_SIZE);
-    auto const nonce = sealed.subspan(KEYSTORE_MAGIC_SIZE + 9
-                                          + ARGON2ID_SALT_SIZE,
-                                      XCHACHA_NONCE_SIZE);
+    auto const salt =
+        sealed.subspan(KEYSTORE_MAGIC_SIZE + 9, ARGON2ID_SALT_SIZE);
+    auto const nonce = sealed.subspan(
+        KEYSTORE_MAGIC_SIZE + 9 + ARGON2ID_SALT_SIZE, XCHACHA_NONCE_SIZE);
     symmetric_key wrapping_key{};
     if (!derive_wrapping_key(passphrase, salt, operations, memory_kib,
                              wrapping_key)) {
@@ -153,8 +150,8 @@ bool open_identity_secret(std::string_view passphrase,
     if (!open_blob(passphrase, sealed, plaintext)) {
         return false;
     }
-    // Une taille inattendue signale un fichier d'un autre type scelle avec la
-    // meme passphrase : on refuse plutot que de recopier ce qui tient.
+    // An unexpected size signals a file of a different type sealed with the
+    // same passphrase: we refuse rather than copy over whatever fits.
     bool const usable = plaintext.size() == out.size();
     if (usable) {
         std::copy(plaintext.begin(), plaintext.end(), out.begin());

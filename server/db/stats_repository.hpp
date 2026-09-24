@@ -1,16 +1,16 @@
 #pragma once
 
-#include <cstdint>
-
 #include "server/db/database_handle.hpp"
+
+#include <cstdint>
 
 namespace hypercom::server {
 
-// Compteurs affiches par la commande d'administration `stats`.
+// Counters shown by the admin `stats` command.
 //
-// Que des agregats : aucun de ces chiffres ne permet de remonter a une
-// personne. C'est cohérent avec le reste -- l'administration sert a exploiter
-// le serveur, pas a observer ses utilisateurs.
+// Aggregates only: none of these numbers can be traced back to a person.
+// This is consistent with everything else -- admin exists to operate the
+// server, not to observe its users.
 struct server_counts {
     std::int64_t users = 0;
     std::int64_t forums = 0;

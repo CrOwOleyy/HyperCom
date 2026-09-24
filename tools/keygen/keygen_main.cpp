@@ -1,8 +1,3 @@
-#include <fstream>
-#include <iostream>
-#include <string>
-#include <vector>
-
 #include "common/crypto/identity_keypair.hpp"
 #include "common/crypto/keystore_envelope.hpp"
 #include "common/crypto/secure_memory.hpp"
@@ -10,13 +5,18 @@
 #include "common/crypto/x25519_exchange.hpp"
 #include "common/util/hex_codec.hpp"
 
-// Generation de cles hors ligne.
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <vector>
+
+// Offline key generation.
 //
-//   hypercom_keygen server <chemin>     paire statique X25519 du serveur
-//   hypercom_keygen identity <chemin>   identite Ed25519 chiffree
+//   hypercom_keygen server <path>     server's static X25519 keypair
+//   hypercom_keygen identity <path>   encrypted Ed25519 identity
 //
-// Sert surtout a preparer une machine avant deploiement, sans lancer le
-// serveur ni le client.
+// Mainly used to prepare a machine before deployment, without starting
+// either the server or the client.
 
 namespace {
 
@@ -75,8 +75,8 @@ using namespace hypercom;
     }
     std::vector<std::uint8_t> sealed;
     if (!crypto::seal_identity_secret(passphrase, identity.get_secret_key(),
-                                      sealed)
-        || !write_binary_file(path, sealed)) {
+                                      sealed) ||
+        !write_binary_file(path, sealed)) {
         std::cerr << "ecriture impossible : " << path << '\n';
         return 1;
     }

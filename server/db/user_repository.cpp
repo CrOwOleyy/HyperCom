@@ -25,8 +25,7 @@ constexpr char const *SELECT_COLUMNS =
 
 user_repository::user_repository(database_handle &database)
     : database_{database}
-{
-}
+{}
 
 bool user_repository::find_by_pubkey(proto::wire_public_key const &pubkey,
                                      user_row &out)
@@ -56,18 +55,18 @@ bool user_repository::find_by_id(std::int64_t id, user_row &out)
 }
 
 bool user_repository::create_user(proto::wire_public_key const &pubkey,
-                                  std::string_view handle,
-                                  std::int64_t &out_id)
+                                  std::string_view handle, std::int64_t &out_id)
 {
-    // Ni date de creation ni date de connexion : un compte, c'est une cle
-    // publique et un pseudo, rien d'autre.
+    // No creation date, no login date: an account is a public key and a
+    // handle, nothing else.
     sql_statement statement{
         database_, "INSERT INTO users (pubkey, handle) VALUES (?1, ?2)"};
     if (!bind_blob(statement, 1, pubkey) || !bind_text(statement, 2, handle)) {
         return false;
     }
-    // Un pseudo deja pris fait echouer la contrainte UNIQUE : c'est la base
-    // qui arbitre, pas un SELECT prealable qui laisserait une fenetre de course.
+    // A handle that's already taken fails the UNIQUE constraint: the
+    // database is the arbiter, not a prior SELECT that would leave a race
+    // window.
     if (statement.step_row() != step_result::done) {
         return false;
     }
@@ -79,8 +78,8 @@ bool user_repository::set_banned(std::int64_t user_id, bool banned)
 {
     sql_statement statement{database_,
                             "UPDATE users SET banned = ?1 WHERE id = ?2"};
-    if (!bind_integer(statement, 1, banned ? 1 : 0)
-        || !bind_integer(statement, 2, user_id)) {
+    if (!bind_integer(statement, 1, banned ? 1 : 0) ||
+        !bind_integer(statement, 2, user_id)) {
         return false;
     }
     return statement.step_row() == step_result::done;

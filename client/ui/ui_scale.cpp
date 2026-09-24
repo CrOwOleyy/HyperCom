@@ -1,10 +1,8 @@
 #include "client/ui/ui_scale.hpp"
 
-#include <filesystem>
-
-#include <imgui.h>
-
 #include <GLFW/glfw3.h>
+#include <filesystem>
+#include <imgui.h>
 
 namespace hypercom::client {
 namespace {
@@ -20,10 +18,11 @@ namespace {
     return value;
 }
 
-// Une police vectorielle est cherchee dans le systeme plutot qu'embarquee :
-// embarquer un fichier de police ajouterait un binaire de plusieurs centaines
-// de kilo-octets au depot, pour un gain nul quand le systeme en fournit deja.
-// L'absence totale de candidat n'est pas une erreur, seulement un repli.
+// A vector font is looked up on the system rather than bundled:
+// bundling a font file would add a binary several hundred kilobytes
+// in size to the repo, for zero gain when the system already
+// provides one. Finding no candidate at all isn't an error, just a
+// fallback.
 [[nodiscard]] char const *find_readable_font_path()
 {
     static char const *const candidates[] = {
@@ -44,11 +43,11 @@ namespace {
     return nullptr;
 }
 
-// Sous X11, sous WSLg et sur beaucoup de configurations Linux, le facteur de
-// contenu rapporte par le systeme vaut 1.0 meme devant un ecran tres dense.
-// La resolution sert alors de second indice : elle n'est pas fiable non plus,
-// mais elle rattrape le cas le plus penible -- une interface minuscule sur un
-// grand ecran, sans aucun signal DPI pour la corriger.
+// Under X11, under WSLg, and on many Linux setups, the content scale
+// factor reported by the system is 1.0 even on a very dense screen.
+// Resolution then serves as a second clue: it isn't reliable either,
+// but it catches the most painful case -- a tiny interface on a big
+// screen, with no DPI signal at all to correct it.
 [[nodiscard]] float infer_scale_from_resolution(float reported_scale)
 {
     if (reported_scale >= 1.25f) {
@@ -110,14 +109,14 @@ bool handle_zoom_input(ui_scale_state &state)
         return false;
     }
     float const previous = state.user_zoom;
-    if (ImGui::IsKeyPressed(ImGuiKey_Equal)
-        || ImGui::IsKeyPressed(ImGuiKey_KeypadAdd)) {
+    if (ImGui::IsKeyPressed(ImGuiKey_Equal) ||
+        ImGui::IsKeyPressed(ImGuiKey_KeypadAdd)) {
         state.user_zoom = clamp_user_zoom(previous + USER_ZOOM_STEP);
-    } else if (ImGui::IsKeyPressed(ImGuiKey_Minus)
-               || ImGui::IsKeyPressed(ImGuiKey_KeypadSubtract)) {
+    } else if (ImGui::IsKeyPressed(ImGuiKey_Minus) ||
+               ImGui::IsKeyPressed(ImGuiKey_KeypadSubtract)) {
         state.user_zoom = clamp_user_zoom(previous - USER_ZOOM_STEP);
-    } else if (ImGui::IsKeyPressed(ImGuiKey_0)
-               || ImGui::IsKeyPressed(ImGuiKey_Keypad0)) {
+    } else if (ImGui::IsKeyPressed(ImGuiKey_0) ||
+               ImGui::IsKeyPressed(ImGuiKey_Keypad0)) {
         state.user_zoom = 1.0f;
     } else if (io.MouseWheel < -0.01f || io.MouseWheel > 0.01f) {
         state.user_zoom =
@@ -140,8 +139,8 @@ void rebuild_scaled_font(ui_scale_state &state)
     char const *const font_path = find_readable_font_path();
     ImFont *loaded = nullptr;
     if (font_path != nullptr) {
-        // GetGlyphRangesDefault couvre le latin-1, donc les accents francais.
-        // La police bitmap integree, elle, s'arrete a l'ASCII.
+        // GetGlyphRangesDefault covers Latin-1, so French accents.
+        // The built-in bitmap font, by contrast, stops at ASCII.
         loaded = io.Fonts->AddFontFromFileTTF(
             font_path, pixel_size, nullptr, io.Fonts->GetGlyphRangesDefault());
     }
@@ -151,8 +150,8 @@ void rebuild_scaled_font(ui_scale_state &state)
         io.Fonts->AddFontDefault(&config);
     }
     io.Fonts->Build();
-    // La police est desormais rasterisee a la bonne taille : tout facteur
-    // supplementaire ne ferait que la rendre floue.
+    // The font is now rasterized at the right size: any extra factor
+    // would only make it blurry.
     io.FontGlobalScale = 1.0f;
     state.applied_scale = scale;
     state.font_rebuild_needed = false;

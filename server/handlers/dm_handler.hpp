@@ -5,15 +5,15 @@
 
 namespace hypercom::server {
 
-// Messages prives chiffres de bout en bout -- le deuxieme bloc de la v1.
+// End-to-end encrypted private messages -- the second of v1's three blocks.
 //
-// Ces trois fonctions constituent tout ce que le serveur sait faire d'un DM :
-// le ranger, le rendre a son destinataire, l'effacer quand il l'a recu. Aucune
-// ne peut lire le contenu, aucune ne le pourrait meme si on le voulait : il
-// n'existe nulle part sur cette machine de cle permettant de l'ouvrir.
+// These three functions are everything the server knows how to do with a DM:
+// store it, hand it back to its recipient, erase it once received. None of
+// them can read the content, and none could even if it wanted to: there is
+// no key anywhere on this machine that could open it.
 //
-// Ce qu'il voit malgre tout, et qu'il faut dire aux utilisateurs plutot que le
-// taire : qui ecrit a qui, et quand.
+// What it does see regardless, and what needs to be told to users rather
+// than left unsaid: who writes to whom, and when.
 
 [[nodiscard]] bool handle_dm_send_request(handler_context &context,
                                           proto::byte_reader &reader);

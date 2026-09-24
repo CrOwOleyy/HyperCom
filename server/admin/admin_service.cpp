@@ -11,9 +11,9 @@
 namespace hypercom::server {
 namespace {
 
-// Une commande d'administration tient largement dans cette limite. Le plafond
-// existe pour qu'un client muet qui envoie des octets sans jamais de saut de
-// ligne ne fasse pas grossir le tampon indefiniment.
+// An admin command comfortably fits within this limit. The cap exists so
+// that a silent client sending bytes without ever a newline doesn't grow
+// the buffer indefinitely.
 constexpr std::size_t MAX_REQUEST_BYTES = 4096;
 
 #if defined(MSG_NOSIGNAL)
@@ -22,7 +22,7 @@ constexpr int SEND_FLAGS = MSG_NOSIGNAL;
 constexpr int SEND_FLAGS = 0;
 #endif
 
-// Renvoie false quand le pair a ferme ou qu'une erreur definitive survient.
+// Returns false when the peer has closed or a definitive error occurs.
 [[nodiscard]] bool read_into_buffer(int descriptor, std::string &buffer)
 {
     char chunk[1024];
@@ -30,21 +30,21 @@ constexpr int SEND_FLAGS = 0;
         auto const received =
             ::recv(descriptor, chunk, static_cast<int>(sizeof(chunk)), 0);
         if (received > 0) {
-            if (buffer.size() + static_cast<std::size_t>(received)
-                > MAX_REQUEST_BYTES) {
+            if (buffer.size() + static_cast<std::size_t>(received) >
+                MAX_REQUEST_BYTES) {
                 return false;
             }
             buffer.append(chunk, static_cast<std::size_t>(received));
             continue;
         }
-        // 0 = pair ferme. Negatif = plus rien a lire pour l'instant, ce qui
-        // est le cas normal sur une socket non bloquante.
+        // 0 = peer closed. Negative = nothing left to read for now, which
+        // is the normal case on a non-blocking socket.
         return received != 0;
     }
 }
 
-// Renvoie false si la connexion doit etre fermee, true sinon. Consomme la
-// partie ecrite de buffer.
+// Returns false if the connection must be closed, true otherwise. Consumes
+// the written portion of buffer.
 [[nodiscard]] bool flush_buffer(int descriptor, std::string &buffer,
                                 bool &has_remaining)
 {
@@ -56,10 +56,10 @@ constexpr int SEND_FLAGS = 0;
             continue;
         }
         has_remaining = !buffer.empty();
-        // Negatif sur une socket non bloquante veut dire « reessaie plus
-        // tard », pas « erreur ». On ne peut pas distinguer sans errno, et
-        // reessayer est le comportement sur : au pire la connexion sera
-        // fermee par le balayage du pair.
+        // Negative on a non-blocking socket means "try again later", not
+        // "error". We can't tell the difference without errno, and
+        // retrying is the safe behavior: at worst the connection gets
+        // closed by the peer's own timeout.
         return true;
     }
     has_remaining = false;
@@ -134,8 +134,8 @@ void service_admin_connection(admin_service &service, event_loop &loop,
         return;
     }
     admin_connection &connection = found->second;
-    if (!connection.response_ready
-        && !read_into_buffer(descriptor, connection.input)) {
+    if (!connection.response_ready &&
+        !read_into_buffer(descriptor, connection.input)) {
         close_admin_connection(service, loop, descriptor);
         return;
     }
@@ -146,8 +146,8 @@ void service_admin_connection(admin_service &service, event_loop &loop,
         return;
     }
     bool has_remaining = false;
-    static_cast<void>(flush_buffer(descriptor, connection.output,
-                                   has_remaining));
+    static_cast<void>(
+        flush_buffer(descriptor, connection.output, has_remaining));
     if (!has_remaining) {
         close_admin_connection(service, loop, descriptor);
         return;

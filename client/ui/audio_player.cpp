@@ -20,11 +20,11 @@
 namespace hypercom::client {
 namespace {
 
-// Le repertoire de l'executable, pas le repertoire courant.
+// The executable's directory, not the current working directory.
 //
-// La distinction compte : un double-clic sous Windows et un lancement depuis
-// un terminal ne donnent pas le meme repertoire courant, et chercher le MP3
-// par rapport a celui-ci le rend introuvable une fois sur deux.
+// The distinction matters: a double-click on Windows and a launch from
+// a terminal don't give the same working directory, and looking for
+// the MP3 relative to it makes it unfindable half the time.
 [[nodiscard]] std::filesystem::path find_executable_directory()
 {
     std::error_code failure;
@@ -50,8 +50,8 @@ namespace {
 [[nodiscard]] std::string find_asset_path(std::string const &file_name)
 {
     std::filesystem::path const base = find_executable_directory();
-    // A cote du binaire d'abord, puis les repertoires parents pour couvrir un
-    // build local, puis le repertoire courant en dernier recours.
+    // Next to the binary first, then the parent directories to cover a
+    // local build, then the current directory as a last resort.
     std::vector<std::filesystem::path> const candidates{
         base / file_name,
         base / "assets" / file_name,
@@ -79,7 +79,8 @@ struct audio_player::engine_state {
     double length_seconds = 0.0;
 };
 
-audio_player::audio_player() : state_{std::make_unique<engine_state>()} {}
+audio_player::audio_player() : state_{std::make_unique<engine_state>()}
+{}
 
 audio_player::~audio_player()
 {
@@ -101,8 +102,7 @@ bool audio_player::start_track(std::string const &file_name,
     state_->engine_ready = true;
     if (ma_sound_init_from_file(&state_->engine, path.c_str(),
                                 MA_SOUND_FLAG_DECODE, nullptr, nullptr,
-                                &state_->sound)
-        != MA_SUCCESS) {
+                                &state_->sound) != MA_SUCCESS) {
         error_out = "decodage impossible : " + path;
         stop_track();
         return false;

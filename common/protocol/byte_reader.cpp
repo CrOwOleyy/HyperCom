@@ -6,8 +6,7 @@ namespace hypercom::proto {
 
 byte_reader::byte_reader(std::span<std::uint8_t const> buffer)
     : buffer_{buffer}, offset_{0}
-{
-}
+{}
 
 std::size_t byte_reader::count_remaining_bytes() const
 {
@@ -43,8 +42,10 @@ bool byte_reader::read_length_prefixed(std::vector<std::uint8_t> &out,
         return false;
     }
     std::size_t const length = static_cast<std::size_t>(announced_length);
-    // Le plafond est verifie avant l'allocation, pas apres : une trame
-    // annoncant 4 Gio ne doit jamais provoquer de reservation memoire.
+    // This check order was annoying to get right: the cap has to be
+    // enforced before anything allocates, not after. A frame announcing
+    // 4 GiB must never get anywhere near a memory reservation, no matter
+    // how tempting it is to read the bytes first and validate later.
     if (length > maximum_length || length > count_remaining_bytes()) {
         return false;
     }

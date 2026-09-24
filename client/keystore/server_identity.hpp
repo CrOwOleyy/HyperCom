@@ -5,21 +5,21 @@
 
 namespace hypercom::client {
 
-// Derive l'identite propre a UN serveur depuis la graine maitresse.
+// Derives the identity specific to ONE server from the master seed.
 //
-// La cle statique du serveur sert de separation de domaine : deux serveurs
-// donnent deux identites sans lien calculable entre elles. Deux administrateurs
-// qui compareraient leurs bases n'y verraient que deux cles publiques
-// quelconques -- c'est ce qui rend la non-correlation technique plutot que
-// declarative.
+// The server's static key acts as domain separation: two servers yield
+// two identities with no computable link between them. Two administrators
+// comparing their databases would see nothing but two arbitrary-looking
+// public keys -- which is what makes the non-correlation technical rather
+// than a mere promise.
 //
-// La derivation est deterministe : la meme graine et la meme cle serveur
-// redonnent toujours la meme identite. C'est ce qui permet de ne sauvegarder
-// qu'un seul secret, quel que soit le nombre de serveurs rejoints, et de tout
-// retrouver depuis cette seule graine.
-[[nodiscard]] bool derive_server_identity(
-    crypto::ed25519_seed const &master_seed,
-    crypto::x25519_public_key const &server_key,
-    crypto::identity_keypair &out);
+// Derivation is deterministic: the same seed and the same server key
+// always give back the same identity. This is what lets you back up only
+// a single secret, no matter how many servers you've joined, and recover
+// everything from that one seed.
+[[nodiscard]] bool
+derive_server_identity(crypto::ed25519_seed const &master_seed,
+                       crypto::x25519_public_key const &server_key,
+                       crypto::identity_keypair &out);
 
 } // namespace hypercom::client

@@ -6,20 +6,20 @@
 
 namespace hypercom::server {
 
-// Une ligne de commande d'administration, decoupee.
+// A parsed admin command line.
 //
-// Le format est du texte ligne par ligne, pas du binaire : la CLI doit rester
-// lisible et scriptable par quelqu'un qui n'ecrit pas de C++. C'est tout
-// l'interet du socket d'admin -- le collaborateur tape des commandes, il n'en
-// programme pas.
+// The format is line-by-line text, not binary: the CLI needs to stay
+// readable and scriptable for someone who doesn't write C++. That's the
+// whole point of the admin socket -- the operator types commands, they
+// don't program them.
 struct admin_command {
     std::string verb;
     std::vector<std::string> arguments;
 };
 
-// Decoupe sur les espaces, en respectant les guillemets doubles : un MOTD
-// contient des espaces, et on ne va pas demander a l'administrateur de les
-// echapper. Renvoie false sur une ligne vide ou un guillemet non ferme.
+// Splits on whitespace, honoring double quotes: a MOTD contains spaces, and
+// we're not going to ask the administrator to escape them. Returns false on
+// an empty line or an unclosed quote.
 [[nodiscard]] bool parse_admin_command(std::string_view line,
                                        admin_command &out);
 

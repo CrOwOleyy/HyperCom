@@ -1,26 +1,26 @@
 #pragma once
 
+#include "common/crypto/key_types.hpp"
+
 #include <string>
 #include <string_view>
 
-#include "common/crypto/key_types.hpp"
-
 namespace hypercom::client {
 
-// La graine maitresse, scellee sur le disque par la passphrase.
+// The master seed, sealed on disk by the passphrase.
 //
-// Elle est l'unique secret a sauvegarder : toutes les identites de tous les
-// serveurs en derivent (voir server_identity.hpp). La perdre revient a perdre
-// tous ses comptes d'un coup -- contrepartie assumee de n'avoir qu'une seule
-// chose a mettre a l'abri plutot qu'une par serveur.
+// It's the one secret worth backing up: every identity on every server
+// derives from it (see server_identity.hpp). Losing it means losing all
+// your accounts at once -- a deliberate tradeoff for having only one
+// thing to keep safe instead of one per server.
 class master_seed_store {
 public:
     explicit master_seed_store(std::string path);
 
     [[nodiscard]] bool has_stored_seed() const;
 
-    // Refuse d'ecraser une graine existante : l'ecraser reviendrait a perdre
-    // toutes les identites qui en derivent, sans aucun recours.
+    // Refuses to overwrite an existing seed: overwriting it would mean
+    // losing every identity derived from it, with no recourse.
     [[nodiscard]] bool create_seed(std::string_view passphrase,
                                    crypto::ed25519_seed &out,
                                    std::string &error_out);

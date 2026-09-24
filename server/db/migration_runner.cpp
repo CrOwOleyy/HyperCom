@@ -1,14 +1,14 @@
 #include "server/db/migration_runner.hpp"
 
+#include "common/util/unix_clock.hpp"
+#include "server/db/sql_binder.hpp"
+#include "server/db/sql_statement.hpp"
+
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <vector>
-
-#include "common/util/unix_clock.hpp"
-#include "server/db/sql_binder.hpp"
-#include "server/db/sql_statement.hpp"
 
 namespace hypercom::server {
 namespace {
@@ -39,8 +39,9 @@ struct migration_file {
         }
         out.push_back({entry.path().filename().string(), entry.path()});
     }
-    // Le tri lexicographique sur NNNN_... donne l'ordre chronologique tant que
-    // le prefixe numerique est de largeur fixe. C'est la convention du projet.
+    // Lexicographic sorting on NNNN_... gives chronological order as long
+    // as the numeric prefix has a fixed width. That's the project's
+    // convention.
     std::sort(out.begin(), out.end(),
               [](migration_file const &left, migration_file const &right) {
                   return left.name < right.name;
@@ -71,10 +72,9 @@ struct migration_file {
     sql_statement statement{
         database,
         "INSERT INTO schema_migrations (name, applied_at) VALUES (?1, ?2)"};
-    if (!bind_text(statement, 1, name)
-        || !bind_integer(statement, 2,
-                         static_cast<std::int64_t>(
-                             util::get_unix_timestamp()))) {
+    if (!bind_text(statement, 1, name) ||
+        !bind_integer(statement, 2,
+                      static_cast<std::int64_t>(util::get_unix_timestamp()))) {
         error_out = "liaison impossible pour schema_migrations";
         return false;
     }
@@ -111,17 +111,18 @@ struct migration_file {
         return false;
     }
     std::string ignored;
-    if (!database.execute_script(script, error_out)
-        || !record_applied_migration(database, file.name, error_out)) {
-        // Tout ou rien : une migration a moitie appliquee laisserait une base
-        // dont plus personne ne connait l'etat.
+    if (!database.execute_script(script, error_out) ||
+        !record_applied_migration(database, file.name, error_out)) {
+        // All or nothing: a half-applied migration would leave a database
+        // whose state nobody knows anymore.
         static_cast<void>(database.execute_script("ROLLBACK", ignored));
-        // Le message brut de sqlite dit quelle contrainte a saute, jamais quoi
-        // faire ensuite. Le renvoi vers la documentation evite au collaborateur
-        // d'avoir a deviner -- c'est lui qui exploite le serveur, pas nous.
-        error_out = file.name + " : " + error_out
-                    + "\n  La base n'a pas ete modifiee. Voir docs/ADMIN.md, "
-                      "section « Migrations », pour resoudre puis relancer.";
+        // sqlite's raw message says which constraint tripped, never what
+        // to do next. Pointing to the documentation saves the operator
+        // from having to guess -- they're the one running the server, not
+        // us.
+        error_out = file.name + " : " + error_out +
+                    "\n  La base n'a pas ete modifiee. Voir docs/ADMIN.md, "
+                    "section « Migrations », pour resoudre puis relancer.";
         return false;
     }
     return database.execute_script("COMMIT", error_out);

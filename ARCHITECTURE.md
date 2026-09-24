@@ -1,119 +1,117 @@
 # Architecture
 
-Ce document explique comment les pièces s'assemblent : ce qui se passe
-entre le moment où un client se connecte et celui où un message atterrit
-dans un fil de discussion ou une boîte de DM. Pour le détail d'un sujet
-précis, les autres docs vont plus loin :
-[PROTOCOL.md](docs/PROTOCOL.md) pour le format des trames,
-[SCHEMA.md](docs/SCHEMA.md) pour la base, [THREAT_MODEL.md](docs/THREAT_MODEL.md)
-pour ce qui est protégé ou non, [ADMIN.md](docs/ADMIN.md) pour faire tourner
-un serveur.
+**English** · [Français](docs/architecture/ARCHITECTURE.fr.md) · [中文](docs/architecture/ARCHITECTURE.zh.md) · [हिन्दी](docs/architecture/ARCHITECTURE.hi.md) · [Español](docs/architecture/ARCHITECTURE.es.md) · [العربية](docs/architecture/ARCHITECTURE.ar.md) · [বাংলা](docs/architecture/ARCHITECTURE.bn.md) · [Português](docs/architecture/ARCHITECTURE.pt.md) · [Русский](docs/architecture/ARCHITECTURE.ru.md) · [日本語](docs/architecture/ARCHITECTURE.ja.md)
 
-## Le serveur ne fait rien en parallèle
+This document explains how the pieces fit together: what happens between
+the moment a client connects and the moment a message lands in a forum
+thread or a DM inbox. For the detail on a specific topic, the other docs
+go further: [PROTOCOL.md](docs/PROTOCOL.md) for the wire format,
+[SCHEMA.md](docs/SCHEMA.md) for the database, [THREAT_MODEL.md](docs/THREAT_MODEL.md)
+for what's protected or not, [ADMIN.md](docs/ADMIN.md) for running a
+server.
 
-`server_runtime::run_until_stopped` est une seule boucle `epoll`. Pas de
-thread par connexion, pas de pool. Chaque connexion, chaque requête à la
-base, chaque calcul crypto passe l'un après l'autre dans la même boucle,
-et aucun mutex n'existe nulle part dans `server/` — il n'y a rien à
-protéger puisque rien ne tourne en parallèle. Deux requêtes qui toucheraient
-la même ligne en même temps, un compteur de rate-limit corrompu par une
-écriture concurrente : toute cette famille de bugs n'a simplement pas
-d'endroit où se produire. Le compromis se paie en débit maximal, mais pour
-un serveur qui sert une communauté plutôt qu'un service à millions
-d'utilisateurs, la boucle unique ne devient jamais le goulot.
+## The server never runs anything in parallel
 
-## Du socket au fil de discussion
+`server_runtime::run_until_stopped` is a single `epoll` loop. No
+thread-per-connection, no pool. Every connection, every database query,
+every crypto operation passes through that same loop one after another,
+and there isn't a single mutex anywhere in `server/` — there's nothing to
+protect since nothing ever runs concurrently. Two requests touching the
+same row at the same time, a rate-limit counter corrupted by a concurrent
+write: that whole family of bugs simply has nowhere to happen. The
+trade-off shows up as a ceiling on throughput, but for a server serving
+one community rather than a service with millions of users, the single
+loop never becomes the bottleneck.
 
-Un message qui arrive traverse ces couches, dans cet ordre :
+## From socket to forum thread
+
+An incoming message travels through these layers, in this order:
 
 ```
-socket TCP
-  → tampon d'octets bruts (connection_socket)
-  → dé-préfixage longueur (extract_length_prefixed_message)
-  → handshake Noise en cours, ou déchiffrement si déjà établi
-  → décodage d'en-tête de trame (frame_codec)
-  → limitation de débit (par adresse, puis par identité)
-  → routage par famille de message (request_router)
+TCP socket
+  → raw byte buffer (connection_socket)
+  → length-prefix stripping (extract_length_prefixed_message)
+  → Noise handshake in progress, or decryption once established
+  → frame header decoding (frame_codec)
+  → rate limiting (per address, then per identity)
+  → routing by message family (request_router)
   → handler (account_handler, forum_handler, dm_handler, ...)
   → repository (post_repository, dm_repository, ...)
   → SQLite
 ```
 
-Les deux premières branches — handshake ou trame applicative — se
-décident dans `connection_processor.cpp`. Tant que
-`channel.is_established()` renvoie faux, chaque message reçu fait avancer
-le handshake Noise au lieu d'être traité comme une requête ; une fois le
-canal établi, tout ce qui arrive est déchiffré puis interprété comme une
-trame.
+The first fork — handshake or application frame — is decided in
+`connection_processor.cpp`. As long as `channel.is_established()` returns
+false, every incoming message advances the Noise handshake instead of
+being treated as a request; once the channel is established, everything
+that arrives gets decrypted and read as a frame.
 
-Le routage est coupé en familles (session, contenu, social, DM,
-signalement) plutôt qu'un unique `switch` sur tous les types de message :
-la norme du projet plafonne une fonction à soixante lignes, et un switch
-qui couvre les vingt et quelques types de message existants la
-dépasserait largement. `route_message` essaie chaque famille dans l'ordre
-et s'arrête dès que l'une d'elles reconnaît le type.
+Routing is split into families (session, content, social, DM, report)
+rather than one giant `switch` over every message type: the project's
+coding rules cap a function at sixty lines, and a switch covering the
+twenty-odd message types that exist today would blow well past that.
+`route_message` tries each family in turn and stops as soon as one of
+them recognizes the type.
 
-Chaque handler ne connaît que sa propre tâche — `handle_dm_send_request`
-ignore tout de la table `posts`. Ce qu'il partage avec les autres, c'est le
-`handler_context` (config, logger, connexion base, connexion cliente) et
-les repositories, qui sont le seul endroit du code à toucher SQLite
-directement. Un handler qui construirait sa propre requête SQL serait un
-signal d'alarme à ce stade.
+Each handler only knows its own job — `handle_dm_send_request` has no
+idea the `posts` table exists. What they share is the `handler_context`
+(config, logger, database connection, client connection) and the
+repositories, which are the only place in the codebase that touches
+SQLite directly. A handler building its own SQL query would be a red flag
+at this point.
 
-## Le canal chiffré
+## The encrypted channel
 
-Le transport n'est pas TLS — il n'y a pas de client web à satisfaire, et
-TLS traîne X.509 et les autorités de certification, deux choses dont ce
-projet n'a aucun usage. À la place : Noise NK sur libsodium. Le client
-connaît d'avance la clé publique statique du serveur (épinglée à la
-première connexion, ou lue dans un fichier de connexion partagé) ; le
-handshake échoue tout simplement si un serveur substitué tente de répondre
-à sa place.
+The transport isn't TLS — there's no web client to satisfy, and TLS
+drags along X.509 and certificate authorities, neither of which this
+project has any use for. Instead: Noise NK on top of libsodium. The
+client already knows the server's static public key (pinned on first
+connection, or read from a shared connect file); the handshake simply
+fails if an impostor server tries to answer in its place.
 
-Une fois le handshake terminé (l'étape que le protocole Noise appelle
-`Split`), chaque sens de communication a sa propre clé et son propre
-compteur de nonce dans `noise_transport`. Un message du client et un
-message du serveur ne peuvent donc jamais partager le même nonce — s'ils
-le faisaient, ChaCha20-Poly1305 cesserait d'être sûr. Tout ce qui suit,
-protocole applicatif compris, n'existe en clair que sur les deux machines
-aux extrémités.
+Once the handshake completes (the step the Noise protocol calls `Split`),
+each direction of the conversation gets its own key and its own nonce
+counter inside `noise_transport`. A message from the client and a message
+from the server can therefore never share a nonce — if they did,
+ChaCha20-Poly1305 would stop being safe. Everything that follows,
+application protocol included, exists in the clear only on the two
+machines at either end.
 
-## Un client, plusieurs serveurs
+## One client, many servers
 
-Le client s'inspire de Discord plus que de Slack : une seule fenêtre, une
-barre de serveurs sur le côté, et chaque serveur garde sa propre identité.
-Une identité partagée entre deux serveurs serait un identifiant que deux
-administrateurs pourraient recouper pour établir que c'est la même
-personne des deux côtés — ce que le projet évite en donnant à chaque
-serveur sa propre paire de clés, sans lien visible entre elles.
+The client takes more after Discord than Slack: a single window, a
+server bar down the side, and each server keeping its own identity. An
+identity shared across two servers would be an identifier two
+administrators could cross-reference to establish it's the same person on
+both — which the project avoids by giving each server its own key pair,
+with no visible link between them.
 
-Deux structures se répartissent l'état :
+Two structures split the state:
 
-- `app_state` contient ce qui appartient à l'application entière : la
-  langue, le slot actif, la passphrase tenue en mémoire pour la session
-  (jamais écrite sur disque).
-- `server_slot` contient tout ce qui appartient à *un* serveur : sa
-  connexion, son identité, sa session, et l'état de ce qui s'affiche pour
-  lui.
+- `app_state` holds whatever belongs to the application as a whole: the
+  language, the active slot, the passphrase kept in memory for the
+  session (never written to disk).
+- `server_slot` holds everything that belongs to *one* server: its
+  connection, its identity, its session, and the view state of whatever
+  it's showing.
 
-Les slots vivent dans un `std::vector<std::unique_ptr<server_slot>>`,
-jamais en valeur directe. La raison tient à un détail d'implémentation
-facile à casser par accident : `client_session` garde des références vers
-`server_connection` et vers l'identité du slot. Si le vecteur contenait
-des `server_slot` par valeur, un `push_back` qui déclenche une
-réallocation invaliderait ces références sans prévenir personne — le
-`unique_ptr` fixe l'adresse du slot une fois pour toutes, donc ajouter un
-serveur ne bouge jamais ceux qui existent déjà.
+Slots live in a `std::vector<std::unique_ptr<server_slot>>`, never by
+value. The reason comes down to an implementation detail that's easy to
+break by accident: `client_session` keeps references into
+`server_connection` and into the slot's identity. If the vector held
+`server_slot` by value, a `push_back` that triggers a reallocation would
+silently invalidate those references — the `unique_ptr` pins the slot's
+address for good, so adding a server never moves the ones already there.
 
-## Où regarder pour quoi
+## Where to look for what
 
-| Question | Dossier |
+| Question | Directory |
 |---|---|
-| Comment un message est structuré sur le fil | `common/protocol/` |
-| Chiffrement, dérivation de clés, DM | `common/crypto/` |
-| Boucle réseau, rate limiting, sessions | `server/net/` |
-| Accès à SQLite | `server/db/` |
-| Logique métier par type de message | `server/handlers/` |
-| Commandes d'administration (socket local) | `server/admin/` |
-| Connexion, keystore, multi-serveur | `client/net/`, `client/keystore/` |
-| Interface ImGui | `client/ui/` |
+| How a message is structured on the wire | `common/protocol/` |
+| Encryption, key derivation, DMs | `common/crypto/` |
+| Network loop, rate limiting, sessions | `server/net/` |
+| SQLite access | `server/db/` |
+| Business logic per message type | `server/handlers/` |
+| Admin commands (local socket) | `server/admin/` |
+| Connection, keystore, multi-server | `client/net/`, `client/keystore/` |
+| ImGui interface | `client/ui/` |

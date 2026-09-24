@@ -1,19 +1,18 @@
 #include "tests/loopback_noise_server.hpp"
 
-#include <array>
-#include <cstring>
-#include <vector>
-
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <unistd.h>
-
 #include "common/crypto/noise_handshake_responder.hpp"
 #include "common/crypto/noise_transport.hpp"
 #include "common/protocol/length_prefixed_stream.hpp"
 #include "common/protocol/protocol_limits.hpp"
+
+#include <arpa/inet.h>
+#include <array>
+#include <cstring>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <vector>
 
 namespace hypercom::tests {
 namespace {
@@ -21,8 +20,8 @@ namespace {
 constexpr std::size_t READ_CHUNK_SIZE = 4096;
 constexpr std::size_t MAX_TEST_MESSAGE_SIZE = proto::MAX_FRAME_SIZE;
 
-// Sans ce delai, un client qui n'arrive jamais fait pendre accept() -- et donc
-// le join() du test. Un test qui echoue doit echouer, pas se figer.
+// Without this timeout, a client that never shows up hangs accept() -- and
+// therefore the test's join(). A failing test should fail, not freeze.
 constexpr int ACCEPT_TIMEOUT_SECONDS = 10;
 
 void apply_accept_timeout(int descriptor)
@@ -33,7 +32,7 @@ void apply_accept_timeout(int descriptor)
                                    &timeout, sizeof(timeout)));
 }
 
-// Lit jusqu'a detacher un message complet, ou echoue si le pair ferme.
+// Reads until a full message can be extracted, or fails if the peer closes.
 [[nodiscard]] bool read_one_message(int descriptor,
                                     std::vector<std::uint8_t> &buffer,
                                     std::vector<std::uint8_t> &out)
@@ -74,22 +73,23 @@ void apply_accept_timeout(int descriptor)
     return true;
 }
 
-// Handshake NK cote repondeur, puis un aller-retour chiffre en echo.
-[[nodiscard]] bool serve_one_session(
-    int descriptor, crypto::x25519_public_key const &static_public,
-    crypto::x25519_secret_key const &static_secret)
+// NK handshake on the responder side, then one encrypted echo round trip.
+[[nodiscard]] bool
+serve_one_session(int descriptor,
+                  crypto::x25519_public_key const &static_public,
+                  crypto::x25519_secret_key const &static_secret)
 {
     crypto::noise_handshake_responder responder{static_public, static_secret};
     std::vector<std::uint8_t> buffer;
     std::vector<std::uint8_t> first;
     std::vector<std::uint8_t> payload;
-    if (!read_one_message(descriptor, buffer, first)
-        || !responder.read_first_message(first, payload)) {
+    if (!read_one_message(descriptor, buffer, first) ||
+        !responder.read_first_message(first, payload)) {
         return false;
     }
     std::vector<std::uint8_t> second;
-    if (!responder.write_second_message({}, second)
-        || !send_one_message(descriptor, second)) {
+    if (!responder.write_second_message({}, second) ||
+        !send_one_message(descriptor, second)) {
         return false;
     }
     crypto::symmetric_key send_key{};
@@ -100,13 +100,13 @@ void apply_accept_timeout(int descriptor)
     crypto::noise_transport channel{send_key, receive_key};
     std::vector<std::uint8_t> sealed;
     std::vector<std::uint8_t> opened;
-    if (!read_one_message(descriptor, buffer, sealed)
-        || !channel.decrypt_message(sealed, opened)) {
+    if (!read_one_message(descriptor, buffer, sealed) ||
+        !channel.decrypt_message(sealed, opened)) {
         return false;
     }
     std::vector<std::uint8_t> echoed;
-    return channel.encrypt_message(opened, echoed)
-        && send_one_message(descriptor, echoed);
+    return channel.encrypt_message(opened, echoed) &&
+           send_one_message(descriptor, echoed);
 }
 
 } // namespace
@@ -120,19 +120,17 @@ bool open_loopback_listener(int &descriptor_out, std::uint16_t &port_out)
     sockaddr_in address{};
     address.sin_family = AF_INET;
     address.sin_port = 0;
-    if (::inet_pton(AF_INET, "127.0.0.1", &address.sin_addr) != 1
-        || ::bind(descriptor, reinterpret_cast<sockaddr const *>(&address),
-                  sizeof(address))
-               != 0
-        || ::listen(descriptor, 4) != 0) {
+    if (::inet_pton(AF_INET, "127.0.0.1", &address.sin_addr) != 1 ||
+        ::bind(descriptor, reinterpret_cast<sockaddr const *>(&address),
+               sizeof(address)) != 0 ||
+        ::listen(descriptor, 4) != 0) {
         ::close(descriptor);
         return false;
     }
     sockaddr_in assigned{};
     socklen_t length = sizeof(assigned);
     if (::getsockname(descriptor, reinterpret_cast<sockaddr *>(&assigned),
-                      &length)
-        != 0) {
+                      &length) != 0) {
         ::close(descriptor);
         return false;
     }
@@ -145,8 +143,7 @@ bool open_loopback_listener(int &descriptor_out, std::uint16_t &port_out)
 void serve_noise_sessions(int listener_descriptor,
                           crypto::x25519_public_key const &static_public,
                           crypto::x25519_secret_key const &static_secret,
-                          int session_count,
-                          loopback_server_result &result)
+                          int session_count, loopback_server_result &result)
 {
     for (int index = 0; index < session_count; ++index) {
         int const accepted = ::accept(listener_descriptor, nullptr, nullptr);
@@ -157,8 +154,8 @@ void serve_noise_sessions(int listener_descriptor,
         if (!serve_one_session(accepted, static_public, static_secret)) {
             result.every_session_succeeded = false;
         }
-        // Fermeture par FIN, sans message d'adieu : c'est exactement ce que
-        // fait le vrai serveur, et ce que le client doit savoir encaisser.
+        // Closed via FIN, with no goodbye message: that's exactly what the
+        // real server does, and what the client needs to be able to handle.
         ::close(accepted);
         ++result.sessions_served;
     }

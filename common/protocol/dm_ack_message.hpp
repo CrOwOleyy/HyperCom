@@ -1,17 +1,17 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 
+#include <cstdint>
+#include <vector>
+
 namespace hypercom::proto {
 
-// Accuse de reception : le serveur peut alors supprimer les enveloppes citees.
+// Acknowledgment: the server can then delete the referenced envelopes.
 //
-// C'est le mecanisme de retention des DM. Une enveloppe acquittee est effacee,
-// pas archivee -- ce qui n'existe plus sur le disque ne peut pas etre saisi.
+// This is the DM retention mechanism. An acknowledged envelope is erased,
+// not archived -- what no longer exists on disk cannot be seized.
 struct dm_ack_request {
     std::vector<std::uint64_t> envelope_ids;
 

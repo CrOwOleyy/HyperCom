@@ -1,17 +1,17 @@
 #pragma once
 
-#include <string>
-#include <string_view>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/forum_record.hpp"
 
+#include <string>
+#include <string_view>
+
 namespace hypercom::proto {
 
-// N'importe qui cree un forum et en devient fondateur. Le serveur ne verifie
-// que l'unicite et la forme du nom -- il n'y a pas de liste de noms interdits,
-// et il n'en est pas prevu.
+// Anyone can create a forum and becomes its founder. The server only checks
+// the name's uniqueness and shape -- there's no list of forbidden names,
+// and none is planned.
 struct forum_create_request {
     std::string name;
     std::string description;
@@ -30,8 +30,8 @@ struct forum_info_response {
     [[nodiscard]] bool read_from(byte_reader &reader);
 };
 
-// Meme logique que validate_handle : ASCII restreint, pour que deux forums ne
-// puissent pas porter des noms visuellement identiques.
+// Same logic as validate_handle: restricted ASCII, so that two forums can't
+// carry visually identical names.
 [[nodiscard]] bool validate_forum_name(std::string_view name);
 
 } // namespace hypercom::proto

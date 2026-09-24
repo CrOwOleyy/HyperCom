@@ -5,18 +5,18 @@
 
 namespace hypercom::server {
 
-// Reception d'un signalement (BRIEF.md 13). Le serveur enregistre, il ne
-// juge rien -- aucune action automatique n'en decoule, c'est l'admin qui lit
-// la file via `reports` sur le socket local.
+// Receiving a report (BRIEF.md 13). The server records it, it doesn't judge
+// anything -- no automatic action follows, it's the admin who reads the
+// queue via `reports` on the local socket.
 //
-// report_account_request ne verifie pas que la cible est un ami ou un
-// correspondant du signaleur : c'est volontaire, quelqu'un peut vouloir
-// signaler un compte avant de lui avoir jamais parle.
+// report_account_request doesn't check that the target is a friend or a
+// contact of the reporter: that's intentional, someone may want to report an
+// account before ever having spoken to them.
 
 [[nodiscard]] bool handle_report_post_request(handler_context &context,
                                               proto::byte_reader &reader);
 
 [[nodiscard]] bool handle_report_account_request(handler_context &context,
-                                                  proto::byte_reader &reader);
+                                                 proto::byte_reader &reader);
 
 } // namespace hypercom::server

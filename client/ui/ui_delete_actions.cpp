@@ -18,16 +18,17 @@ void delete_post(cli_context &context, ui_state &state, std::uint64_t post_id)
     std::string failure;
     proto::status_ok_response response;
     if (!send_typed_message(context.connection,
-                            proto::message_type::post_delete_request, request)
-        || !receive_typed_message(context.connection,
-                                  proto::message_type::status_ok, response,
-                                  failure)) {
+                            proto::message_type::post_delete_request,
+                            request) ||
+        !receive_typed_message(context.connection,
+                               proto::message_type::status_ok, response,
+                               failure)) {
         state.status_message = failure;
         state.status_is_error = true;
         return;
     }
-    // Le fil affiche encore le post ouvert : le refermer evite de laisser a
-    // l'ecran un contenu qui n'existe plus.
+    // The thread still shows the open post: closing it avoids leaving
+    // content on screen that no longer exists.
     state.selected_post_id = 0;
     state.comments.clear();
     refresh_post_list(context, state);
@@ -47,10 +48,10 @@ void delete_comment(cli_context &context, ui_state &state,
     proto::status_ok_response response;
     if (!send_typed_message(context.connection,
                             proto::message_type::comment_delete_request,
-                            request)
-        || !receive_typed_message(context.connection,
-                                  proto::message_type::status_ok, response,
-                                  failure)) {
+                            request) ||
+        !receive_typed_message(context.connection,
+                               proto::message_type::status_ok, response,
+                               failure)) {
         state.status_message = failure;
         state.status_is_error = true;
         return;

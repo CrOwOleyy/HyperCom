@@ -1,7 +1,5 @@
 #include "client/ui/server_actions.hpp"
 
-#include <algorithm>
-
 #include "client/cli/invite_link.hpp"
 #include "client/keystore/identity_store.hpp"
 #include "client/keystore/master_seed_store.hpp"
@@ -9,6 +7,8 @@
 #include "client/ui/ui_actions.hpp"
 #include "common/crypto/secure_memory.hpp"
 #include "common/util/hex_codec.hpp"
+
+#include <algorithm>
 
 namespace hypercom::client {
 namespace {
@@ -37,7 +37,8 @@ namespace {
     return ready;
 }
 
-// Recopie dans le registre l'etat courant des slots, puis rescelle le tout.
+// Copies the slots' current state back into the registry, then
+// reseals the whole thing.
 [[nodiscard]] bool persist(app_state const &app, server_slot_list const &slots,
                            std::string &error_out)
 {
@@ -66,8 +67,7 @@ bool build_slot(server_entry const &entry, app_state const &app,
     if (!resolve_identity(entry, app, slot->identity, error_out)) {
         return false;
     }
-    slot->connection =
-        std::make_unique<server_connection>(entry.server_key);
+    slot->connection = std::make_unique<server_connection>(entry.server_key);
     slot->session =
         std::make_unique<client_session>(*slot->connection, slot->identity);
     slot->view.endpoint = entry.endpoint;
@@ -88,8 +88,8 @@ bool connect_slot(server_slot &slot, std::string &error_out)
         slot.view.connected = true;
         return true;
     }
-    if (!slot.connection->open_session(slot.entry.endpoint, error_out)
-        || !slot.session->authenticate(error_out)) {
+    if (!slot.connection->open_session(slot.entry.endpoint, error_out) ||
+        !slot.session->authenticate(error_out)) {
         slot.view.connected = false;
         return false;
     }
@@ -113,8 +113,8 @@ void add_server_from_invite(app_state &app, server_slot_list &slots)
     entry.label = link.host;
     entry.endpoint = {link.host, link.port, {}, 0};
     std::vector<std::uint8_t> decoded;
-    if (!util::decode_hex(link.server_key_hex, decoded)
-        || decoded.size() != entry.server_key.size()) {
+    if (!util::decode_hex(link.server_key_hex, decoded) ||
+        decoded.size() != entry.server_key.size()) {
         report(app, "cle du serveur illisible", true);
         return;
     }

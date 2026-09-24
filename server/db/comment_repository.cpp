@@ -1,17 +1,18 @@
 #include "server/db/comment_repository.hpp"
 
-#include <string>
-
 #include "common/util/unix_clock.hpp"
 #include "server/db/sql_binder.hpp"
 #include "server/db/sql_column_reader.hpp"
 #include "server/db/sql_statement.hpp"
 
+#include <string>
+
 namespace hypercom::server {
 namespace {
 
-// path sert uniquement au tri : il place chaque reponse juste sous son parent,
-// ce qui donne un parcours prefixe sans reconstruire d'arbre cote serveur.
+// path is used only for sorting: it places each reply right under its
+// parent, giving a preorder traversal without rebuilding a tree
+// server-side.
 constexpr char const *SELECT_THREAD =
     "WITH RECURSIVE thread(id, post_id, parent_comment_id, author_id, body,"
     "                      created_at, depth, path) AS ("
@@ -57,8 +58,7 @@ constexpr char const *SELECT_ONE =
 
 comment_repository::comment_repository(database_handle &database)
     : database_{database}
-{
-}
+{}
 
 bool comment_repository::create_comment(std::int64_t post_id,
                                         std::int64_t parent_comment_id,
@@ -71,13 +71,12 @@ bool comment_repository::create_comment(std::int64_t post_id,
         "INSERT INTO comments (post_id, parent_comment_id, author_id, body,"
         "                      created_at) "
         "VALUES (?1, NULLIF(?2, 0), ?3, ?4, ?5)"};
-    if (!bind_integer(statement, 1, post_id)
-        || !bind_integer(statement, 2, parent_comment_id)
-        || !bind_integer(statement, 3, author_id)
-        || !bind_text(statement, 4, body)
-        || !bind_integer(statement, 5,
-                         static_cast<std::int64_t>(
-                             util::get_unix_timestamp()))) {
+    if (!bind_integer(statement, 1, post_id) ||
+        !bind_integer(statement, 2, parent_comment_id) ||
+        !bind_integer(statement, 3, author_id) ||
+        !bind_text(statement, 4, body) ||
+        !bind_integer(statement, 5,
+                      static_cast<std::int64_t>(util::get_unix_timestamp()))) {
         return false;
     }
     if (statement.step_row() != step_result::done) {
@@ -87,28 +86,26 @@ bool comment_repository::create_comment(std::int64_t post_id,
     return true;
 }
 
-bool comment_repository::find_by_id(std::int64_t id,
-                                    proto::comment_record &out)
+bool comment_repository::find_by_id(std::int64_t id, proto::comment_record &out)
 {
     sql_statement statement{database_, SELECT_ONE};
-    if (!bind_integer(statement, 1, id)
-        || statement.step_row() != step_result::row) {
+    if (!bind_integer(statement, 1, id) ||
+        statement.step_row() != step_result::row) {
         return false;
     }
     return read_comment_record(statement, out);
 }
 
-bool comment_repository::list_thread(std::int64_t post_id,
-                                     std::uint16_t limit,
+bool comment_repository::list_thread(std::int64_t post_id, std::uint16_t limit,
                                      std::vector<proto::comment_record> &out,
                                      bool &truncated)
 {
     sql_statement statement{database_, SELECT_THREAD};
-    // On demande un element de plus que la limite : si sqlite le rend, c'est
-    // qu'il y en avait davantage, et le client doit le savoir.
-    if (!bind_integer(statement, 1, post_id)
-        || !bind_integer(statement, 2, MAX_COMMENT_DEPTH)
-        || !bind_integer(statement, 3, static_cast<std::int64_t>(limit) + 1)) {
+    // We ask for one more element than the limit: if sqlite returns it,
+    // there were more, and the client needs to know.
+    if (!bind_integer(statement, 1, post_id) ||
+        !bind_integer(statement, 2, MAX_COMMENT_DEPTH) ||
+        !bind_integer(statement, 3, static_cast<std::int64_t>(limit) + 1)) {
         return false;
     }
     out.clear();
@@ -132,8 +129,8 @@ bool comment_repository::check_parent_belongs_to_post(
 {
     sql_statement statement{
         database_, "SELECT 1 FROM comments WHERE id = ?1 AND post_id = ?2"};
-    if (!bind_integer(statement, 1, parent_comment_id)
-        || !bind_integer(statement, 2, post_id)) {
+    if (!bind_integer(statement, 1, parent_comment_id) ||
+        !bind_integer(statement, 2, post_id)) {
         return false;
     }
     return statement.step_row() == step_result::row;
@@ -143,13 +140,12 @@ bool comment_repository::delete_own_comment(std::int64_t comment_id,
                                             std::int64_t author_id)
 {
     sql_statement statement{
-        database_,
-        "UPDATE comments SET body = '', deleted_at = ?1 "
-        "WHERE id = ?2 AND author_id = ?3 AND deleted_at IS NULL"};
+        database_, "UPDATE comments SET body = '', deleted_at = ?1 "
+                   "WHERE id = ?2 AND author_id = ?3 AND deleted_at IS NULL"};
     if (!bind_integer(statement, 1,
-                      static_cast<std::int64_t>(util::get_unix_timestamp()))
-        || !bind_integer(statement, 2, comment_id)
-        || !bind_integer(statement, 3, author_id)) {
+                      static_cast<std::int64_t>(util::get_unix_timestamp())) ||
+        !bind_integer(statement, 2, comment_id) ||
+        !bind_integer(statement, 3, author_id)) {
         return false;
     }
     if (statement.step_row() != step_result::done) {

@@ -1,16 +1,16 @@
 #pragma once
 
-#include <cstdint>
-
 #include "common/protocol/prekey_fetch_message.hpp"
 #include "server/db/database_handle.hpp"
 
+#include <cstdint>
+
 namespace hypercom::server {
 
-// Le serveur est un annuaire de prekeys, jamais une autorite : il stocke la
-// signature avec la cle et la ressert telle quelle. Il ne verifie meme pas
-// qu'elle est valide au depot -- c'est le destinataire qui verifiera, et lui
-// seul a de bonnes raisons d'y croire.
+// The server is a prekey directory, never an authority: it stores the
+// signature alongside the key and serves it back as-is. It doesn't even
+// check that it's valid on upload -- the recipient will verify it, and
+// only they have good reason to trust it.
 class prekey_repository {
 public:
     explicit prekey_repository(database_handle &database);
@@ -19,9 +19,9 @@ public:
                                       proto::wire_public_key const &prekey,
                                       proto::wire_signature const &signature);
 
-    [[nodiscard]] bool find_bundle_by_pubkey(
-        proto::wire_public_key const &owner_pubkey,
-        proto::prekey_bundle_response &out);
+    [[nodiscard]] bool
+    find_bundle_by_pubkey(proto::wire_public_key const &owner_pubkey,
+                          proto::prekey_bundle_response &out);
 
 private:
     database_handle &database_;

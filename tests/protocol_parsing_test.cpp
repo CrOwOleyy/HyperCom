@@ -1,6 +1,3 @@
-#include <cstdint>
-#include <vector>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/frame_codec.hpp"
@@ -8,11 +5,14 @@
 #include "common/protocol/text_field_codec.hpp"
 #include "tests/test_harness.hpp"
 
+#include <cstdint>
+#include <vector>
+
 namespace {
 
 using namespace hypercom;
 
-// Le lecteur ne doit jamais sortir de son tampon, quelle que soit l'entree.
+// The reader must never run past its buffer, no matter what the input is.
 void check_reader_bounds(tests::test_report &report)
 {
     std::vector<std::uint8_t> const empty;
@@ -23,12 +23,12 @@ void check_reader_bounds(tests::test_report &report)
     std::vector<std::uint8_t> const partial{0x01, 0x02, 0x03};
     proto::byte_reader short_reader{partial};
     HYPERCOM_CHECK(report, !short_reader.read_integer(value));
-    // Un echec ne doit rien consommer : le curseur reste ou il etait.
+    // A failure must consume nothing: the cursor stays where it was.
     HYPERCOM_CHECK(report, short_reader.count_remaining_bytes() == 3);
 }
 
-// Une longueur annoncee enorme ne doit provoquer aucune allocation, seulement
-// un refus. C'est la propriete la plus importante du parseur.
+// A huge announced length must trigger no allocation at all, only a
+// rejection. This is the parser's single most important property.
 void check_length_prefix_cap(tests::test_report &report)
 {
     std::vector<std::uint8_t> hostile{0xFF, 0xFF, 0xFF, 0xFF};
@@ -53,8 +53,8 @@ void check_round_trip(tests::test_report &report)
     std::string text;
     HYPERCOM_CHECK(report, reader.read_integer(recovered));
     HYPERCOM_CHECK(report, recovered == 0x0123456789ABCDEFULL);
-    HYPERCOM_CHECK(report,
-                   proto::read_text_field(reader, text, 32) && text == "bonjour");
+    HYPERCOM_CHECK(report, proto::read_text_field(reader, text, 32) &&
+                               text == "bonjour");
     HYPERCOM_CHECK(report, reader.count_remaining_bytes() == 0);
 }
 
@@ -63,13 +63,13 @@ void check_utf8_validation(tests::test_report &report)
     HYPERCOM_CHECK(report, proto::validate_text_field("texte normal"));
     HYPERCOM_CHECK(report, proto::validate_text_field("accentue : eee"));
     HYPERCOM_CHECK(report, proto::validate_text_field("\xC3\xA9"));
-    // Sur-long : 0xC0 0x80 encode U+0000 sur deux octets.
+    // Overlong: 0xC0 0x80 encodes U+0000 over two bytes.
     HYPERCOM_CHECK(report, !proto::validate_text_field("\xC0\x80"));
-    // Demi-codet de substitution U+D800.
+    // Surrogate half U+D800.
     HYPERCOM_CHECK(report, !proto::validate_text_field("\xED\xA0\x80"));
-    // Continuation isolee.
+    // Isolated continuation byte.
     HYPERCOM_CHECK(report, !proto::validate_text_field("\x80"));
-    // Controles C0 refuses, sauf tabulation et saut de ligne.
+    // C0 control characters rejected, except tab and newline.
     HYPERCOM_CHECK(report, !proto::validate_text_field(std::string(1, '\0')));
     HYPERCOM_CHECK(report, !proto::validate_text_field("\r"));
     HYPERCOM_CHECK(report, proto::validate_text_field("a\tb\nc"));
@@ -79,17 +79,17 @@ void check_frame_codec(tests::test_report &report)
 {
     std::vector<std::uint8_t> const payload{0xAA, 0xBB};
     std::vector<std::uint8_t> frame;
-    HYPERCOM_CHECK(report, proto::encode_frame(
-                               proto::message_type::ping_request, payload,
-                               frame));
+    HYPERCOM_CHECK(
+        report,
+        proto::encode_frame(proto::message_type::ping_request, payload, frame));
     proto::frame_header header{};
     HYPERCOM_CHECK(report, proto::decode_frame_header(frame, header));
     HYPERCOM_CHECK(report, header.type == proto::message_type::ping_request);
     HYPERCOM_CHECK(report, header.body_size == payload.size() + 1);
-    // Type inconnu : refuse a l'entete, jamais transmis a un handler.
+    // Unknown type: rejected at the header, never passed to a handler.
     std::vector<std::uint8_t> forged{0x02, 0x00, 0x00, 0x00, 0xFE, 0x00};
     HYPERCOM_CHECK(report, !proto::decode_frame_header(forged, header));
-    // Longueur nulle : une trame contient toujours au moins son type.
+    // Zero length: a frame always contains at least its type.
     std::vector<std::uint8_t> const zero_length{0x00, 0x00, 0x00, 0x00, 0x06};
     HYPERCOM_CHECK(report, !proto::decode_frame_header(zero_length, header));
 }
@@ -100,9 +100,9 @@ void check_handle_validation(tests::test_report &report)
     HYPERCOM_CHECK(report, proto::validate_handle("a_b-1"));
     HYPERCOM_CHECK(report, !proto::validate_handle("ab"));
     HYPERCOM_CHECK(report, !proto::validate_handle("1abc"));
-    // Majuscules autorisées (ex: "Alice")
+    // Uppercase allowed (e.g. "Alice")
     HYPERCOM_CHECK(report, proto::validate_handle("Alice"));
-    // Homoglyphe cyrillique refuse par la restriction ASCII.
+    // Cyrillic homoglyph rejected by the ASCII restriction.
     HYPERCOM_CHECK(report, !proto::validate_handle("\xD1\x83ounes"));
 }
 

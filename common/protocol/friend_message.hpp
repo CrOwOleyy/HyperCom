@@ -1,19 +1,19 @@
 #pragma once
 
-#include <vector>
-
 #include "common/protocol/byte_reader.hpp"
 #include "common/protocol/byte_writer.hpp"
 #include "common/protocol/social_records.hpp"
 #include "common/protocol/wire_key.hpp"
 
+#include <vector>
+
 namespace hypercom::proto {
 
-// friend_list_request n'a pas de champ : on renvoie toujours la liste de la
-// session authentifiee. Payload vide, donc pas de structure a declarer.
+// friend_list_request has no field: we always return the list for the
+// authenticated session. Empty payload, so no structure to declare.
 //
-// status sert aussi a bloquer, mais le serveur ne fait que memoriser
-// l'intention. Le filtrage reel se passe cote client.
+// status also serves to block, but the server only records the intent.
+// The actual filtering happens client-side.
 struct friend_add_request {
     wire_public_key target_pubkey{};
     friendship_status status = friendship_status::requested;

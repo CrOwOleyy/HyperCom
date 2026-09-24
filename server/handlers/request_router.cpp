@@ -16,9 +16,9 @@ namespace {
 
 using proto::message_type;
 
-// Un routeur par famille : la regle F4 plafonne une fonction a soixante lignes,
-// et un switch sur l'ensemble des types la depasserait largement.
-// handled indique si la famille a reconnu le type.
+// One router per family: rule F4 caps a function at sixty lines, and a
+// switch over the whole set of types would blow well past that.
+// handled indicates whether the family recognized the type.
 
 [[nodiscard]] bool route_session_family(handler_context &context,
                                         message_type type,
@@ -99,8 +99,7 @@ using proto::message_type;
     }
 }
 
-[[nodiscard]] bool route_dm_family(handler_context &context,
-                                   message_type type,
+[[nodiscard]] bool route_dm_family(handler_context &context, message_type type,
                                    proto::byte_reader &reader, bool &handled)
 {
     handled = true;
@@ -170,8 +169,8 @@ bool route_message(handler_context &context, message_type type,
     if (handled) {
         return true;
     }
-    // Type connu du protocole mais qu'un client n'a aucune raison d'emettre :
-    // une reponse serveur, ou un message de blob reserve a la v2.
+    // A type the protocol knows but that a client has no reason to send: a
+    // server response, or a blob message reserved for v2.
     return send_status_error(context.connection,
                              proto::error_code::not_implemented);
 }

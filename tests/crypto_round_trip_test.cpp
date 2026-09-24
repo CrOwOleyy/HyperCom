@@ -1,6 +1,3 @@
-#include <string>
-#include <vector>
-
 #include "common/crypto/dm_envelope.hpp"
 #include "common/crypto/dm_message_chain.hpp"
 #include "common/crypto/dm_session_keys.hpp"
@@ -14,6 +11,9 @@
 #include "common/crypto/x25519_exchange.hpp"
 #include "tests/test_harness.hpp"
 
+#include <string>
+#include <vector>
+
 namespace {
 
 using namespace hypercom;
@@ -23,15 +23,15 @@ using namespace hypercom;
     return {reinterpret_cast<std::uint8_t const *>(text.data()), text.size()};
 }
 
-// Le handshake complet, puis un message dans CHAQUE sens. Tester une seule
-// direction laisserait passer une inversion des cles de transport, qui est
-// l'erreur la plus facile a commettre dans Split().
+// The full handshake, then a message in EACH direction. Testing only one
+// direction would let a transport key swap slip through, which is the
+// easiest mistake to make in Split().
 void check_noise_handshake(tests::test_report &report)
 {
     crypto::x25519_public_key server_public{};
     crypto::x25519_secret_key server_secret{};
-    HYPERCOM_CHECK(report, crypto::generate_x25519_keypair(server_public,
-                                                           server_secret));
+    HYPERCOM_CHECK(
+        report, crypto::generate_x25519_keypair(server_public, server_secret));
     crypto::noise_handshake_initiator client{server_public};
     crypto::noise_handshake_responder server{server_public, server_secret};
     std::vector<std::uint8_t> first;
@@ -54,21 +54,19 @@ void check_noise_handshake(tests::test_report &report)
     crypto::noise_transport server_channel{server_send, server_receive};
     std::vector<std::uint8_t> sealed;
     std::vector<std::uint8_t> opened;
-    HYPERCOM_CHECK(report,
-                   client_channel.encrypt_message(as_bytes("vers le serveur"),
-                                                  sealed));
+    HYPERCOM_CHECK(report, client_channel.encrypt_message(
+                               as_bytes("vers le serveur"), sealed));
     HYPERCOM_CHECK(report, server_channel.decrypt_message(sealed, opened));
-    HYPERCOM_CHECK(report, std::string(opened.begin(), opened.end())
-                               == "vers le serveur");
-    HYPERCOM_CHECK(report,
-                   server_channel.encrypt_message(as_bytes("vers le client"),
-                                                  sealed));
+    HYPERCOM_CHECK(report, std::string(opened.begin(), opened.end()) ==
+                               "vers le serveur");
+    HYPERCOM_CHECK(report, server_channel.encrypt_message(
+                               as_bytes("vers le client"), sealed));
     HYPERCOM_CHECK(report, client_channel.decrypt_message(sealed, opened));
-    HYPERCOM_CHECK(report, std::string(opened.begin(), opened.end())
-                               == "vers le client");
+    HYPERCOM_CHECK(report, std::string(opened.begin(), opened.end()) ==
+                               "vers le client");
 }
 
-// Un client qui epingle la mauvaise cle ne doit PAS etablir de session.
+// A client that pins the wrong key must NOT establish a session.
 void check_wrong_pinned_key_is_refused(tests::test_report &report)
 {
     crypto::x25519_public_key real_public{};
@@ -84,12 +82,12 @@ void check_wrong_pinned_key_is_refused(tests::test_report &report)
     std::vector<std::uint8_t> first;
     std::vector<std::uint8_t> payload;
     HYPERCOM_CHECK(report, client.write_first_message({}, first));
-    // Le serveur ne parvient meme pas a ouvrir le premier message : le hachage
-    // de handshake diverge des le pre-message.
+    // The server can't even open the first message: the handshake hash
+    // already diverges at the pre-message.
     HYPERCOM_CHECK(report, !server.read_first_message(first, payload));
 }
 
-// Les deux cotes doivent deriver la meme racine, sans aucun echange prealable.
+// Both sides must derive the same root, with no prior exchange at all.
 void check_dm_round_trip(tests::test_report &report)
 {
     crypto::identity_keypair alice;
@@ -98,8 +96,8 @@ void check_dm_round_trip(tests::test_report &report)
     HYPERCOM_CHECK(report, crypto::identity_keypair::generate_random(bob));
     crypto::x25519_public_key bob_prekey_public{};
     crypto::x25519_secret_key bob_prekey_secret{};
-    HYPERCOM_CHECK(report, crypto::generate_x25519_keypair(
-                               bob_prekey_public, bob_prekey_secret));
+    HYPERCOM_CHECK(report, crypto::generate_x25519_keypair(bob_prekey_public,
+                                                           bob_prekey_secret));
     crypto::x25519_public_key ephemeral_public{};
     crypto::x25519_secret_key ephemeral_secret{};
     HYPERCOM_CHECK(report, crypto::generate_x25519_keypair(ephemeral_public,
@@ -125,22 +123,22 @@ void check_dm_round_trip(tests::test_report &report)
     header.sender_identity = alice.get_public_key();
     header.sender_ephemeral = ephemeral_public;
     std::vector<std::uint8_t> envelope;
-    HYPERCOM_CHECK(report, crypto::seal_dm_envelope(header, sender_key,
-                                                    as_bytes("secret"),
-                                                    envelope));
+    HYPERCOM_CHECK(report,
+                   crypto::seal_dm_envelope(header, sender_key,
+                                            as_bytes("secret"), envelope));
     std::vector<std::uint8_t> opened;
-    HYPERCOM_CHECK(report, crypto::open_dm_envelope(envelope, recipient_key,
-                                                    opened));
+    HYPERCOM_CHECK(report,
+                   crypto::open_dm_envelope(envelope, recipient_key, opened));
     HYPERCOM_CHECK(report,
                    std::string(opened.begin(), opened.end()) == "secret");
-    // Un octet modifie dans l'en-tete authentifie doit faire echouer
-    // l'ouverture : le serveur ne peut pas rejouer a un autre compteur.
+    // A single modified byte in the authenticated header must make opening
+    // fail: the server can't replay it under a different counter.
     envelope[1] ^= 0x01;
     HYPERCOM_CHECK(report,
                    !crypto::open_dm_envelope(envelope, recipient_key, opened));
 }
 
-// La cle de chaine precedente doit disparaitre a chaque avancee.
+// The previous chain key must vanish with every step forward.
 void check_forward_secrecy_of_chain(tests::test_report &report)
 {
     crypto::symmetric_key root{};
@@ -156,18 +154,17 @@ void check_forward_secrecy_of_chain(tests::test_report &report)
 void check_keystore_round_trip(tests::test_report &report)
 {
     crypto::identity_keypair identity;
-    HYPERCOM_CHECK(report,
-                   crypto::identity_keypair::generate_random(identity));
+    HYPERCOM_CHECK(report, crypto::identity_keypair::generate_random(identity));
     std::vector<std::uint8_t> sealed;
-    HYPERCOM_CHECK(report, crypto::seal_identity_secret(
-                               "bonne passphrase", identity.get_secret_key(),
-                               sealed));
+    HYPERCOM_CHECK(report,
+                   crypto::seal_identity_secret(
+                       "bonne passphrase", identity.get_secret_key(), sealed));
     crypto::ed25519_secret_key recovered{};
     HYPERCOM_CHECK(report, crypto::open_identity_secret("bonne passphrase",
                                                         sealed, recovered));
     HYPERCOM_CHECK(report, recovered == identity.get_secret_key());
-    HYPERCOM_CHECK(report, !crypto::open_identity_secret("mauvaise", sealed,
-                                                         recovered));
+    HYPERCOM_CHECK(
+        report, !crypto::open_identity_secret("mauvaise", sealed, recovered));
     sealed[sealed.size() - 1] ^= 0x01;
     HYPERCOM_CHECK(report, !crypto::open_identity_secret("bonne passphrase",
                                                          sealed, recovered));
@@ -176,14 +173,12 @@ void check_keystore_round_trip(tests::test_report &report)
 void check_signature_verification(tests::test_report &report)
 {
     crypto::identity_keypair identity;
-    HYPERCOM_CHECK(report,
-                   crypto::identity_keypair::generate_random(identity));
+    HYPERCOM_CHECK(report, crypto::identity_keypair::generate_random(identity));
     crypto::ed25519_signature signature{};
+    HYPERCOM_CHECK(report, identity.sign_message(as_bytes("defi"), signature));
     HYPERCOM_CHECK(report,
-                   identity.sign_message(as_bytes("defi"), signature));
-    HYPERCOM_CHECK(report, crypto::verify_signature(identity.get_public_key(),
-                                                    as_bytes("defi"),
-                                                    signature));
+                   crypto::verify_signature(identity.get_public_key(),
+                                            as_bytes("defi"), signature));
     HYPERCOM_CHECK(report, !crypto::verify_signature(identity.get_public_key(),
                                                      as_bytes("autre defi"),
                                                      signature));

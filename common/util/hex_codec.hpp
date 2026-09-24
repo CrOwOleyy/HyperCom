@@ -8,16 +8,16 @@
 
 namespace hypercom::util {
 
-// Conversion hexadecimale pour l'affichage et la configuration.
+// Hex conversion for display and configuration.
 //
-// AVERTISSEMENT : ces deux fonctions ne sont PAS a temps constant. Elles sont
-// reservees aux donnees publiques -- cles publiques, empreintes, identifiants.
-// Une cle privee ne passe jamais par ici : elle reste binaire, et son stockage
-// sur disque est traite par common/crypto/keystore_envelope.
+// WARNING: these two functions are NOT constant-time. They're reserved
+// for public data -- public keys, fingerprints, identifiers. A private
+// key never goes through here: it stays binary, and its on-disk storage
+// is handled by common/crypto/keystore_envelope.
 void encode_hex(std::span<std::uint8_t const> input, std::string &out);
 
-// Accepte les deux casses, refuse tout caractere non hexadecimal et toute
-// longueur impaire. Le vecteur de sortie n'est ecrit qu'en cas de succes.
+// Accepts both cases, rejects any non-hexadecimal character and any odd
+// length. The output vector is written only on success.
 [[nodiscard]] bool decode_hex(std::string_view input,
                               std::vector<std::uint8_t> &out);
 

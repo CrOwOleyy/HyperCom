@@ -1,11 +1,11 @@
 #include "server/admin/admin_reports_command.hpp"
 
-#include <charconv>
-
 #include "common/util/hex_codec.hpp"
 #include "server/admin/admin_text_format.hpp"
 #include "server/db/post_repository.hpp"
 #include "server/db/report_repository.hpp"
+
+#include <charconv>
 
 namespace hypercom::server {
 namespace {
@@ -22,9 +22,9 @@ constexpr std::uint16_t REPORTS_LIST_LIMIT = 200;
     if (rows.empty()) {
         return "(aucun signalement)\n";
     }
-    std::string text = pad_right("ID", 6) + pad_right("TYPE", 10)
-                       + pad_right("CIBLE", 20) + pad_right("MOTIF", 30)
-                       + "PAR\n";
+    std::string text = pad_right("ID", 6) + pad_right("TYPE", 10) +
+                       pad_right("CIBLE", 20) + pad_right("MOTIF", 30) +
+                       "PAR\n";
     for (report_row const &row : rows) {
         std::string target = std::to_string(row.post_id);
         if (row.kind != "post") {
@@ -75,8 +75,8 @@ constexpr std::uint16_t REPORTS_LIST_LIMIT = 200;
     if (!posts.admin_delete_post(post_id)) {
         return "echec : post introuvable ou deja supprime\n";
     }
-    // Journalise sans le motif ni le texte du post : la trace dit qu'une
-    // action a eu lieu, pas ce qui a motive le signalement d'origine.
+    // Logged without the reason or the post's text: the trace says an
+    // action took place, not what motivated the original report.
     context.logger.write_entry(
         util::log_level::info,
         "post supprime par l'administration suite a un signalement");

@@ -6,14 +6,16 @@
 
 namespace hypercom::server {
 
-// Aiguillage par type de message.
+// Dispatch by message type.
 //
-// Le type a deja ete valide par decode_frame_header : le routeur ne raisonne
-// jamais sur un octet arbitraire. Un type connu mais hors contexte -- une
-// reponse serveur envoyee par un client, par exemple -- est refuse ici.
+// The type has already been validated by decode_frame_header: the router
+// never reasons over an arbitrary byte. A type that is known but out of
+// context -- a server response sent by a client, for instance -- is
+// rejected here.
 //
-// Renvoie false pour fermer la connexion. C'est reserve aux fautes de
-// protocole ; une erreur metier part en status_error et la session continue.
+// Returns false to close the connection. That's reserved for protocol
+// violations; a business error goes out as status_error and the session
+// continues.
 [[nodiscard]] bool route_message(handler_context &context,
                                  proto::message_type type,
                                  proto::byte_reader &reader);

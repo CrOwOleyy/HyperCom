@@ -5,42 +5,42 @@
 namespace hypercom::server {
 namespace {
 
-// WAL : lectures concurrentes sans bloquer l'ecrivain.
-// foreign_keys : sqlite les desactive par defaut, ce qui rendrait les
-//   contraintes du schema purement decoratives.
-// busy_timeout : sans lui, la moindre contention rend SQLITE_BUSY
-//   immediatement au lieu d'attendre.
-// synchronous NORMAL : le bon compromis en WAL, une coupure de courant peut
-//   couter la derniere transaction, jamais l'integrite du fichier.
-// secure_delete : sans lui, sqlite laisse le contenu efface intact dans les
-//   pages liberees. Un post retire par son auteur resterait donc lisible en
-//   clair dans le fichier de base, et dans chaque sauvegarde -- ce qui ne
-//   serait pas une suppression, seulement une disparition de l'affichage.
-//   Le cout est un peu d'ecriture supplementaire, a une echelle ou ca ne se
-//   mesure pas.
-constexpr char const *STARTUP_PRAGMAS =
-    "PRAGMA journal_mode=WAL;"
-    "PRAGMA foreign_keys=ON;"
-    "PRAGMA busy_timeout=5000;"
-    "PRAGMA synchronous=NORMAL;"
-    "PRAGMA secure_delete=ON;"
-    "PRAGMA temp_store=MEMORY;";
+// WAL: concurrent reads without blocking the writer.
+// foreign_keys: sqlite disables these by default, which would make the
+//   schema's constraints purely decorative.
+// busy_timeout: without it, the slightest contention returns SQLITE_BUSY
+//   immediately instead of waiting.
+// synchronous NORMAL: the right trade-off in WAL mode, a power outage can
+//   cost the last transaction, never the file's integrity.
+// secure_delete: without it, sqlite leaves deleted content intact in freed
+//   pages. A post removed by its author would then stay readable in the
+//   clear in the database file, and in every backup -- which wouldn't be a
+//   deletion, only a disappearance from the display. The cost is a bit of
+//   extra writing, at a scale where it doesn't register.
+constexpr char const *STARTUP_PRAGMAS = "PRAGMA journal_mode=WAL;"
+                                        "PRAGMA foreign_keys=ON;"
+                                        "PRAGMA busy_timeout=5000;"
+                                        "PRAGMA synchronous=NORMAL;"
+                                        "PRAGMA secure_delete=ON;"
+                                        "PRAGMA temp_store=MEMORY;";
 
 } // namespace
 
-database_handle::database_handle() : handle_{nullptr} {}
+database_handle::database_handle() : handle_{nullptr}
+{}
 
 bool database_handle::open_database(std::string const &path,
                                     std::string &error_out)
 {
     sqlite3 *raw = nullptr;
-    int const status = sqlite3_open_v2(
-        path.c_str(), &raw, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
+    int const status =
+        sqlite3_open_v2(path.c_str(), &raw,
+                        SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
     handle_.reset(raw);
     if (status != SQLITE_OK) {
-        error_out = "ouverture de " + path + " : "
-                    + (raw != nullptr ? sqlite3_errmsg(raw)
-                                      : sqlite3_errstr(status));
+        error_out =
+            "ouverture de " + path + " : " +
+            (raw != nullptr ? sqlite3_errmsg(raw) : sqlite3_errstr(status));
         handle_.reset();
         return false;
     }
@@ -59,8 +59,8 @@ bool database_handle::execute_script(std::string_view sql,
     int const status = sqlite3_exec(handle_.get(), script.c_str(), nullptr,
                                     nullptr, &raw_message);
     if (status != SQLITE_OK) {
-        error_out = raw_message != nullptr ? raw_message
-                                           : sqlite3_errstr(status);
+        error_out =
+            raw_message != nullptr ? raw_message : sqlite3_errstr(status);
         sqlite3_free(raw_message);
         return false;
     }

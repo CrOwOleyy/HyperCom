@@ -1,12 +1,12 @@
 #include "server/handlers/forum_handler.hpp"
 
-#include <algorithm>
-
 #include "common/protocol/forum_create_message.hpp"
 #include "common/protocol/forum_list_message.hpp"
 #include "server/db/forum_repository.hpp"
 #include "server/handlers/response_builder.hpp"
 #include "server/handlers/session_guard.hpp"
+
+#include <algorithm>
 
 namespace hypercom::server {
 
@@ -51,12 +51,11 @@ bool handle_forum_list_request(handler_context &context,
     if (!request.read_from(reader)) {
         return false;
     }
-    // La limite demandee est rabattue, jamais honoree telle quelle : c'est le
-    // serveur qui decide combien il envoie.
-    std::uint16_t const limit =
-        std::min<std::uint16_t>(request.limit == 0 ? proto::DEFAULT_LIST_ITEMS
-                                                   : request.limit,
-                                proto::MAX_LIST_ITEMS);
+    // The requested limit is clamped, never honored as-is: it's the server
+    // that decides how much it sends.
+    std::uint16_t const limit = std::min<std::uint16_t>(
+        request.limit == 0 ? proto::DEFAULT_LIST_ITEMS : request.limit,
+        proto::MAX_LIST_ITEMS);
     forum_repository forums{context.database};
     proto::forum_list_response response;
     if (!forums.list_forums(request.offset, limit, response.forums,

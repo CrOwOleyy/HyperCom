@@ -1,31 +1,32 @@
 #pragma once
 
+#include "client/ui/i18n.hpp"
+
 #include <cstddef>
 #include <string>
 
-#include "client/ui/i18n.hpp"
-
 namespace hypercom::client {
 
-// Ce qui appartient a l'application entiere, et non a un serveur en particulier.
+// What belongs to the application as a whole, not to any single server.
 //
-// Tout le reste vit dans le ui_state de chaque slot : forums, fils, amis,
-// messages, tampons de saisie. Le partage se fait ici, et seulement ici.
+// Everything else lives in each slot's ui_state: forums, threads,
+// friends, messages, input buffers. Sharing happens here, and only
+// here.
 struct app_state {
     language current_lang = language::french;
     std::size_t active_slot = 0;
-    // Leve une seule fois apres une creation de compte : l'accueil est une
-    // sequence de fenetre, pas une sequence de serveur.
+    // Raised once after an account creation: the welcome flow is a
+    // window sequence, not a per-server sequence.
     bool intro_requested = false;
-    // Statut des actions applicatives (ajout de serveur, bascule). Les erreurs
-    // propres a un serveur restent dans le ui_state de son slot.
+    // Status of application-level actions (adding a server, switching).
+    // Errors specific to one server stay in that slot's ui_state.
     std::string status_message;
     bool status_is_error = false;
-    // Saisie de la ligne d'invitation, dans la barre laterale.
+    // Input for the invite line, in the sidebar.
     char invite_input[160] = {};
-    // Passphrase de la session, gardee en memoire pour pouvoir reecrire le
-    // registre quand on ajoute un serveur ou qu'on acquitte un avertissement.
-    // Elle ne quitte jamais ce processus et n'est jamais ecrite sur disque.
+    // Session passphrase, kept in memory so the registry can be
+    // rewritten when a server is added or a warning is acknowledged.
+    // It never leaves this process and is never written to disk.
     std::string passphrase;
     std::string registry_path;
     std::string master_seed_path;

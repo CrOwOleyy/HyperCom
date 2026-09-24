@@ -4,8 +4,8 @@
 
 namespace hypercom::proto {
 
-// Un octet, une famille par tranche de 16. Les valeurs sont figees : elles
-// font partie du format de fil et ne se renumerotent pas.
+// One byte, one family per block of 16. The values are frozen: they're
+// part of the wire format and never get renumbered.
 enum class message_type : std::uint8_t {
     // Session -- 0x0*
     hello_request = 0x01,
@@ -19,7 +19,7 @@ enum class message_type : std::uint8_t {
     status_ok = 0x09,
     status_error = 0x0A,
 
-    // Compte -- 0x1*
+    // Account -- 0x1*
     register_request = 0x10,
     prekey_publish_request = 0x11,
     prekey_fetch_request = 0x12,
@@ -31,7 +31,7 @@ enum class message_type : std::uint8_t {
     forum_list_request = 0x22,
     forum_list_response = 0x23,
 
-    // Contenu -- 0x3*
+    // Content -- 0x3*
     post_create_request = 0x30,
     post_info_response = 0x31,
     post_list_request = 0x32,
@@ -54,28 +54,28 @@ enum class message_type : std::uint8_t {
     top8_get_request = 0x47,
     top8_response = 0x48,
 
-    // Prive -- 0x5*
+    // Private -- 0x5*
     dm_send_request = 0x50,
     dm_fetch_request = 0x51,
     dm_list_response = 0x52,
     dm_ack_request = 0x53,
 
-    // Blobs -- 0x6*, reserves pour la v2. Les valeurs sont posees maintenant
-    // pour que brancher le P2P plus tard ne renumerote rien.
+    // Blobs -- 0x6*, reserved for v2. The values are set now so that
+    // wiring up P2P later doesn't renumber anything.
     blob_announce_request = 0x60,
     blob_locate_request = 0x61,
     blob_peers_response = 0x62,
 
-    // Signalement -- 0x7*. Un canal de reception, pas un outil de moderation
-    // (BRIEF.md 13) : le serveur enregistre le signalement, il ne juge rien.
-    // Un DM ne se signale jamais par son contenu, qui reste illisible -- seul
-    // le compte de l'expediteur l'est, via report_account_request.
+    // Reporting -- 0x7*. An intake channel, not a moderation tool
+    // (BRIEF.md 13): the server records the report, it judges nothing.
+    // A DM is never reported by its content, which stays unreadable --
+    // only the sender's account can be, via report_account_request.
     report_post_request = 0x70,
     report_account_request = 0x71,
 };
 
-// Un type inconnu est rejete avant d'atteindre un handler : le routeur ne
-// travaille jamais sur un octet arbitraire.
+// An unknown type is rejected before reaching a handler: the router never
+// operates on an arbitrary byte.
 [[nodiscard]] bool is_known_message_type(std::uint8_t raw_type);
 
 } // namespace hypercom::proto
