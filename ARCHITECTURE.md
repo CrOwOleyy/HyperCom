@@ -11,16 +11,16 @@ un serveur.
 
 ## Le serveur ne fait rien en parallèle
 
-`server_runtime::run_until_stopped` est une seule boucle `epoll`, point.
-Pas de thread par connexion, pas de pool, rien. Chaque connexion, chaque
-requête à la base, chaque calcul crypto passe l'un après l'autre dans la
-même boucle. C'est un choix délibéré plutôt qu'une limite technique : ça
-élimine d'un coup toute une classe de bugs de concurrence (deux requêtes
-qui touchent la même ligne en même temps, un compteur de rate-limit
-corrompu par une écriture concurrente) qu'il aurait fallu protéger avec des
-mutex sinon. À l'échelle visée — un serveur pour une communauté, pas un
-service qui sert des millions de connexions — le coût en performance ne se
-voit pas.
+`server_runtime::run_until_stopped` est une seule boucle `epoll`. Pas de
+thread par connexion, pas de pool. Chaque connexion, chaque requête à la
+base, chaque calcul crypto passe l'un après l'autre dans la même boucle,
+et aucun mutex n'existe nulle part dans `server/` — il n'y a rien à
+protéger puisque rien ne tourne en parallèle. Deux requêtes qui toucheraient
+la même ligne en même temps, un compteur de rate-limit corrompu par une
+écriture concurrente : toute cette famille de bugs n'a simplement pas
+d'endroit où se produire. Le compromis se paie en débit maximal, mais pour
+un serveur qui sert une communauté plutôt qu'un service à millions
+d'utilisateurs, la boucle unique ne devient jamais le goulot.
 
 ## Du socket au fil de discussion
 
@@ -47,11 +47,11 @@ canal établi, tout ce qui arrive est déchiffré puis interprété comme une
 trame.
 
 Le routage est coupé en familles (session, contenu, social, DM,
-signalement) plutôt qu'un unique `switch` sur tous les types de message.
-Pas pour une raison d'élégance : la norme du projet plafonne une fonction
-à soixante lignes, et un switch qui couvre les vingt et quelques types de
-message existants la dépasserait largement. `route_message` essaie chaque
-famille dans l'ordre et s'arrête dès que l'une d'elles reconnaît le type.
+signalement) plutôt qu'un unique `switch` sur tous les types de message :
+la norme du projet plafonne une fonction à soixante lignes, et un switch
+qui couvre les vingt et quelques types de message existants la
+dépasserait largement. `route_message` essaie chaque famille dans l'ordre
+et s'arrête dès que l'une d'elles reconnaît le type.
 
 Chaque handler ne connaît que sa propre tâche — `handle_dm_send_request`
 ignore tout de la table `posts`. Ce qu'il partage avec les autres, c'est le
@@ -72,19 +72,20 @@ handshake échoue tout simplement si un serveur substitué tente de répondre
 
 Une fois le handshake terminé (l'étape que le protocole Noise appelle
 `Split`), chaque sens de communication a sa propre clé et son propre
-compteur de nonce — `noise_transport` les garde séparés précisément pour
-qu'un message du client et un message du serveur ne puissent jamais
-partager le même nonce, ce qui casserait la sécurité de ChaCha20-Poly1305.
-Tout ce qui suit, protocole applicatif compris, n'existe en clair que sur
-les deux machines aux extrémités.
+compteur de nonce dans `noise_transport`. Un message du client et un
+message du serveur ne peuvent donc jamais partager le même nonce — s'ils
+le faisaient, ChaCha20-Poly1305 cesserait d'être sûr. Tout ce qui suit,
+protocole applicatif compris, n'existe en clair que sur les deux machines
+aux extrémités.
 
 ## Un client, plusieurs serveurs
 
 Le client s'inspire de Discord plus que de Slack : une seule fenêtre, une
 barre de serveurs sur le côté, et chaque serveur garde sa propre identité.
-Volontairement — une identité partagée entre deux serveurs serait un
-identifiant que deux administrateurs pourraient recouper pour établir que
-c'est la même personne des deux côtés.
+Une identité partagée entre deux serveurs serait un identifiant que deux
+administrateurs pourraient recouper pour établir que c'est la même
+personne des deux côtés — ce que le projet évite en donnant à chaque
+serveur sa propre paire de clés, sans lien visible entre elles.
 
 Deux structures se répartissent l'état :
 
