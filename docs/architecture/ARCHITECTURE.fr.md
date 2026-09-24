@@ -1,12 +1,14 @@
 # Architecture
 
+[English](../../ARCHITECTURE.md) · **Français** · [中文](ARCHITECTURE.zh.md) · [हिन्दी](ARCHITECTURE.hi.md) · [Español](ARCHITECTURE.es.md) · [العربية](ARCHITECTURE.ar.md) · [বাংলা](ARCHITECTURE.bn.md) · [Português](ARCHITECTURE.pt.md) · [Русский](ARCHITECTURE.ru.md) · [日本語](ARCHITECTURE.ja.md)
+
 Ce document explique comment les pièces s'assemblent : ce qui se passe
 entre le moment où un client se connecte et celui où un message atterrit
 dans un fil de discussion ou une boîte de DM. Pour le détail d'un sujet
 précis, les autres docs vont plus loin :
-[PROTOCOL.md](docs/PROTOCOL.md) pour le format des trames,
-[SCHEMA.md](docs/SCHEMA.md) pour la base, [THREAT_MODEL.md](docs/THREAT_MODEL.md)
-pour ce qui est protégé ou non, [ADMIN.md](docs/ADMIN.md) pour faire tourner
+[PROTOCOL.md](../PROTOCOL.md) pour le format des trames,
+[SCHEMA.md](../SCHEMA.md) pour la base, [THREAT_MODEL.md](../THREAT_MODEL.md)
+pour ce qui est protégé ou non, [ADMIN.md](../ADMIN.md) pour faire tourner
 un serveur.
 
 ## Le serveur ne fait rien en parallèle
