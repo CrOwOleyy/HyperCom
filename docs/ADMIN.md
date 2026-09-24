@@ -1,9 +1,10 @@
-# ADMIN — exploitation du serveur
+# ADMIN — running the server
 
-Ce document couvre le domaine du collaborateur : configuration, base,
-durcissement, annonces. **Rien ici n'exige d'écrire du C++.**
+This document covers the collaborator's domain: configuration, the
+database, hardening, announcements. **None of it requires writing
+C++.**
 
-## 1. Démarrage
+## 1. Starting up
 
 ```
 cp hypercom.conf.example hypercom.conf
@@ -12,21 +13,22 @@ chmod 600 keys/server_static.key
 ./hypercom_server hypercom.conf
 ```
 
-Au premier lancement, le serveur applique les migrations, génère sa clé
-statique si elle manque, puis **affiche sa clé publique**. C'est elle que les
-clients épinglent.
+On first launch, the server applies migrations, generates its static
+key if it's missing, then **prints its public key**. That's the one
+clients pin.
 
-> Elle doit être communiquée par un canal de confiance. La faire récupérer
-> depuis le serveur lui-même annulerait tout l'intérêt de l'épinglage.
+> It needs to be communicated over a trusted channel. Having clients
+> fetch it from the server itself would defeat the entire point of
+> pinning.
 
-Le serveur **refuse de démarrer sur une configuration invalide** plutôt que de
-retomber sur des valeurs par défaut silencieuses. Les erreurs sont accumulées
-et affichées ensemble, avec leur numéro de ligne.
+The server **refuses to start on an invalid configuration** rather than
+falling back to silent defaults. Errors are collected and shown
+together, with their line number.
 
-### Fichier de connexion
+### Connect file
 
-Au démarrage, le serveur écrit aussi ces informations sous une forme que le
-client sait lire directement, dans `run/hypercom-connect.txt` :
+On startup, the server also writes this information in a form the
+client can read directly, at `run/hypercom-connect.txt`:
 
 ```ini
 host=203.0.113.7
@@ -34,27 +36,29 @@ port=7717
 server_key=447a6def06c64a36...
 ```
 
-Le nouvel utilisateur le passe au client sans rien retaper :
+A new user hands it to the client without retyping anything:
 
 ```
 ./hypercom_cli --connect-file hypercom-connect.txt whoami
 ```
 
-Un `--host`, `--port` ou `--server-key` placé **après** `--connect-file` sur la
-ligne de commande écrase la valeur correspondante du fichier.
+A `--host`, `--port` or `--server-key` placed **after**
+`--connect-file` on the command line overrides the corresponding value
+from the file.
 
-> **Le modèle de confiance est inchangé.** Ce fichier ne contient rien de
-> secret, mais il porte la clé à épingler : il se transmet par le même canal de
-> confiance que la clé elle-même. Le faire télécharger depuis le serveur qu'il
-> décrit annulerait l'épinglage exactement de la même façon.
+> **The trust model doesn't change.** This file contains nothing
+> secret, but it carries the key to pin: it travels over the same
+> trusted channel as the key itself. Having it downloaded from the
+> server it describes would defeat pinning in exactly the same way.
 
-Le chemin se règle avec `connect_file` dans `[paths]` ; une valeur vide
-désactive l'écriture. Seul le listener clearnet y figure — le port de l'oignon
-est en boucle locale et n'a rien à faire dans un fichier partagé.
+The path is set with `connect_file` under `[paths]`; an empty value
+disables writing it. Only the clearnet listener appears in it — the
+onion port lives on a local loop and has no business being in a shared
+file.
 
-`bind_address` est une adresse d'**écoute** : `0.0.0.0` signifie « toutes les
-interfaces » et n'est joignable par personne. Le serveur ne peut pas deviner
-son adresse publique, donc déclarez-la :
+`bind_address` is a **listening** address: `0.0.0.0` means "every
+interface" and is reachable by nobody. The server can't guess its
+public address, so declare it:
 
 ```ini
 [clearnet]
@@ -62,50 +66,49 @@ bind_address    = 0.0.0.0
 advertised_host = 203.0.113.7
 ```
 
-C'est `advertised_host` qui part dans le fichier de connexion. Sans lui, le
-serveur écrit `bind_address` et prévient au démarrage. **Corriger le fichier à
-la main ne sert à rien** : il est réécrit à chaque démarrage.
+`advertised_host` is what goes into the connect file. Without it, the
+server writes `bind_address` and warns at startup. **Editing the file
+by hand is pointless**: it's rewritten on every startup.
 
 ## 2. Configuration
 
-Tout est dans `hypercom.conf`, format `clé = valeur` par section. Voir
-`hypercom.conf.example`, qui est commenté.
+Everything lives in `hypercom.conf`, `key = value` per section. See
+`hypercom.conf.example`, which is commented.
 
-### La politique de journalisation
+### The logging policy
 
 ```ini
 [logging]
-log_peer_addresses = false     # défaut
+log_peer_addresses = false     # default
 ```
 
-**Par défaut, le serveur ne journalise aucune adresse IP.** Le passer à `true`
-provoque un avertissement explicite au démarrage. C'est volontaire : sur un
-réseau qui se dit non surveillé, journaliser des IP doit être une décision
-prise, jamais un effet de bord.
+**By default, the server logs no IP address at all.** Setting it to
+`true` triggers an explicit warning at startup. This is deliberate: on
+a network that claims to be unsurveilled, logging IPs has to be a
+decision made on purpose, never a side effect.
 
-Conséquence concrète : une saisie du serveur ne révèle pas qui s'est connecté
-ni depuis où.
+Concrete consequence: a server seizure doesn't reveal who connected or
+from where.
 
-Le seul chemin vers un journal passe par `logger::redact_peer_address`, qui
-rend `[redacted]` tant que la politique n'est pas ouverte. Les appelants n'ont
-pas à s'en souvenir.
+The only path to a log goes through `logger::redact_peer_address`,
+which returns `[redacted]` as long as the policy isn't opened up.
+Callers don't have to remember this themselves.
 
-**Jamais sur le `.onion`, quel que soit ce réglage.** Tor relaie en boucle
-locale : le serveur n'y voit structurellement aucune vraie IP, donc `true` ne
-journalise que les connexions clearnet.
+**Never for `.onion`, regardless of this setting.** Tor relays over a
+local loop: the server structurally never sees a real IP there, so
+`true` only ever logs clearnet connections.
 
-**Sur clearnet, `log_peer_addresses = true` journalise désormais réellement
-chaque connexion acceptée** — avant, le réglage ne servait à
-rien tant que rien n'écrivait effectivement dans le journal. Si `retention_days`
-reste sous un an, un avertissement le signale au démarrage : c'est le plancher
-légal français pour les données de connexion (art. L.34-1 CPCE, art. 6-II
-LCEN), et journaliser sans le respecter n'apporte la conformité qu'en
-apparence.
+**On clearnet, `log_peer_addresses = true` now genuinely logs every
+accepted connection** — before, the setting did nothing as long as
+nothing actually wrote to the log. If `retention_days` is under a
+year, a warning flags it at startup: that's the legal floor in France
+for connection data (art. L.34-1 CPCE, art. 6-II LCEN), and logging
+without respecting it brings compliance only in appearance.
 
-### Service caché Tor
+### Tor hidden service
 
-Le même code sert au clearnet et au `.onion` : Tor relaie simplement vers un
-listener en boucle locale.
+The same code serves both clearnet and `.onion`: Tor simply relays to
+a listener on a local loop.
 
 ```ini
 [onion]
@@ -114,159 +117,161 @@ bind_address = 127.0.0.1
 port         = 7718
 ```
 
-Côté `torrc` :
+On the `torrc` side:
 
 ```
 HiddenServiceDir /var/lib/tor/hypercom/
 HiddenServicePort 7717 127.0.0.1:7718
 ```
 
-Le port de l'oignon ne doit **jamais** être exposé au réseau.
+The onion port must **never** be exposed to the network.
 
 ## 3. Migrations
 
-Déposer un fichier dans `db/migrations/NNNN_description.sql`. Il est appliqué
-au prochain démarrage, dans une transaction : il passe entièrement ou pas du
-tout. Le préfixe numérique de largeur fixe donne l'ordre.
+Drop a file into `db/migrations/NNNN_description.sql`. It's applied on
+the next startup, inside a transaction: it goes through entirely or
+not at all. The fixed-width numeric prefix gives the ordering.
 
-Ne jamais modifier une migration déjà appliquée — en ajouter une nouvelle.
+Never edit a migration that's already been applied — add a new one.
 
-### Si une migration échoue
+### If a migration fails
 
-Le serveur refuse de démarrer et la base n'est **pas** modifiée (la migration
-tourne dans une transaction). Le message donne le fichier fautif et l'erreur
-SQLite.
+The server refuses to start and the database is **not** modified (the
+migration runs inside a transaction). The message gives the offending
+file and the SQLite error.
 
-Le cas le plus probable est `0002_handle_case_insensitive` sur une base créée
-avant elle : si deux comptes ont des pseudos ne différant que par la casse
-(`leyy` et `Leyy`), l'index unique ne peut pas être créé. C'est volontaire —
-renommer le compte de quelqu'un en silence serait pire que de s'arrêter.
+The most likely case is `0002_handle_case_insensitive` on a database
+created before it existed: if two accounts have handles that only
+differ by case (`leyy` and `Leyy`), the unique index can't be created.
+This is deliberate — silently renaming someone's account would be
+worse than stopping.
 
-Pour résoudre, il faut choisir quel compte garde le pseudo. Aucune commande
-n'existe encore pour ça : il faut passer par `sqlite3`, en ayant arrêté le
-serveur.
+To fix it, someone has to choose which account keeps the handle. No
+command exists for this yet: it has to go through `sqlite3`, with the
+server stopped.
 
 ```
 sqlite3 hypercom.db "SELECT id, handle FROM users ORDER BY lower(handle);"
-sqlite3 hypercom.db "UPDATE users SET handle = 'leyy_ancien' WHERE id = 4;"
+sqlite3 hypercom.db "UPDATE users SET handle = 'leyy_old' WHERE id = 4;"
 ```
 
-Le compte n'est pas perdu : son identité est sa clé publique, pas son pseudo.
-Seul le nom affiché change.
+The account isn't lost: its identity is its public key, not its
+handle. Only the displayed name changes.
 
-## 4. Sauvegarde
+## 4. Backup
 
 ```
-sqlite3 hypercom.db ".backup /sauvegardes/hypercom-$(date +%F).db"
+sqlite3 hypercom.db ".backup /backups/hypercom-$(date +%F).db"
 ```
 
-À chaud, sans arrêter le serveur. Une copie brute (`cp`) pendant une écriture
-peut produire un fichier incohérent à cause du WAL.
+Hot, without stopping the server. A raw copy (`cp`) taken mid-write can
+produce an inconsistent file because of WAL.
 
-Sauvegarder aussi `keys/server_static.key` : la perdre casse l'épinglage de
-tous les clients, qui refuseront alors de se connecter.
+Also back up `keys/server_static.key`: losing it breaks pinning for
+every client, who will then refuse to connect.
 
 ## 5. MOTD
 
-La table `motd` porte les annonces, avec un index unique partiel garantissant
-un seul actif. Il est poussé aux clients à la connexion.
+The `motd` table holds announcements, with a partial unique index
+guaranteeing only one is active. It's pushed to clients on connection.
 
-En attendant la CLI d'administration (voir §7), il se modifie directement :
+Pending the admin CLI (see §7), it's edited directly:
 
 ```sql
 UPDATE motd SET active = 0 WHERE active = 1;
 INSERT INTO motd (body, active, created_at)
-VALUES ('maintenance samedi 14h', 1, strftime('%s','now'));
+VALUES ('maintenance Saturday 2pm', 1, strftime('%s','now'));
 ```
 
-Aucun redémarrage nécessaire : il est relu à chaque connexion.
+No restart needed: it's re-read on every connection.
 
-Plus simple depuis que la CLI existe (voir §7) :
+Simpler now that the CLI exists (see §7):
 
 ```bash
-hypercom_adminctl motd set "maintenance samedi 14h"
+hypercom_adminctl motd set "maintenance Saturday 2pm"
 ```
 
-## 6. Durcissement au déploiement
+## 6. Deployment hardening
 
-Ces mesures sont **documentées mais pas implémentées** — elles relèvent de
-l'exploitation, pas du code :
+These measures are **documented but not implemented** — they're an
+operational concern, not a code one:
 
-- abandon des privilèges après bind ; le serveur ne doit jamais tourner en root ;
-- sandbox seccomp-bpf et espaces de noms Linux ;
-- unité systemd durcie : `NoNewPrivileges`, `ProtectSystem=strict`,
-  `PrivateTmp`, `MemoryDenyWriteExecute` ;
-- base et clés en `0600`, propriétaire dédié.
+- privilege drop after bind; the server should never run as root;
+- seccomp-bpf sandbox and Linux namespaces;
+- hardened systemd unit: `NoNewPrivileges`, `ProtectSystem=strict`,
+  `PrivateTmp`, `MemoryDenyWriteExecute`;
+- database and keys at `0600`, dedicated owner.
 
-## 7. La CLI d'administration
+## 7. The admin CLI
 
-Elle écoute sur un socket **AF_UNIX** dont le chemin vient de `[paths]
-admin_socket`. Jamais de TCP : il n'existe aucun chemin de code capable de
-l'exposer au réseau. Le fichier est créé en `0600`, donc seul le compte qui
-fait tourner le serveur peut s'y connecter — c'est toute l'authentification,
-et elle repose entièrement sur les permissions du système de fichiers.
+It listens on an **AF_UNIX** socket whose path comes from `[paths]
+admin_socket`. Never TCP: there's no code path capable of exposing it
+to the network. The file is created at `0600`, so only the account
+running the server can connect to it — that's the entire
+authentication, and it rests entirely on filesystem permissions.
 
 ```bash
 hypercom_adminctl help
 ```
 
-| Commande | Effet |
+| Command | Effect |
 |---|---|
-| `stats` | uptime, connexions, volumétrie de la base |
-| `sessions` | connexions en cours |
-| `sessions close <descripteur>` | ferme une connexion |
-| `motd` | annonce en cours |
-| `motd set "texte"` | publie une annonce, effet immédiat |
-| `motd clear` | désactive l'annonce |
-| `backup <chemin>` | sauvegarde à chaud, instantané cohérent |
-| `reports` | signalements en attente |
-| `reports clear <id>` | classe un signalement, ne touche à rien d'autre |
-| `reports delete-post <id>` | supprime le post signalé — même effacement réel que l'auteur lui-même |
-| `ban <clé_hex>` | révoque l'authentification d'un compte |
-| `unban <clé_hex>` | la restaure |
-| `help` | la liste |
+| `stats` | uptime, connections, database size |
+| `sessions` | current connections |
+| `sessions close <descriptor>` | closes a connection |
+| `motd` | current announcement |
+| `motd set "text"` | publishes an announcement, immediate effect |
+| `motd clear` | disables the announcement |
+| `backup <path>` | hot backup, consistent snapshot |
+| `reports` | pending reports |
+| `reports clear <id>` | closes a report, touches nothing else |
+| `reports delete-post <id>` | deletes the reported post — same real deletion as the author themselves would trigger |
+| `ban <hex_key>` | revokes an account's authentication |
+| `unban <hex_key>` | restores it |
+| `help` | the list |
 
-Le chemin du socket se précise avec `--socket` s'il n'est pas au défaut :
+The socket path is set with `--socket` if it isn't at the default:
 
 ```bash
 hypercom_adminctl --socket /var/run/hypercom-admin.sock stats
 ```
 
-**`sessions` ne montre ni pseudo ni adresse, et ce n'est pas réglable.** La
-liste donne un descripteur, un état (`handshake`, `hello`, `auth`,
-`authentifiée`) et deux durées — de quoi repérer une connexion qui traîne ou un
-handshake bloqué, jamais de quoi savoir qui est en ligne. Contrairement à
-`log_peer_addresses`, il n'existe aucune option pour réactiver l'identité ici :
-un outil qui liste qui se connecte et depuis quand est un outil de
-surveillance, pas un outil d'exploitation, et le projet n'en fournit pas.
+**`sessions` shows neither handle nor address, and that isn't
+configurable.** The list gives a descriptor, a state (`handshake`,
+`hello`, `auth`, `authenticated`) and two durations — enough to spot a
+lingering connection or a stuck handshake, never enough to know who's
+online. Unlike `log_peer_addresses`, there's no option to turn identity
+back on here: a tool that lists who's connecting and since when is a
+surveillance tool, not an operations tool, and the project doesn't
+ship one.
 
-`motd set` valide le texte comme s'il venait du réseau : UTF-8 correct, pas de
-caractère de contrôle. L'annonce sera resservie à tous les clients, un
-administrateur distrait n'a pas plus le droit qu'un inconnu d'y glisser
-n'importe quoi.
+`motd set` validates the text as if it came from the network: correct
+UTF-8, no control characters. The announcement gets served back to
+every client, and a distracted administrator has no more right than a
+stranger to slip anything through it.
 
-`backup` passe par l'API de sauvegarde de SQLite, pas par une copie de
-fichier — en mode WAL, un `cp` pendant une écriture produit un fichier
-incohérent.
+`backup` goes through SQLite's backup API, not a file copy — under WAL
+mode, a `cp` taken mid-write produces an inconsistent file.
 
-**`reports` et `ban` sont l'exception unique à l'absence de modération** : une
-capacité réservée à la conformité légale (LCEN art. 6-I-7),
-jamais à un contrôle éditorial général. `reports delete-post` n'existe
-délibérément que sur ce socket local — aucun message du protocole réseau ne
-permet à quiconque, y compris un client qui se prétendrait administrateur,
-d'effacer le contenu de quelqu'un d'autre. `clear` et `delete-post` restent
-deux actions séparées : classer un signalement ne touche jamais au post,
-supprimer un post ne classe pas automatiquement son signalement. `ban` révoque
-l'authentification, sans toucher au contenu déjà publié par le compte.
+**`reports` and `ban` are the sole exception to the absence of
+moderation**: a capability reserved for legal compliance (LCEN art.
+6-I-7), never for general editorial control. `reports delete-post`
+deliberately exists only on this local socket — no network protocol
+message lets anyone, including a client claiming to be an
+administrator, erase someone else's content. `clear` and `delete-post`
+stay two separate actions: closing a report never touches the post,
+deleting a post doesn't automatically close its report. `ban` revokes
+authentication, without touching content the account already
+published.
 
-## 8. Ce qui manque encore
+## 8. What's still missing
 
-| Élément | État |
+| Item | Status |
 |---|---|
-| Rechargement à chaud de la configuration | **non implémenté** — changer un listener demanderait de le rouvrir sous les connexions en cours |
-| Rotation et purge des journaux | **non implémenté** — `retention_days` est lu et validé, rien ne l'applique |
-| Abandon des privilèges après bind | **non implémenté** |
-| Sandbox seccomp-bpf | **non implémenté** |
+| Hot-reloading the configuration | **not implemented** — changing a listener would require reopening it under connections already in flight |
+| Log rotation and purging | **not implemented** — `retention_days` is read and validated, nothing enforces it |
+| Privilege drop after bind | **not implemented** |
+| seccomp-bpf sandbox | **not implemented** |
 
-En attendant le rechargement à chaud, tout changement de configuration demande
-un redémarrage du serveur.
+Until hot-reloading exists, any configuration change requires
+restarting the server.

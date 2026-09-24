@@ -1,61 +1,62 @@
-# THREAT_MODEL — ce que Hypercom protège, et ce qu'il ne protège pas
+# THREAT_MODEL — what Hypercom protects, and what it doesn't
 
-Ce document est écrit pour être montré aux utilisateurs. Il ne promet rien que
-l'architecture ne tienne.
+This document is written to be shown to users. It doesn't promise
+anything the architecture doesn't actually hold.
 
-## 1. Le principe
+## 1. The principle
 
-**La non-surveillance est une propriété technique, pas une promesse.**
-L'opérateur du serveur ne doit pas *choisir* de ne pas lire les conversations
-privées — il doit en être *incapable*.
+**Non-surveillance is a technical property, not a promise.** The server
+operator shouldn't *choose* not to read private conversations — they
+should be *unable* to.
 
-Concrètement : il n'existe nulle part sur la machine serveur de clé permettant
-d'ouvrir un message privé. Ce n'est pas une politique qu'un administrateur
-pourrait changer, c'est une absence.
+Concretely: there's no key anywhere on the server machine that can open
+a private message. This isn't a policy an administrator could change,
+it's an absence.
 
-## 2. Ce qui est protégé
+## 2. What's protected
 
-| Menace | Protection |
+| Threat | Protection |
 |---|---|
-| Écoute du réseau | Tout est chiffré par Noise_NK, y compris le type de trame. |
-| Serveur substitué | Clé statique épinglée : le handshake échoue avant tout échange. |
-| Opérateur du serveur lisant les DM | Il n'a aucune clé. Le chiffrement se fait sur le client. |
-| Serveur forgeant une prekey pour s'interposer | La prekey est signée par la clé d'identité ; le destinataire vérifie. |
-| Serveur rejouant ou modifiant un DM | L'en-tête entier est donnée associée authentifiée. |
-| Vol de la base de données | Elle ne contient que du chiffré opaque et des posts publics. |
-| Saisie du serveur | Aucune IP journalisée par défaut, aucun email, aucun mot de passe. |
-| Usurpation de compte | L'identité *est* une clé privée qui ne quitte jamais la machine. |
-| Compromission future de la clé de chaîne | Cliquet symétrique : les messages passés restent illisibles. |
-| Injection SQL | Requêtes préparées exclusivement, aucune concaténation. |
-| Trame hostile | Parseur borné, plafonds vérifiés avant allocation, fuzzé. |
-| Admin traçant la présence des utilisateurs | La CLI d'admin ne peut pas lister qui est en ligne : `sessions` ne montre ni pseudo ni adresse, et ce n'est pas réglable. |
-| **N'importe qui** traçant la présence d'un autre | Aucune date de dernière connexion n'est stockée ni servie. La colonne `last_seen` a été supprimée du schéma et du protocole. |
-| Serveur datant les échanges privés | L'horodatage vit **dans** le chiffré. Le serveur ne sait plus quand un message a été envoyé, seulement dans quel ordre les enveloppes sont arrivées. |
-| Corrélation par âge de compte ou de relation | `users.created_at` et `friends.created_at` supprimées : ni date d'inscription, ni chronologie des liens sociaux. |
-| Usurpation par la casse du pseudo | Unicité `COLLATE NOCASE` : `alice`, `Alice` et `ALICE` sont le même pseudo. |
-| Contournement de la limite de débit par reconnexion | Les compteurs sont partagés entre connexions, pas remis à zéro à chacune. |
-| Serveur recousant deux connexions d'une même personne | Aucun jeton de reprise n'existe. Une reconnexion est un handshake Noise neuf, avec une clé éphémère neuve. Voir PROTOCOL.md §9. |
-| Sessions mortes s'accumulant après une coupure | Keepalive TCP réglé des deux côtés (240 s de détection), sans délai d'inactivité applicatif qui obligerait à mesurer l'activité de chacun. |
+| Network eavesdropping | Everything is encrypted with Noise_NK, including the frame type. |
+| Impersonated server | Pinned static key: the handshake fails before any exchange. |
+| Server operator reading DMs | It has no key. Encryption happens on the client. |
+| Server forging a prekey to intercept | The prekey is signed by the identity key; the recipient verifies it. |
+| Server replaying or modifying a DM | The whole header is authenticated associated data. |
+| Database theft | It only holds opaque ciphertext and public posts. |
+| Server seizure | No IP logged by default, no email, no password. |
+| Account impersonation | Identity *is* a private key that never leaves the machine. |
+| Future compromise of the chain key | Symmetric ratchet: past messages stay unreadable. |
+| SQL injection | Prepared statements exclusively, no concatenation. |
+| Hostile frame | Bounded parser, caps checked before allocation, fuzzed. |
+| Admin tracking user presence | The admin CLI can't list who's online: `sessions` shows neither handle nor address, and it isn't configurable. |
+| **Anyone** tracking someone's presence | No last-connection date is stored or served. The `last_seen` column was removed from the schema and the protocol. |
+| Server dating private exchanges | The timestamp lives **inside** the ciphertext. The server no longer knows when a message was sent, only the order envelopes arrived in. |
+| Correlation by account or relationship age | `users.created_at` and `friends.created_at` removed: no signup date, no timeline of social links. |
+| Impersonation via handle casing | `COLLATE NOCASE` uniqueness: `alice`, `Alice` and `ALICE` are the same handle. |
+| Bypassing the rate limit by reconnecting | Counters are shared across connections, not reset on each one. |
+| Server stitching two connections from the same person | No resumption token exists. A reconnection is a fresh Noise handshake, with a fresh ephemeral key. See PROTOCOL.md §9. |
+| Dead sessions piling up after a disconnect | TCP keepalive set on both sides (240s detection), with no application-level idle timeout that would require measuring anyone's activity. |
 
-## 3. Ce qui n'est PAS protégé — limites assumées
+## 3. What's NOT protected — accepted limitations
 
-### 3.1 Les métadonnées de routage
+### 3.1 Routing metadata
 
-**Le serveur voit qui écrit à qui.** Il stocke `recipient_id` et
-`sender_pubkey` — sans eux, il ne saurait pas à qui remettre l'enveloppe.
+**The server sees who's writing to whom.** It stores `recipient_id` and
+`sender_pubkey` — without them, it wouldn't know who to deliver the
+envelope to.
 
-Il ne sait en revanche **plus quand** : l'horodatage est passé à l'intérieur du
-chiffré, et l'ordre d'arrivée (`id`) est tout ce qui reste. Un serveur saisi
-révèle donc le graphe des échanges, pas leur chronologie.
+What it no longer knows is **when**: the timestamp moved inside the
+ciphertext, and arrival order (`id`) is all that's left. A seized server
+therefore reveals the exchange graph, not its timing.
 
-Masquer le graphe lui-même demanderait un mix-net ou des boîtes aveugles, hors
-périmètre v1. C'est la limite la plus importante de ce modèle, et elle doit
-être dite franchement aux utilisateurs.
+Hiding the graph itself would require a mix-net or blind relays, out of
+scope for v1. This is the most important limitation of this model, and
+it needs to be stated plainly to users.
 
-### 3.1 bis Ce que le serveur détient réellement d'une personne
+### 3.1 bis What the server actually holds on a person
 
-Après un usage complet (inscription, forum, post, commentaire, ami, message
-privé), voici l'intégralité de ce que contient la base :
+After full use (registration, forum, post, comment, friend, private
+message), here's the entirety of what the database contains:
 
 ```
 users        id, pubkey, handle, banned
@@ -66,113 +67,116 @@ dm_envelopes id, recipient_id, sender_pubkey, ciphertext
 reports      id, kind, post_id, target_pubkey, reporter_id, reason, created_at
 ```
 
-Aucune date sur aucune de ces lignes, sauf `reports` : un signalement porte
-nécessairement un horodatage, sinon l'admin ne peut pas savoir quand il traite
-une file. Les autres horodatages qui subsistent portent sur du **contenu
-public** — `posts`, `comments`, `forums` — où ils sont de toute façon visibles
-de quiconque lit le fil, et sur `motd`, qui est une annonce d'administration.
+No date on any of these rows, except `reports`: a report necessarily
+carries a timestamp, otherwise the admin couldn't tell when they're
+handling a queue. The other timestamps that remain are on **public
+content** — `posts`, `comments`, `forums` — where they're visible to
+anyone reading the thread anyway, and on `motd`, which is an admin
+announcement.
 
-`reports` est une exception délibérée à « pas de dates » : signaler quelque
-chose révèle forcément qui a signalé quoi et quand. C'est un
-choix assumé, pas un oubli — le dispositif de signalement est une obligation
-légale, pas une fonctionnalité de surveillance déguisée, et son contenu
-n'est lisible que par l'admin sur le socket local, jamais par le réseau.
+`reports` is a deliberate exception to "no dates": reporting something
+necessarily reveals who reported what and when. This is an accepted
+choice, not an oversight — the reporting mechanism exists to meet a
+legal obligation, not as surveillance in disguise, and its content is
+only readable by the admin on the local socket, never over the network.
 
-**Hors base, dans le journal seulement, si `log_peer_addresses=true` :** une
-ligne par connexion clearnet acceptée, adresse + horodatage. Jamais pour le
-`.onion`, quel que soit ce réglage — Tor relaie en boucle locale, il n'y a
-structurellement pas de vraie IP à voir côté serveur. Rien n'est écrit par
-défaut.
+**Outside the database, in the log only, if `log_peer_addresses=true`:**
+one line per accepted clearnet connection, address + timestamp. Never
+for `.onion`, regardless of that setting — Tor relays over a local loop,
+there's structurally no real IP to see on the server side. Nothing is
+written by default.
 
-### 3.2 Pas de confidentialité persistante future
+### 3.2 No future forward secrecy
 
-Le cliquet est symétrique. Quelqu'un qui compromet la clé d'identité d'un
-utilisateur peut lire ses messages **futurs**. Le cliquet Diffie-Hellman
-complet, qui refermerait cette fenêtre, est prévu en v2 — le format
-d'enveloppe est déjà prêt à l'accueillir.
+The ratchet is symmetric. Someone who compromises a user's identity key
+can read their **future** messages. The full Diffie-Hellman ratchet,
+which would close that window, is planned for v2 — the envelope format
+is already ready to accommodate it.
 
-### 3.3 Prekey non tournante
+### 3.3 Non-rotating prekey
 
-La prekey est dérivée déterministiquement de l'identité et ne tourne pas.
-La confidentialité persistante repose donc entièrement sur la clé éphémère,
-régénérée à chaque message. Acceptable, mais moins robuste qu'une rotation.
+The prekey is deterministically derived from the identity and doesn't
+rotate. Forward secrecy therefore rests entirely on the ephemeral key,
+regenerated on every message. Acceptable, but less robust than
+rotation.
 
-### 3.4 Clé perdue = compte perdu
+### 3.4 Lost key = lost account
 
-Sans recours, définitivement. C'est le prix de l'absence d'autorité : personne
-ne peut réinitialiser un compte, donc personne ne peut en voler un par ce
-moyen. Une phrase de récupération à 12 mots est prévue en v2.
+No recourse, permanently. This is the price of having no authority:
+nobody can reset an account, so nobody can steal one that way either. A
+12-word recovery phrase is planned for v2.
 
-### 3.5 Implémentation maison de Noise
+### 3.5 Homegrown Noise implementation
 
-Le code de `common/crypto/noise_*` est une implémentation maison d'un protocole
-**spécifié**, pas une cryptographie maison : toutes les primitives viennent de
-libsodium. Le risque résiduel est une erreur dans l'enchaînement des étapes,
-pas dans les primitives.
+The code in `common/crypto/noise_*` is a homegrown implementation of a
+**specified** protocol, not homegrown cryptography: every primitive
+comes from libsodium. The residual risk is an error in how the steps
+chain together, not in the primitives themselves.
 
-**Fait** : `tests/noise_official_vectors_test.cpp` rejoue le handshake avec les
-clés fixes d'un vecteur officiel (source noise-c, `Noise_NK_25519_ChaChaPoly_
-SHA256`, sans PSK) et compare chaque octet — messages de handshake, hachage
-final, clés de transport, quatre messages de transport — à la référence.
+**Fact**: `tests/noise_official_vectors_test.cpp` replays the handshake
+with the fixed keys of an official vector (noise-c source,
+`Noise_NK_25519_ChaChaPoly_SHA256`, no PSK) and compares every byte —
+handshake messages, final hash, transport keys, four transport messages
+— against the reference.
 
-Ce test couvre un angle mort que le round-trip ne couvre pas : un bug présent
-à l'identique côté client et côté serveur (mauvais ordre de `mix_hash`, par
-exemple) resterait invisible à deux parties qui se parlent entre elles mais se
-trompent de la même façon. Comparer à une référence externe est le seul moyen
-de l'attraper.
+This test covers a blind spot round-trip testing doesn't: a bug present
+identically on both the client and server side (a wrong `mix_hash`
+order, for example) would stay invisible to two parties talking to each
+other while making the same mistake. Comparing against an external
+reference is the only way to catch that.
 
-### 3.6 Le premier contact avec la clé du serveur
+### 3.6 First contact with the server's key
 
-L'épinglage ne protège que si la clé arrive par un canal de confiance. Si un
-utilisateur la récupère depuis le serveur lui-même, ou depuis un site que
-l'attaquant contrôle, l'épinglage ne protège de rien.
+Pinning only protects if the key arrives through a trusted channel. If a
+user fetches it from the server itself, or from a site the attacker
+controls, pinning protects nothing.
 
-### 3.7 Aucune modération — sauf l'exception légale
+### 3.7 No moderation — except the legal exception
 
-C'est le point du projet, mais c'est aussi une exposition. Le filtrage vit dans
-le client de chacun.
+That's the point of the project, but it's also an exposure. Filtering
+lives in each person's client.
 
-Une exception unique existe : `reports`/`ban` sur le socket d'administration
-local. Elle ne change rien à ce qu'un client peut faire —
-aucun message du protocole réseau ne permet d'effacer le contenu de
-quelqu'un d'autre, seul son propre contenu reste supprimable. Ce que ça
-change : un administrateur qui a la main sur la machine peut désormais bannir
-un compte ou supprimer un post spécifiquement signalé, en réaction à une
-obligation légale précise, jamais par jugement éditorial général.
+One single exception exists: `reports`/`ban` on the local admin socket.
+It changes nothing about what a client can do — no network protocol
+message lets anyone erase someone else's content, only their own
+content stays removable. What it does change: an administrator with
+hands-on access to the machine can now ban an account or delete a
+specifically reported post, in response to a precise legal obligation,
+never by general editorial judgment.
 
-### 3.8 Contenu des posts
+### 3.8 Post content
 
-Les posts sont **publics par nature**. Rien ne les chiffre, et rien ne devrait :
-un forum lisible seulement par son auteur n'est pas un forum.
+Posts are **public by nature**. Nothing encrypts them, and nothing
+should: a forum readable only by its own author isn't a forum.
 
-## 4. Hypothèses
+## 4. Assumptions
 
-- La machine du client n'est pas compromise. Si elle l'est, la clé privée l'est
-  aussi, quelle que soit la qualité du protocole.
-- libsodium est correct.
-- L'utilisateur choisit une passphrase résistante. Argon2id (paramètres
-  MODERATE, 256 MiB) ralentit une attaque hors ligne, il ne la rend pas
-  impossible sur une passphrase faible.
+- The client machine isn't compromised. If it is, the private key is
+  too, regardless of how good the protocol is.
+- libsodium is correct.
+- The user picks a resistant passphrase. Argon2id (MODERATE parameters,
+  256 MiB) slows down an offline attack, it doesn't make one impossible
+  against a weak passphrase.
 
-## 5. État du durcissement
+## 5. State of hardening
 
-| Mesure | État |
+| Measure | Status |
 |---|---|
-| `-Wall -Wextra -Werror`, stack protector, RELRO, PIE | **fait**, appliqué à toutes les cibles |
-| Cibles ASAN / UBSAN / TSAN | **fait**, `-DHYPERCOM_SANITIZER=...` |
-| Suite de tests passant sous ASAN+UBSAN | **fait** |
-| Harnais de fuzzing du parseur | **fait**, couvre les 36 décodeurs. Campagne continue à mettre en place : libFuzzer exige clang, absent de l'environnement actuel |
-| Rejeu du corpus de fuzzing dans la suite | **fait**, `tests/fuzz_corpus_replay_test.cpp` rejoue les cas limites connus sous gcc et sous sanitizers, sans libFuzzer |
-| Aller-retour de tous les messages | **fait**, trois suites `message_roundtrip_*` : chaque message encodé puis décodé, avec vérification qu'il ne reste aucun octet — seule façon de détecter un décalage de champ silencieux |
-| Reconnexion sans jeton de reprise | **fait**, `tests/reconnection_test.cpp`, validé aussi sous TSAN |
-| Requêtes préparées exclusivement | **fait** |
-| Aucune globale mutable (G4) | **fait**, y compris l'arrêt par `signalfd` plutôt qu'un drapeau global |
-| Pas de journalisation d'IP par défaut | **fait** |
-| Vecteurs de test officiels Noise | **fait**, `tests/noise_official_vectors_test.cpp` |
-| Purge automatique des journaux | **configurée, non appliquée** — `retention_days` est lu mais aucune rotation n'est implémentée |
-| Abandon des privilèges après bind | **non fait** |
-| seccomp-bpf + espaces de noms | **non fait** |
-| Unité systemd durcie | **non fait** |
+| `-Wall -Wextra -Werror`, stack protector, RELRO, PIE | **done**, applied to every target |
+| ASAN / UBSAN / TSAN targets | **done**, `-DHYPERCOM_SANITIZER=...` |
+| Test suite passing under ASAN+UBSAN | **done** |
+| Parser fuzzing harness | **done**, covers all 36 decoders. Continuous campaign still to set up: libFuzzer requires clang, absent from the current environment |
+| Fuzzing corpus replay in the suite | **done**, `tests/fuzz_corpus_replay_test.cpp` replays known edge cases under gcc and under sanitizers, without libFuzzer |
+| Round trip of every message | **done**, three `message_roundtrip_*` suites: every message encoded then decoded, checked to leave no byte behind — the only way to catch a silent field shift |
+| Reconnection without a resumption token | **done**, `tests/reconnection_test.cpp`, also validated under TSAN |
+| Prepared statements exclusively | **done** |
+| No mutable globals (G4) | **done**, including shutdown via `signalfd` rather than a global flag |
+| No IP logging by default | **done** |
+| Official Noise test vectors | **done**, `tests/noise_official_vectors_test.cpp` |
+| Automatic log purging | **configured, not enforced** — `retention_days` is read but no rotation is implemented |
+| Privilege drop after bind | **not done** |
+| seccomp-bpf + namespaces | **not done** |
+| Hardened systemd unit | **not done** |
 
-Les trois dernières lignes relèvent du déploiement et du domaine du
-collaborateur.
+The last three lines fall under deployment, and the collaborator's
+domain.
