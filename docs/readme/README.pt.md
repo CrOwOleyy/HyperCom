@@ -14,17 +14,16 @@ em quantos servidores quiser, cada um com uma identidade separada e sem
 correlação entre si.
 
 Documentação completa: [ARCHITECTURE.md](../../ARCHITECTURE.md) (como as
-peças se encaixam), [BRIEF.md](../../BRIEF.md) (decisões de design),
-[docs/ADMIN.md](../ADMIN.md) (administração do servidor),
+peças se encaixam), [docs/ADMIN.md](../ADMIN.md) (administração do servidor),
 [docs/THREAT_MODEL.md](../THREAT_MODEL.md) (o que é protegido e o que
-não é), [COMMANDS.md](../../COMMANDS.md) (referência completa de
-comandos).
+não é), [SECURITY.md](../../SECURITY.md) (relatar uma vulnerabilidade),
+[COMMANDS.md](../../COMMANDS.md) (referência completa de comandos).
 
 ## Requisitos
 
 - CMake ≥ 3.20, um compilador C++20 (MSVC no Windows, GCC/Clang no Linux)
 - libsodium, SQLite e Dear ImGui: baixados uma vez por um script, nunca
-  automaticamente pelo CMake (BRIEF.md 15)
+  automaticamente pelo CMake
 
 **O servidor só compila em Linux/WSL** (depende de epoll e signalfd). O
 cliente — CLI e interface gráfica — compila tanto no Windows quanto no

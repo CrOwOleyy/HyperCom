@@ -12,17 +12,17 @@
 خادم هوية منفصلة لا يمكن الربط بينها وبين الهويات الأخرى.
 
 الوثائق الكاملة: [ARCHITECTURE.md](../../ARCHITECTURE.md) (كيفية ترابط
-الأجزاء)، [BRIEF.md](../../BRIEF.md) (قرارات التصميم)،
-[docs/ADMIN.md](../ADMIN.md) (تشغيل الخادم)،
+الأجزاء)، [docs/ADMIN.md](../ADMIN.md) (تشغيل الخادم)،
 [docs/THREAT_MODEL.md](../THREAT_MODEL.md) (ما هو محمي وما هو غير
-محمي)، [COMMANDS.md](../../COMMANDS.md) (مرجع الأوامر الكامل).
+محمي)، [SECURITY.md](../../SECURITY.md) (الإبلاغ عن ثغرة أمنية)،
+[COMMANDS.md](../../COMMANDS.md) (مرجع الأوامر الكامل).
 
 ## المتطلبات
 
 - CMake بإصدار 3.20 أو أحدث، ومترجم يدعم C++20 (MSVC على Windows،
   وGCC أو Clang على Linux)
 - مكتبات libsodium وSQLite وDear ImGui: تُجلب مرة واحدة عبر سكربت،
-  ولا يجلبها CMake تلقائيًا أبدًا (انظر BRIEF.md 15)
+  ولا يجلبها CMake تلقائيًا أبدًا
 
 **الخادم لا يُبنى إلا على Linux/WSL** (لأنه يعتمد على epoll
 وsignalfd). أما العميل — سطر الأوامر والواجهة الرسومية — فيُبنى على

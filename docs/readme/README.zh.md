@@ -11,9 +11,9 @@ TLS 或任何 Web 技术——在 libsodium 之上手写实现的 Noise 协议�
 独立,彼此之间无法关联。
 
 完整文档:[ARCHITECTURE.md](../../ARCHITECTURE.md)(各部分如何协同
-工作)、[BRIEF.md](../../BRIEF.md)(设计决策)、
-[docs/ADMIN.md](../ADMIN.md)(服务器运维)、
+工作)、[docs/ADMIN.md](../ADMIN.md)(服务器运维)、
 [docs/THREAT_MODEL.md](../THREAT_MODEL.md)(哪些受到保护,哪些没有)、
+[SECURITY.md](../../SECURITY.md)(报告漏洞)、
 [COMMANDS.md](../../COMMANDS.md)(完整命令参考)。
 
 ## 依赖要求
@@ -21,7 +21,7 @@ TLS 或任何 Web 技术——在 libsodium 之上手写实现的 Noise 协议�
 - CMake ≥ 3.20,支持 C++20 的编译器(Windows 上用 MSVC,Linux 上用
   GCC/Clang)
 - libsodium、SQLite 和 Dear ImGui:通过脚本一次性获取,CMake 从不会
-  自动下载它们(见 BRIEF.md 15)
+  自动下载它们
 
 **服务器只能在 Linux/WSL 下编译**(依赖 epoll 和 signalfd)。客户端
 ——命令行和图形界面——在 Windows 和 Linux 上都能编译。

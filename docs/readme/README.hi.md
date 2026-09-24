@@ -14,16 +14,16 @@
 आपस में जोड़ा नहीं जा सकता।
 
 पूरा दस्तावेज़: [ARCHITECTURE.md](../../ARCHITECTURE.md) (सारे हिस्से
-कैसे जुड़ते हैं), [BRIEF.md](../../BRIEF.md) (डिज़ाइन के फ़ैसले),
-[docs/ADMIN.md](../ADMIN.md) (सर्वर चलाना),
+कैसे जुड़ते हैं), [docs/ADMIN.md](../ADMIN.md) (सर्वर चलाना),
 [docs/THREAT_MODEL.md](../THREAT_MODEL.md) (क्या सुरक्षित है और क्या
-नहीं), [COMMANDS.md](../../COMMANDS.md) (सभी कमांड की पूरी सूची)।
+नहीं), [SECURITY.md](../../SECURITY.md) (एक कमज़ोरी की रिपोर्ट करना),
+[COMMANDS.md](../../COMMANDS.md) (सभी कमांड की पूरी सूची)।
 
 ## ज़रूरी चीज़ें
 
 - CMake ≥ 3.20, एक C++20 कंपाइलर (Windows पर MSVC, Linux पर GCC/Clang)
 - libsodium, SQLite और Dear ImGui: एक स्क्रिप्ट से एक बार में लाए
-  जाते हैं, CMake कभी अपने आप नहीं लाता (देखें BRIEF.md 15)
+  जाते हैं, CMake कभी अपने आप नहीं लाता
 
 **सर्वर सिर्फ़ Linux/WSL पर ही बिल्ड होता है** (यह epoll और signalfd
 पर निर्भर है)। क्लाइंट — CLI और ग्राफ़िकल इंटरफ़ेस दोनों — Windows
