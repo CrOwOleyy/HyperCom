@@ -1,246 +1,255 @@
-# PROTOCOL — protocole de fil Hypercom v1
+# PROTOCOL — Hypercom v1 wire protocol
 
-Protocole binaire maison. Pas de HTTP, pas de JSON, pas de texte.
+Homegrown binary protocol. No HTTP, no JSON, no text.
 
-## 1. Couches
+## 1. Layers
 
 ```
-  TCP  ──►  [u32 len][message Noise]        transport, chiffré
+  TCP  ──►  [u32 len][Noise message]        transport, encrypted
                           │
-                          ▼ déchiffrement
-            [u32 body_size][u8 type][payload]   trame applicative
+                          ▼ decryption
+            [u32 body_size][u8 type][payload]   application frame
 ```
 
-Le préfixe de longueur externe est en clair — il le faut pour découper le
-flux — mais **tout ce qu'il encadre est chiffré**, y compris l'octet de type.
-Un observateur du réseau ne voit que des tailles de messages.
+The outer length prefix is in the clear — it has to be, to split the
+stream — but **everything it frames is encrypted**, including the type
+byte. A network observer only ever sees message sizes.
 
 ## 2. Handshake — `Noise_NK_25519_ChaChaPoly_SHA256`
 
 ```
 NK:
-  <- s          clé statique du serveur, épinglée par le client
+  <- s          server's static key, pinned by the client
   ...
   -> e, es      message 1
   <- e, ee      message 2  →  Split()
 ```
 
-- **Prologue** : `hypercom-v1`, mixé par les deux pairs. Lie la session à cette
-  application et à cette version.
-- Le nom de suite fait exactement 32 octets, donc HASHLEN : il sert directement
-  d'état de hachage initial, sans passer par SHA-256.
-- **Sens des clés** : l'initiateur émet avec la première sortie de `Split()`,
-  le répondeur avec la seconde. S'y tromper produit un canal qui s'établit puis
-  échoue au premier message — d'où le test bidirectionnel.
+- **Prologue**: `hypercom-v1`, mixed by both peers. Binds the session to
+  this application and this version.
+- The suite name is exactly 32 bytes, i.e. HASHLEN: it's used directly
+  as the initial hash state, without going through SHA-256.
+- **Key direction**: the initiator sends with the first output of
+  `Split()`, the responder with the second. Getting this backwards
+  produces a channel that establishes fine but then fails on the first
+  message — hence the bidirectional test.
 
-Un client qui épingle la mauvaise clé **échoue dès le premier message**, sans
-rien avoir révélé. C'est le remplacement complet de la chaîne de certificats :
-pas d'autorité à interroger, seulement une clé à comparer.
+A client that pins the wrong key **fails on the very first message**,
+without having revealed anything. This is the full replacement for the
+certificate chain: no authority to query, just a key to compare.
 
-## 3. Cadrage applicatif
+## 3. Application framing
 
 ```
 [u32 body_size][u8 type][payload]
 ```
 
-`body_size` compte l'octet de type et le payload, pas le champ lui-même :
-`1 ≤ body_size ≤ MAX_FRAME_SIZE - 4`, soit 1 MiB au total.
+`body_size` counts the type byte and the payload, not the field itself:
+`1 ≤ body_size ≤ MAX_FRAME_SIZE - 4`, i.e. 1 MiB total.
 
-**Règles non négociables du parseur** (`common/protocol/`) :
+**Non-negotiable parser rules** (`common/protocol/`):
 
-- Toute lecture passe par `byte_reader`, qui ne sort jamais de son tampon.
-- Toute taille annoncée est comparée à son plafond **avant** la moindre
-  allocation. Une trame annonçant 4 GiB est rejetée sans réserver un octet.
-- Un échec ne consomme rien et n'écrit pas la sortie.
-- Un type inconnu est rejeté par `decode_frame_header`, jamais transmis à un
-  handler.
+- Every read goes through `byte_reader`, which never steps outside its
+  buffer.
+- Every announced size is compared against its cap **before** any
+  allocation. A frame announcing 4 GiB is rejected without reserving a
+  single byte.
+- A failure consumes nothing and doesn't write the output.
+- An unknown type is rejected by `decode_frame_header`, never handed to
+  a handler.
 
-Le parseur est sans état, sans I/O et sans lien avec libsodium — précisément
-pour être fuzzable seul (`tools/fuzz/`).
+The parser is stateless, has no I/O, and has no link to libsodium —
+precisely so it can be fuzzed on its own (`tools/fuzz/`).
 
-## 4. Encodage des champs
+## 4. Field encoding
 
-| Type | Encodage |
+| Type | Encoding |
 |---|---|
-| entiers | petit-boutiste, taille fixe |
-| texte | `[u32 taille][octets UTF-8]`, validé |
-| blob | `[u32 taille][octets]` |
-| clé publique / signature | 32 / 64 octets bruts |
-| liste | `[u16 nombre][éléments]`, nombre plafonné |
-| horodatage | `u64`, secondes UNIX UTC |
+| integers | little-endian, fixed size |
+| text | `[u32 size][UTF-8 bytes]`, validated |
+| blob | `[u32 size][bytes]` |
+| public key / signature | 32 / 64 raw bytes |
+| list | `[u16 count][elements]`, count capped |
+| timestamp | `u64`, UNIX UTC seconds |
 
-Le même préfixe `u32` sert aux textes et aux blobs : deux octets de plus par
-chaîne, contre un seul chemin de décodage à auditer.
+The same `u32` prefix serves both text and blobs: two extra bytes per
+string, in exchange for a single decoding path to audit.
 
-**Validation du texte** — un texte accepté est resservi tel quel à d'autres
-clients, la validation n'est donc pas cosmétique. Sont refusés : UTF-8 invalide
-ou sur-long, demi-codets de substitution, hors-plan Unicode, contrôles C0 sauf
-tabulation et saut de ligne, DEL, et le retour chariot.
+**Text validation** — accepted text gets served back as-is to other
+clients, so validation isn't cosmetic. Rejected: invalid or overlong
+UTF-8, surrogate halves, out-of-plane code points, C0 controls except
+tab and newline, DEL, and carriage return.
 
-## 5. Séquence d'ouverture de session
+## 5. Session opening sequence
 
 ```
-C → S   hello_request      { version, clé publique }
-S → C   auth_challenge     { nonce 32 o, version, compte_existe }
-C → S   auth_response      { signature Ed25519 }
-S → C   auth_accepted      { user_id, pseudo, heure }      si le compte existe
-        ou status_ok       { 0 }                            sinon
-C → S   register_request   { pseudo }                       le cas échéant
+C → S   hello_request      { version, public key }
+S → C   auth_challenge     { 32-byte nonce, version, account_exists }
+C → S   auth_response      { Ed25519 signature }
+S → C   auth_accepted      { user_id, handle, time }         if the account exists
+        or status_ok       { 0 }                              otherwise
+C → S   register_request   { handle }                         if needed
 S → C   auth_accepted
-S → C   motd_push                                           si un MOTD est actif
+S → C   motd_push                                             if a MOTD is active
 ```
 
-Le client signe `"hypercom-auth-v1" || nonce || clé_publique`. La séparation de
-domaine empêche qu'une signature produite ici vaille dans un autre contexte.
+The client signs `"hypercom-auth-v1" || nonce || public_key`. Domain
+separation prevents a signature produced here from being valid in a
+different context.
 
-Aucun mot de passe n'est transmis, stocké, ni même existant côté serveur.
+No password is transmitted, stored, or even exists server-side.
 
-## 6. Familles de messages
+## 6. Message families
 
-| Plage | Famille |
+| Range | Family |
 |---|---|
-| `0x0*` | session : hello, auth, ping, motd, status |
-| `0x1*` | compte : register, prekey publish/fetch |
-| `0x2*` | forums : create, list |
-| `0x3*` | contenu : post create/list, thread, comment |
-| `0x4*` | social : profile, friends, top8 |
-| `0x5*` | privé : dm send/fetch/ack |
-| `0x6*` | blobs — **réservés v2**, valeurs posées pour que l'ajout du P2P ne renumérote rien |
+| `0x0*` | session: hello, auth, ping, motd, status |
+| `0x1*` | account: register, prekey publish/fetch |
+| `0x2*` | forums: create, list |
+| `0x3*` | content: post create/list, thread, comment |
+| `0x4*` | social: profile, friends, top8 |
+| `0x5*` | private: dm send/fetch/ack |
+| `0x6*` | blobs — **reserved for v2**, values set aside so adding P2P doesn't renumber anything |
 
-Les valeurs sont figées : elles font partie du format de fil.
+Values are frozen: they're part of the wire format.
 
-## 7. Enveloppe de message privé
+## 7. Private message envelope
 
-Opaque pour le serveur, définie par `common/crypto/dm_envelope` :
+Opaque to the server, defined by `common/crypto/dm_envelope`:
 
 ```
-[u8 version][32 identité expéditeur][32 éphémère][u32 compteur][ciphertext+tag]
-└──────────────── donnée associée, authentifiée ────────────────┘
+[u8 version][32 sender identity][32 ephemeral][u32 counter][ciphertext+tag]
+└──────────────── authenticated associated data ────────────────┘
 ```
 
-L'en-tête circule en clair — le destinataire en a besoin pour dériver la clé —
-mais il est intégralement authentifié. Modifier un seul octet, y compris le
-compteur, fait échouer le déchiffrement : le serveur ne peut ni rejouer à un
-autre compteur, ni maquiller l'expéditeur.
+The header travels in the clear — the recipient needs it to derive the
+key — but it's fully authenticated. Modifying a single byte, including
+the counter, makes decryption fail: the server can neither replay it
+under a different counter, nor spoof the sender.
 
-Le nonce est nul, et c'est sûr **uniquement** parce que la clé est unique par
-message : le cliquet de `dm_message_chain` n'en produit jamais deux fois la
-même.
+The nonce is zero, and that's safe **only** because the key is unique
+per message: the `dm_message_chain` ratchet never produces the same one
+twice.
 
-## 8. Codes d'erreur
+## 8. Error codes
 
-Volontairement grossiers. `unknown_user` et `invalid_signature` répondent tous
-deux `authentication_failed` : un code trop précis renseignerait un attaquant
-sur l'état interne du serveur.
+Deliberately coarse. `unknown_user` and `invalid_signature` both reply
+`authentication_failed`: a too-precise code would tell an attacker
+about the server's internal state.
 
-Un code d'erreur n'est jamais destiné à être lu par un humain — c'est le rôle
-du champ `detail`, qui peut changer sans préavis. Brancher la logique du client
-sur `detail` plutôt que sur `code` est une erreur.
+An error code is never meant to be read by a human — that's the job of
+the `detail` field, which can change without notice. Wiring client
+logic to `detail` instead of `code` is a bug.
 
-Trois erreurs sont **fatales à la connexion**, parce qu'un flux désynchronisé
-ne se rattrape pas : `malformed_frame`, une longueur annoncée au-delà du
-plafond, et un échec de déchiffrement. Dans ces trois cas la connexion est
-fermée, jamais reprise.
+Three errors are **fatal to the connection**, because a desynchronized
+stream can't be recovered: `malformed_frame`, a length announced past
+the cap, and a decryption failure. In all three cases the connection is
+closed, never resumed.
 
-## 9. Cycle de vie d'une connexion
+## 9. Connection lifecycle
 
-### Durée de vie
+### Lifetime
 
-**Aucun délai d'inactivité applicatif.** Une session reste ouverte tant que le
-pair est là. C'est cohérent avec le reste : un délai côté serveur obligerait à
-mesurer l'activité de chacun, donc à en tenir un registre.
+**No application-level idle timeout.** A session stays open as long as
+the peer is there. This is consistent with the rest: a server-side
+timeout would require measuring everyone's activity, and therefore
+keeping a record of it.
 
-Le maintien de la connexion repose entièrement sur le **keepalive TCP**, activé
-des deux côtés avec le même réglage (`server/net/tcp_listener.cpp` et
-`client/net/tcp_client_socket.cpp`) :
+Keeping the connection alive relies entirely on **TCP keepalive**,
+enabled on both sides with the same settings
+(`server/net/tcp_listener.cpp` and `client/net/tcp_client_socket.cpp`):
 
-| Paramètre | Valeur | Effet |
+| Parameter | Value | Effect |
 |---|---|---|
-| `SO_KEEPALIVE` | activé | sondes automatiques |
-| `TCP_KEEPIDLE` | 120 s | délai avant la première sonde |
-| `TCP_KEEPINTVL` | 30 s | intervalle entre deux sondes |
-| `TCP_KEEPCNT` | 4 | sondes avant abandon |
+| `SO_KEEPALIVE` | enabled | automatic probes |
+| `TCP_KEEPIDLE` | 120s | delay before the first probe |
+| `TCP_KEEPINTVL` | 30s | interval between two probes |
+| `TCP_KEEPCNT` | 4 | probes before giving up |
 
-Un pair disparu sans `FIN` — coupure réseau, plantage, sortie de portée Tor —
-est donc détecté en 240 s environ. Sans ce réglage, Linux attendrait deux
-heures, et les sessions mortes s'accumuleraient.
+A peer that disappears without `FIN` — network drop, crash, dropping
+out of Tor's range — is therefore detected in about 240s. Without this
+setting, Linux would wait two hours, and dead sessions would pile up.
 
-Les deux bouts sondent à la même cadence, délibérément : sinon c'est toujours
-le même côté qui déclare la connexion morte.
+Both ends probe at the same cadence, deliberately: otherwise it's
+always the same side declaring the connection dead.
 
-### Fermeture
+### Closing
 
-**`FIN` TCP, sans message d'adieu.** Il n'existe pas de message `close` dans le
-protocole. Un adieu explicite n'apporterait rien — il n'est pas fiable de toute
-façon, puisqu'une coupure brutale ne l'envoie jamais — et le client doit savoir
-encaisser une disparition sans préavis dans tous les cas.
+**TCP `FIN`, no goodbye message.** There's no `close` message in the
+protocol. An explicit goodbye wouldn't add anything — it isn't reliable
+anyway, since an abrupt drop never sends one — and the client has to be
+able to handle a disappearance without warning regardless.
 
-### Reconnexion — re-handshake complet
+### Reconnection — full re-handshake
 
-Une reconnexion est une **session entièrement neuve** : nouveau handshake
-Noise avec une clé éphémère fraîche, puis nouveau défi-réponse.
+A reconnection is an **entirely new session**: a new Noise handshake
+with a fresh ephemeral key, then a new challenge-response.
 
-**Aucun jeton de reprise n'existe.** C'est un choix, pas un oubli : un jeton de
-session serait précisément ce qui permettrait au serveur de recoudre deux
-connexions d'une même personne, donc de reconstituer une continuité de présence
-que le reste de l'architecture s'applique à ne pas produire (voir
-THREAT_MODEL.md §2, lignes sur la présence et `last_seen`).
+**No resumption token exists.** This is a choice, not an oversight: a
+session token would be exactly what would let the server stitch two
+connections from the same person together, and so reconstruct a
+continuity of presence that the rest of the architecture works to avoid
+producing (see THREAT_MODEL.md §2, the lines on presence and
+`last_seen`).
 
-La contrepartie assumée est le coût : un handshake et une signature à chaque
-reprise. À l'échelle visée — quelques centaines d'utilisateurs — c'est
-négligeable.
+The accepted trade-off is cost: a handshake and a signature on every
+reconnect. At the scale targeted — a few hundred users — that's
+negligible.
 
-Côté code, `server_connection::open_session` **est** la reconnexion : la
-rappeler sur une connexion tombée remet à zéro le handshake, le canal et le
-tampon d'entrée avant de repartir. Rien de la session précédente ne survit.
-`tests/reconnection_test.cpp` vérifie ce cycle sur un même objet.
+In code, `server_connection::open_session` **is** the reconnection:
+calling it again on a dropped connection resets the handshake, the
+channel, and the input buffer before starting over. Nothing from the
+previous session survives. `tests/reconnection_test.cpp` verifies this
+cycle on the same object.
 
-> Ce chemin ne concerne que les clients qui vivent longtemps, c'est-à-dire le
-> client graphique. La CLI relance un processus par commande et refait donc un
-> handshake complet de toute façon.
+> This path only matters for long-lived clients, i.e. the graphical
+> client. The CLI spawns a new process per command and so does a full
+> handshake every time regardless.
 
-### Ce que le client doit resynchroniser après une reprise
+### What the client has to resync after a reconnect
 
-Le serveur ne mémorise pas où en était le client. C'est au client de rattraper,
-et le protocole est fait pour que ce soit possible sans état côté serveur :
+The server doesn't remember where the client was. Catching up is the
+client's job, and the protocol is designed to make that possible
+without any server-side state:
 
-| Données | Comment |
+| Data | How |
 |---|---|
-| messages privés | `DM_FETCH` avec `since_id` = dernière enveloppe reçue |
-| posts et fils | `POST_LIST` / `THREAD_FETCH`, pagination par `offset` |
-| MOTD | repoussé par le serveur à chaque connexion |
+| private messages | `DM_FETCH` with `since_id` = last envelope received |
+| posts and threads | `POST_LIST` / `THREAD_FETCH`, `offset` pagination |
+| MOTD | pushed by the server again on every connection |
 
-## 10. Versionnage et évolution
+## 10. Versioning and evolution
 
-`PROTOCOL_VERSION` vaut 1. Elle circule dans `hello_request` et
+`PROTOCOL_VERSION` is 1. It travels in `hello_request` and
 `auth_challenge`.
 
-**Règle : ce qui n'est pas reconnu est rejeté.** Pas de tolérance, pas de
-champs ignorés silencieusement. Un décodeur qui accepte ce qu'il ne comprend
-pas est un décodeur dont on ne sait plus ce qu'il accepte.
+**Rule: whatever isn't recognized gets rejected.** No tolerance, no
+fields silently ignored. A decoder that accepts what it doesn't
+understand is a decoder whose actual behavior nobody can be sure of
+anymore.
 
-Le rejet s'applique à trois niveaux, indépendamment :
+Rejection applies at three levels, independently:
 
-1. **Version** — un `hello_request` dont la version diffère reçoit
-   `unsupported_version` et n'ouvre pas de session
+1. **Version** — a `hello_request` with a different version gets
+   `unsupported_version` and doesn't open a session
    (`server/handlers/session_handler.cpp`).
-2. **Octet de type inconnu** — refusé par `decode_frame_header`, avant qu'un
-   handler ne le voie.
-3. **Type connu mais inattendu** — une réponse serveur émise par un client, ou
-   un message de blob réservé à la v2, reçoit `not_implemented`
+2. **Unknown type byte** — rejected by `decode_frame_header`, before any
+   handler sees it.
+3. **Known but unexpected type** — a server response sent by a client,
+   or a blob message reserved for v2, gets `not_implemented`
    (`server/handlers/request_router.cpp`).
 
-### Faire évoluer un message
+### Evolving a message
 
-Les valeurs de `message_type` sont **figées** : elles font partie du format de
-fil et ne se renumérotent pas. La plage `0x6*` est déjà réservée aux blobs de
-la v2 pour cette raison.
+`message_type` values are **frozen**: they're part of the wire format
+and don't get renumbered. The `0x6*` range is already reserved for v2's
+blobs for exactly this reason.
 
-Un champ ne s'ajoute donc **pas** à un message existant — un client v1 lirait
-les champs suivants décalés. Pour étendre : créer un nouveau type de message
-dans une valeur libre de la famille. Les deux versions coexistent, et un client
-v1 rejette proprement ce qu'il ne connaît pas.
+A field therefore does **not** get added to an existing message — a v1
+client would read the following fields shifted. To extend: create a new
+message type at a free value within the family. Both versions coexist,
+and a v1 client cleanly rejects what it doesn't know about.
 
-C'est plus verbeux qu'un format auto-descriptif, et c'est le but : le décodeur
-reste une lecture séquentielle de champs à positions connues, sans branche
-conditionnelle pilotée par la donnée reçue.
+This is more verbose than a self-describing format, and that's the
+point: the decoder stays a sequential read of fields at known
+positions, with no conditional branch driven by the data received.
