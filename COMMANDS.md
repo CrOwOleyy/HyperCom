@@ -1,147 +1,191 @@
+# Commands
 
-## Configuration locale
+**English** · [Français](docs/commands/COMMANDS.fr.md) · [中文](docs/commands/COMMANDS.zh.md) · [हिन्दी](docs/commands/COMMANDS.hi.md) · [Español](docs/commands/COMMANDS.es.md) · [العربية](docs/commands/COMMANDS.ar.md) · [বাংলা](docs/commands/COMMANDS.bn.md) · [Português](docs/commands/COMMANDS.pt.md) · [Русский](docs/commands/COMMANDS.ru.md) · [日本語](docs/commands/COMMANDS.ja.md)
 
-`env.ps1` (Windows) et `env.sh` (Linux/WSL) ne sont pas versionnés : ils
-contiennent votre passphrase locale et la clé publique de votre serveur.
-Première utilisation :
+## Local configuration
 
-cp env.example.ps1 env.ps1   # ou env.example.sh -> env.sh
-# puis éditer env.ps1 / env.sh avec vos propres valeurs
+`env.ps1` (Windows) and `env.sh` (Linux/WSL) aren't versioned: they hold
+your local passphrase and your server's public key. First use:
 
-## Administrer le serveur
+```
+cp env.example.ps1 env.ps1   # or env.example.sh -> env.sh
+# then edit env.ps1 / env.sh with your own values
+```
 
-Le serveur ouvre un socket local (`run/hypercom-admin.sock` par défaut) sur
-lequel `hypercom_adminctl` envoie des commandes. Pas de C++ à écrire, pas de
-SQL à taper.
+## Administering the server
 
+The server opens a local socket (`run/hypercom-admin.sock` by default) that
+`hypercom_adminctl` sends commands to. No C++ to write, no SQL to type.
+
+```
 hypercom_adminctl help
 hypercom_adminctl stats
 hypercom_adminctl sessions
 hypercom_adminctl sessions close 12
-hypercom_adminctl motd set "maintenance samedi 14h"
+hypercom_adminctl motd set "maintenance Saturday 2pm"
 hypercom_adminctl motd clear
-hypercom_adminctl backup sauvegardes/hypercom.db
+hypercom_adminctl backup backups/hypercom.db
+```
 
-Si le socket n'est pas au chemin par défaut :
+If the socket isn't at the default path:
 
+```
 hypercom_adminctl --socket /var/run/hypercom-admin.sock stats
+```
 
-Détails et garanties de sécurité : docs/ADMIN.md §7.
+Details and security guarantees: docs/ADMIN.md §7.
 
-## Lancer les tests
+## Running the tests
 
-Après chaque modification, recompiler puis lancer la suite :
+After every change, rebuild then run the suite:
 
+```
 cmake --build build/windows --config RelWithDebInfo -j
 ctest --test-dir build/windows -C RelWithDebInfo --output-on-failure
+```
 
-Huit suites :
+Nine suites:
 
-| Suite | Ce qu'elle couvre |
+| Suite | What it covers |
 |---|---|
-| `protocol_parsing_test` | bornes du lecteur, plafonds, validation UTF-8, cadrage |
-| `crypto_round_trip_test` | handshake, DM chiffrés, keystore |
-| `noise_official_vectors_test` | comparaison octet par octet à un vecteur officiel Noise |
-| `message_roundtrip_session_test` | messages de session : hello, auth, ping, MOTD, status |
-| `message_roundtrip_content_test` | forums, posts, commentaires, fils |
-| `message_roundtrip_social_test` | compte, prekeys, profils, amis, top 8, DM |
-| `fuzz_corpus_replay_test` | rejeu du corpus de fuzzing, sans libFuzzer |
-| `reconnection_test` | re-handshake complet sur un même objet (POSIX seulement) |
+| `protocol_parsing_test` | reader bounds, caps, UTF-8 validation, framing |
+| `crypto_round_trip_test` | handshake, encrypted DMs, keystore |
+| `noise_official_vectors_test` | byte-for-byte comparison against an official Noise vector |
+| `message_roundtrip_session_test` | session messages: hello, auth, ping, MOTD, status |
+| `message_roundtrip_content_test` | forums, posts, comments, threads |
+| `message_roundtrip_social_test` | account, prekeys, profiles, friends, top 8, DMs |
+| `multi_server_identity_test` | per-server identities, the server bar, slot lifecycle |
+| `fuzz_corpus_replay_test` | replays the fuzzing corpus, without libFuzzer |
+| `reconnection_test` | full re-handshake on the same object (POSIX only) |
 
-Sous sanitizers :
+Under sanitizers:
 
+```
 cmake -S . -B build-asan -DHYPERCOM_SANITIZER=address,undefined
 cmake --build build-asan -j
 ctest --test-dir build-asan --output-on-failure
+```
 
-TSAN se lance dans un répertoire séparé (incompatible avec ASAN). Sous WSL, il
-faut désactiver l'ASLR, sinon il refuse de démarrer :
+TSAN runs from a separate directory (incompatible with ASAN). Under WSL,
+ASLR needs to be disabled or it refuses to start:
 
+```
 setarch -R ctest --test-dir build-tsan --output-on-failure
+```
 
-Un test seul, pour voir le détail :
+A single test, to see the detail:
 
+```
 build\windows\bin\RelWithDebInfo\noise_official_vectors_test.exe
+```
 
-## Sur Windows (PowerShell)
+## On Windows (PowerShell)
 
-### 1. Installer les dépendances
+### 1. Install dependencies
+```
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\scripts\fetch_third_party.ps1
+```
 
-### 2. Compiler (Générer l'exécutable)
+### 2. Configure the build
 
+```
 cmake -S . -B build/windows
+```
 
-### 3. Compiler le projet
+### 3. Build the project
+```
 cmake --build build/windows --config RelWithDebInfo -j
+```
 
-### 3. Lancer le projet
-### 1. Charger l'environnement
+### 4. Run the project
+#### Load the environment
+```
 . .\env.ps1
+```
 
-### Pour lancer le serveur localement dans le terminal 1
+#### Launch the server locally in terminal 1
+```
 hserver
+```
 
-### 2. Lancer le client interface graphique (GUI)
+#### Launch the graphical client (GUI)
+```
 hgui
+```
 
-### Pour lancer un 2ème client (pour tester avec un 2ème compte)
-hgui --identity compte2.key
+#### Launch a 2nd client (to test with a 2nd account)
+```
+hgui --identity account2.key
+```
 
+## The welcome sequence
 
-## La séquence d'accueil
+It only plays **when an account is created**, never on later connections.
+To replay it without creating a throwaway account:
 
-Elle ne se joue **qu'à la création d'un compte**, jamais aux connexions
-suivantes. Pour la revoir sans créer de compte jetable :
-
+```
 hgui --replay-intro
+```
 
-Ou en repartant d'une identité neuve — attention, le fichier ne doit pas déjà
-exister, sinon le compte est déjà enregistré et l'intro ne se déclenche pas :
+Or by starting from a fresh identity — careful, the file must not already
+exist, otherwise the account is already registered and the intro never
+triggers:
 
-hgui --identity compte_neuf.key
+```
+hgui --identity fresh_account.key
+```
 
-Déroulé, calé sur la durée réelle de `menu.mp3` (~12,5 s) :
+Sequence, timed to the actual duration of `menu.mp3` (~12.5s):
 
-| Moment | Ce qui se passe |
+| Moment | What happens |
 |---|---|
-| 0 → 6 s | Carte de verre centrée, « Bienvenue dans l'espace HyperCom. » |
-| 6 s → fin | Les trois colonnes remontent l'une après l'autre, en bulles |
-| ensuite | Interface normale, plus aucune animation |
+| 0 → 6s | Centered glass card, "Welcome to the HyperCom space." |
+| 6s → end | The three columns rise one after another, as bubbles |
+| after | Normal interface, no more animation |
 
-Remplacer `menu.mp3` recale l'animation tout seul : la durée est lue dans le
-fichier. CMake le recopie à côté de l'exécutable à chaque build.
+Replacing `menu.mp3` recalibrates the animation on its own: the duration
+is read from the file. CMake copies it next to the executable on every
+build.
 
-Pas de son ? Ce n'est jamais bloquant — l'intro se déroule à l'identique sur
-l'horloge. Le client affiche la raison au démarrage :
+No sound? Never a blocker — the intro plays out identically on the clock.
+The client prints the reason at startup:
 
-    intro : musique, duree retenue 12.5268 s
+```
+intro: music, duration used 12.5268 s
+```
 
+## On Linux / WSL
 
-
-## Sur Linux / WSL
-
-### 1. Installer les dépendances
+### 1. Install dependencies
+```
 ./scripts/fetch_third_party.sh
+```
 
-### 2. Compiler (Générer l'exécutable)
-# Générer les fichiers de construction
+### 2. Configure the build
+```
 cmake -S . -B build/linux
+```
 
-# Compiler le projet
+### 3. Build the project
+```
 cmake --build build/linux -j
+```
 
-### 3. Lancer le projet
-*(Charge les raccourcis `hgui`, `hcli` et `hserver`)*
+### 4. Run the project
+*(Loads the `hgui`, `hcli` and `hserver` shortcuts)*
 
-### 1. Pour lancer le serveur localement (terminal 1)
+#### Launch the server locally (terminal 1)
+```
 hserver
+```
 
-### 2. Charger l'environnement (terminal 2)
+#### Load the environment (terminal 2)
+```
 source env.sh
+```
 
-### 3. Lancer le client interface graphique (GUI) (terminal 2)
+#### Launch the graphical client (GUI) (terminal 2)
+```
 hgui
-
-
+```

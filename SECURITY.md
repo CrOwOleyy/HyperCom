@@ -1,45 +1,47 @@
-# Politique de sécurité
+# Security policy
 
-Hypercom est maintenu par une petite équipe, en dehors de tout cadre
-professionnel. Ce document dit honnêtement ce que ça implique.
+**English** · [Français](docs/security/SECURITY.fr.md) · [中文](docs/security/SECURITY.zh.md) · [हिन्दी](docs/security/SECURITY.hi.md) · [Español](docs/security/SECURITY.es.md) · [العربية](docs/security/SECURITY.ar.md) · [বাংলা](docs/security/SECURITY.bn.md) · [Português](docs/security/SECURITY.pt.md) · [Русский](docs/security/SECURITY.ru.md) · [日本語](docs/security/SECURITY.ja.md)
 
-## Signaler une faille
+Hypercom is maintained by a small team, outside of any professional
+setting. This document says honestly what that implies.
 
-**Ne pas ouvrir d'issue publique pour une faille de sécurité.** Utiliser le
-[signalement privé de vulnérabilités GitHub](../../security/advisories/new)
-de ce dépôt (onglet *Security* → *Report a vulnerability*) : le rapport
-n'est visible que par les mainteneurs tant qu'un correctif n'est pas publié.
+## Reporting a vulnerability
 
-Décrire :
+**Do not open a public issue for a security vulnerability.** Use this
+repository's [private vulnerability reporting](../../security/advisories/new)
+(*Security* tab → *Report a vulnerability*): the report stays visible only
+to maintainers until a fix ships.
 
-- le fichier et la fonction concernés si possible ;
-- les conditions précises pour reproduire le problème ;
-- l'impact concret (ce qu'un attaquant obtient, pas seulement « c'est mal
-  écrit »).
+Describe:
 
-## Ce qui est dans le périmètre
+- the file and function involved, if possible;
+- exact conditions to reproduce the problem;
+- the concrete impact (what an attacker gains, not just "this looks
+  wrong").
 
-Toute faille qui rend fausse une des garanties listées dans
-[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) — par exemple : un DM lisible
-sans la clé du destinataire, un contournement de l'authentification par
-signature, une injection SQL, un crash déclenchable à distance sans
-authentification, une fuite mémoire d'un secret.
+## What's in scope
 
-## Ce qui n'est pas une faille
+Any flaw that makes one of the guarantees listed in
+[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) false — for example: a DM
+readable without the recipient's key, a bypass of signature-based
+authentication, a SQL injection, a remotely triggerable crash without
+authentication, a secret leaking through memory.
 
-Le `THREAT_MODEL.md` documente des limites **assumées**, pas des oublis :
-le serveur voit qui écrit à qui, « amis uniquement » n'est pas du
-chiffrement, un opérateur de serveur malveillant peut mentir à ses propres
-utilisateurs. Les rapports sur ces points précis seront fermés en pointant
-vers ce document plutôt que traités comme une faille.
+## What isn't a vulnerability
 
-## Versions couvertes
+`THREAT_MODEL.md` documents **accepted** limitations, not oversights: the
+server sees who's writing to whom, "friends only" isn't encryption, a
+malicious server operator can lie to their own users. Reports on these
+specific points will be closed with a pointer to that document rather
+than treated as a bug.
 
-Hypercom n'a pas encore de version stable numérotée : seule la branche
-`main` reçoit des correctifs de sécurité.
+## Supported versions
 
-## Délai de réponse
+Hypercom doesn't have a numbered stable release yet: only the `main`
+branch receives security fixes.
 
-Aucun SLA formel — c'est un projet à deux personnes, pas une entreprise.
-En pratique : accusé de réception sous une semaine, correctif ou plan
-d'action communiqué avant publication publique du rapport.
+## Response time
+
+No formal SLA — this is a two-person project, not a company. In
+practice: acknowledgment within a week, a fix or an action plan
+communicated before the report is made public.
