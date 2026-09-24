@@ -1,5 +1,16 @@
 #include "client/keystore/identity_store.hpp"
 
+#if defined(_WIN32)
+#include <fcntl.h>
+#include <io.h>
+#include <share.h>
+#include <sys/stat.h>
+#else
+#include <cerrno>
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
@@ -11,6 +22,53 @@
 namespace hypercom::client {
 namespace {
 
+// Ouvre le fichier avec des permissions restreintes au proprietaire des la
+// creation, plutot que de les resserrer apres coup avec un chmod separe.
+// Entre une creation a permissions larges et ce chmod, un autre utilisateur
+// local pourrait lire le blob scelle -- un mode explicite a l'ouverture
+// elimine cette fenetre au lieu de la refermer apres qu'elle ait existe.
+#if defined(_WIN32)
+[[nodiscard]] int open_owner_only(std::string const &path)
+{
+    int descriptor = -1;
+    static_cast<void>(::_sopen_s(
+        &descriptor, path.c_str(),
+        _O_CREAT | _O_TRUNC | _O_WRONLY | _O_BINARY, _SH_DENYWR,
+        _S_IREAD | _S_IWRITE));
+    return descriptor;
+}
+
+[[nodiscard]] bool write_all(int descriptor, std::uint8_t const *data,
+                             std::size_t size)
+{
+    return ::_write(descriptor, data, static_cast<unsigned int>(size))
+        == static_cast<int>(size);
+}
+#else
+[[nodiscard]] int open_owner_only(std::string const &path)
+{
+    return ::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY, 0600);
+}
+
+[[nodiscard]] bool write_all(int descriptor, std::uint8_t const *data,
+                             std::size_t size)
+{
+    std::size_t written = 0;
+    while (written < size) {
+        ssize_t const result =
+            ::write(descriptor, data + written, size - written);
+        if (result < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return false;
+        }
+        written += static_cast<std::size_t>(result);
+    }
+    return true;
+}
+#endif
+
 [[nodiscard]] bool write_sealed_file(std::string const &path,
                                      std::vector<std::uint8_t> const &sealed,
                                      std::string &error_out)
@@ -20,22 +78,21 @@ namespace {
     if (target.has_parent_path()) {
         std::filesystem::create_directories(target.parent_path(), failure);
     }
-    std::ofstream output{path, std::ios::binary | std::ios::trunc};
-    if (!output) {
+    int const descriptor = open_owner_only(path);
+    if (descriptor < 0) {
         error_out = "ecriture impossible : " + path;
         return false;
     }
-    output.write(reinterpret_cast<char const *>(sealed.data()),
-                 static_cast<std::streamsize>(sealed.size()));
-    if (!output) {
+    bool const ok = write_all(descriptor, sealed.data(), sealed.size());
+#if defined(_WIN32)
+    ::_close(descriptor);
+#else
+    ::close(descriptor);
+#endif
+    if (!ok) {
         error_out = "ecriture incomplete : " + path;
         return false;
     }
-    std::filesystem::permissions(target,
-                                 std::filesystem::perms::owner_read
-                                     | std::filesystem::perms::owner_write,
-                                 std::filesystem::perm_options::replace,
-                                 failure);
     return true;
 }
 
