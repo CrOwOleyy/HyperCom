@@ -73,7 +73,7 @@ public** — `posts`, `comments`, `forums` — où ils sont de toute façon visi
 de quiconque lit le fil, et sur `motd`, qui est une annonce d'administration.
 
 `reports` est une exception délibérée à « pas de dates » : signaler quelque
-chose révèle forcément qui a signalé quoi et quand (BRIEF.md 13). C'est un
+chose révèle forcément qui a signalé quoi et quand. C'est un
 choix assumé, pas un oubli — le dispositif de signalement est une obligation
 légale, pas une fonctionnalité de surveillance déguisée, et son contenu
 n'est lisible que par l'admin sur le socket local, jamais par le réseau.
@@ -133,7 +133,7 @@ C'est le point du projet, mais c'est aussi une exposition. Le filtrage vit dans
 le client de chacun.
 
 Une exception unique existe : `reports`/`ban` sur le socket d'administration
-local (BRIEF.md 13, 15). Elle ne change rien à ce qu'un client peut faire —
+local. Elle ne change rien à ce qu'un client peut faire —
 aucun message du protocole réseau ne permet d'effacer le contenu de
 quelqu'un d'autre, seul son propre contenu reste supprimable. Ce que ça
 change : un administrateur qui a la main sur la machine peut désormais bannir

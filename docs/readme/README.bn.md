@@ -14,18 +14,17 @@ Reddit-এর মতো কমিউনিটি ফোরাম, MySpace-এর
 কোনো সম্পর্ক খুঁজে বের করা যায় না।
 
 সম্পূর্ণ ডকুমেন্টেশন: [ARCHITECTURE.md](../../ARCHITECTURE.md)
-(অংশগুলো কীভাবে একসাথে কাজ করে), [BRIEF.md](../../BRIEF.md)
-(ডিজাইনের সিদ্ধান্তসমূহ), [docs/ADMIN.md](../ADMIN.md) (সার্ভার
+(অংশগুলো কীভাবে একসাথে কাজ করে), [docs/ADMIN.md](../ADMIN.md) (সার্ভার
 পরিচালনা), [docs/THREAT_MODEL.md](../THREAT_MODEL.md) (কী সুরক্ষিত
-আর কী নয়), [COMMANDS.md](../../COMMANDS.md) (সম্পূর্ণ কমান্ড
-রেফারেন্স)।
+আর কী নয়), [SECURITY.md](../../SECURITY.md) (একটা দুর্বলতা রিপোর্ট করা),
+[COMMANDS.md](../../COMMANDS.md) (সম্পূর্ণ কমান্ড রেফারেন্স)।
 
 ## প্রয়োজনীয়তা
 
 - CMake ≥ 3.20, একটি C++20 কম্পাইলার (Windows-এ MSVC, Linux-এ
   GCC/Clang)
 - libsodium, SQLite এবং Dear ImGui: একটি স্ক্রিপ্টের মাধ্যমে একবারই
-  আনা হয়, CMake কখনও নিজে থেকে আনে না (দেখুন BRIEF.md 15)
+  আনা হয়, CMake কখনও নিজে থেকে আনে না
 
 **সার্ভার শুধু Linux/WSL-এই বিল্ড হয়** (এটি epoll ও signalfd-এর
 উপর নির্ভরশীল)। ক্লায়েন্ট — CLI এবং গ্রাফিক্যাল ইন্টারফেস দুটোই —

@@ -12,16 +12,16 @@ service. A single master identity lets you join as many servers as you
 like, each with a separate, uncorrelatable identity.
 
 Full documentation: [ARCHITECTURE.md](ARCHITECTURE.md) (how the pieces fit
-together), [BRIEF.md](BRIEF.md) (design decisions), [docs/ADMIN.md](docs/ADMIN.md)
-(running a server), [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) (what's
-protected and what isn't), [COMMANDS.md](COMMANDS.md) (full command
-reference).
+together), [docs/ADMIN.md](docs/ADMIN.md) (running a server),
+[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) (what's protected and what
+isn't), [SECURITY.md](SECURITY.md) (reporting a vulnerability),
+[COMMANDS.md](COMMANDS.md) (full command reference).
 
 ## Requirements
 
 - CMake ≥ 3.20, a C++20 compiler (MSVC on Windows, GCC/Clang on Linux)
 - libsodium, SQLite and Dear ImGui: fetched once through a script, never
-  pulled automatically by CMake (BRIEF.md 15)
+  pulled automatically by CMake
 
 **The server only builds on Linux/WSL** (it relies on epoll and signalfd).
 The client — CLI and GUI — builds on both Windows and Linux.

@@ -95,7 +95,7 @@ locale : le serveur n'y voit structurellement aucune vraie IP, donc `true` ne
 journalise que les connexions clearnet.
 
 **Sur clearnet, `log_peer_addresses = true` journalise désormais réellement
-chaque connexion acceptée** (BRIEF.md 13) — avant, le réglage ne servait à
+chaque connexion acceptée** — avant, le réglage ne servait à
 rien tant que rien n'écrivait effectivement dans le journal. Si `retention_days`
 reste sous un an, un avertissement le signale au démarrage : c'est le plancher
 légal français pour les données de connexion (art. L.34-1 CPCE, art. 6-II
@@ -219,7 +219,7 @@ hypercom_adminctl help
 | `motd set "texte"` | publie une annonce, effet immédiat |
 | `motd clear` | désactive l'annonce |
 | `backup <chemin>` | sauvegarde à chaud, instantané cohérent |
-| `reports` | signalements en attente (BRIEF.md 13) |
+| `reports` | signalements en attente |
 | `reports clear <id>` | classe un signalement, ne touche à rien d'autre |
 | `reports delete-post <id>` | supprime le post signalé — même effacement réel que l'auteur lui-même |
 | `ban <clé_hex>` | révoque l'authentification d'un compte |
@@ -249,8 +249,8 @@ n'importe quoi.
 fichier — en mode WAL, un `cp` pendant une écriture produit un fichier
 incohérent.
 
-**`reports` et `ban` sont l'exception unique posée au BRIEF.md 13,15** : une
-capacité de modération réservée à la conformité légale (LCEN art. 6-I-7),
+**`reports` et `ban` sont l'exception unique à l'absence de modération** : une
+capacité réservée à la conformité légale (LCEN art. 6-I-7),
 jamais à un contrôle éditorial général. `reports delete-post` n'existe
 délibérément que sur ce socket local — aucun message du protocole réseau ne
 permet à quiconque, y compris un client qui se prétendrait administrateur,

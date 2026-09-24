@@ -14,10 +14,10 @@ Noise プロトコルだけで成り立っている。
 は互いに関連付けられない、別々のものになる。
 
 詳しいドキュメント:[ARCHITECTURE.md](../../ARCHITECTURE.md)
-(各部分がどう組み合わさっているか)、[BRIEF.md](../../BRIEF.md)
-(設計上の判断)、[docs/ADMIN.md](../ADMIN.md)
+(各部分がどう組み合わさっているか)、[docs/ADMIN.md](../ADMIN.md)
 (サーバー運用)、[docs/THREAT_MODEL.md](../THREAT_MODEL.md)
 (何が守られていて何が守られていないか)、
+[SECURITY.md](../../SECURITY.md)(脆弱性の報告)、
 [COMMANDS.md](../../COMMANDS.md)(コマンド一覧)。
 
 ## 必要なもの
@@ -25,7 +25,7 @@ Noise プロトコルだけで成り立っている。
 - CMake 3.20 以上、C++20 対応コンパイラ(Windows なら MSVC、Linux
   なら GCC か Clang)
 - libsodium、SQLite、Dear ImGui:スクリプトで一度だけ取得する。
-  CMake が自動でダウンロードすることはない(BRIEF.md 15 参照)
+  CMake が自動でダウンロードすることはない
 
 **サーバーは Linux/WSL でしかビルドできない**(epoll と signalfd に
 依存しているため)。クライアント側——CLI とグラフィカルインター

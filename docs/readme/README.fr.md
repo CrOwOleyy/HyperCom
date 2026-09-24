@@ -12,17 +12,16 @@ service central. Une seule identité maîtresse permet de rejoindre autant de
 serveurs qu'on veut, chacun avec une identité distincte et non corrélable.
 
 Documentation complète : [ARCHITECTURE.md](../../ARCHITECTURE.md) (comment
-les pièces s'assemblent), [BRIEF.md](../../BRIEF.md) (décisions de
-conception), [docs/ADMIN.md](../ADMIN.md) (exploitation serveur),
+les pièces s'assemblent), [docs/ADMIN.md](../ADMIN.md) (exploitation serveur),
 [docs/THREAT_MODEL.md](../THREAT_MODEL.md) (ce qui est protégé, ce qui ne
-l'est pas), [COMMANDS.md](../../COMMANDS.md) (référence complète des
-commandes).
+l'est pas), [SECURITY.md](../../SECURITY.md) (signaler une faille),
+[COMMANDS.md](../../COMMANDS.md) (référence complète des commandes).
 
 ## Prérequis
 
 - CMake ≥ 3.20, compilateur C++20 (MSVC sur Windows, GCC/Clang sur Linux)
 - libsodium, SQLite et Dear ImGui : récupérés une fois via un script, jamais
-  automatiquement par CMake (BRIEF.md 15)
+  automatiquement par CMake
 
 **Le serveur ne compile que sous Linux/WSL** (il s'appuie sur epoll et
 signalfd). Le client — CLI et interface graphique — compile sous Windows et
