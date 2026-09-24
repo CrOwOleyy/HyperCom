@@ -9,7 +9,8 @@ Chaque communauté héberge son propre serveur, comme sur Discord, plutôt qu'un
 service central. Une seule identité maîtresse permet de rejoindre autant de
 serveurs qu'on veut, chacun avec une identité distincte et non corrélable.
 
-Documentation complète : [BRIEF.md](BRIEF.md) (décisions de conception),
+Documentation complète : [ARCHITECTURE.md](ARCHITECTURE.md) (comment les
+pièces s'assemblent), [BRIEF.md](BRIEF.md) (décisions de conception),
 [docs/ADMIN.md](docs/ADMIN.md) (exploitation serveur),
 [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) (ce qui est protégé, ce qui ne
 l'est pas), [COMMANDS.md](COMMANDS.md) (référence complète des commandes).
