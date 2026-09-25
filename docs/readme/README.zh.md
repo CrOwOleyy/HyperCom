@@ -137,3 +137,10 @@ ctest --test-dir build/windows -C RelWithDebInfo --output-on-failure
 
 测试套件详情、sanitizer 构建方式以及客户端欢迎流程:见
 [COMMANDS.md](../../COMMANDS.md)。
+
+## 现状
+
+这是一个原型:遇到 bug 是意料之中的事,有些部分也还比较粗糙。发现了
+问题?欢迎开一个 issue,如果已经有修复方案,也欢迎直接提 pull
+request。其他任何事情,可以联系
+[leyy@pepepak.fr](mailto:leyy@pepepak.fr)。

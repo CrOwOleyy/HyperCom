@@ -143,3 +143,10 @@ ctest --test-dir build/windows -C RelWithDebInfo --output-on-failure
 
 টেস্ট স্যুইটের বিস্তারিত, sanitizer দিয়ে বিল্ড, এবং ক্লায়েন্টের
 স্বাগত সিকোয়েন্স: দেখুন [COMMANDS.md](../../COMMANDS.md)।
+
+## অবস্থা
+
+এটা একটা প্রোটোটাইপ: বাগ পাওয়া স্বাভাবিক, আর কিছু অংশ এখনো একটু
+অমসৃণ। কোনো বাগ পেয়েছেন? একটা issue খুলুন, অথবা যদি আগে থেকেই কোনো
+ফিক্স থাকে তাহলে pull request পাঠান। বাকি যেকোনো কিছুর জন্য,
+[leyy@pepepak.fr](mailto:leyy@pepepak.fr)-এ যোগাযোগ করুন।

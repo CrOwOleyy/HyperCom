@@ -139,3 +139,10 @@ ctest --test-dir build/windows -C RelWithDebInfo --output-on-failure
 
 Détail des suites, builds sous sanitizers et séquence d'accueil du client :
 voir [COMMANDS.md](../../COMMANDS.md).
+
+## État
+
+C'est un prototype : des bugs sont à prévoir, et certaines parties
+restent encore un peu brutes. Vous en trouvez un ? Ouvrez une issue, ou
+envoyez une pull request si vous avez déjà un correctif. Pour tout le
+reste, contactez [leyy@pepepak.fr](mailto:leyy@pepepak.fr).

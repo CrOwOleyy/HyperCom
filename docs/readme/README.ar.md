@@ -140,3 +140,9 @@ ctest --test-dir build/windows -C RelWithDebInfo --output-on-failure
 
 تفاصيل مجموعات الاختبار، والبناء باستخدام أدوات sanitizer، وتسلسل
 الترحيب في العميل: انظر [COMMANDS.md](../../COMMANDS.md).
+
+## الحالة
+
+هذا نموذج أولي: تُوقَّع الأخطاء، وبعض الأجزاء ما زالت خشنة إلى حد ما.
+وجدت خطأ؟ افتح issue، أو أرسل pull request إذا كان لديك إصلاح جاهز.
+لأي شيء آخر، راسل [leyy@pepepak.fr](mailto:leyy@pepepak.fr).

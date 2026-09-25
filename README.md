@@ -138,3 +138,10 @@ ctest --test-dir build/windows -C RelWithDebInfo --output-on-failure
 
 Test suite details, sanitizer builds and the client's welcome sequence:
 see [COMMANDS.md](COMMANDS.md).
+
+## Status
+
+This is a prototype: expect bugs, and some parts are still rough around
+the edges. Found one? Open an issue, or send a pull request if you've
+already got a fix. For anything else, reach out at
+[leyy@pepepak.fr](mailto:leyy@pepepak.fr).
