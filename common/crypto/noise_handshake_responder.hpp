@@ -14,9 +14,9 @@ namespace hypercom::crypto {
 //
 // The server knows nothing about the client at the transport level: NK
 // only authenticates the responder. The client's identity is established
-// afterward, at the application level, by signing the challenge
-// (BRIEF.md 6). This separation is deliberate: it lets a client connect
-// anonymously, for instance just to read a public forum.
+// afterward, at the application level, by signing the challenge. This
+// separation is deliberate: it lets a client connect anonymously, for
+// instance just to read a public forum.
 class noise_handshake_responder {
 public:
     noise_handshake_responder(x25519_public_key const &static_public,

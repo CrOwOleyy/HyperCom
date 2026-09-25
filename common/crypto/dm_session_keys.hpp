@@ -5,7 +5,7 @@
 
 namespace hypercom::crypto {
 
-// Simplified X3DH (BRIEF.md 6). Three Diffie-Hellman exchanges, one secret:
+// Simplified X3DH. Three Diffie-Hellman exchanges, one secret:
 //
 //   DH1 = DH(IK_sender, SPK_recipient)     authenticates the sender
 //   DH2 = DH(EK_sender, IK_recipient)      authenticates the recipient

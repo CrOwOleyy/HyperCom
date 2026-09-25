@@ -1,4 +1,4 @@
--- Signalement et bannissement (BRIEF.md 13).
+-- Signalement et bannissement.
 --
 -- Deux obligations legales distinctes du contenu chiffre : un dispositif de
 -- signalement (LCEN art. 6-I-7) et la capacite d'agir une fois informe. Aucune

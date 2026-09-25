@@ -9,8 +9,8 @@
 
 namespace hypercom::proto {
 
-// Reporting is a legally required mechanism, not a moderation tool
-// (BRIEF.md 13): the server records it, it judges nothing, and neither
+// Reporting is a legally required mechanism, not a moderation tool: the
+// server records it, it judges nothing, and neither
 // message can ever carry the content of a DM, which stays unreadable to
 // it.
 //

@@ -30,8 +30,8 @@ struct limits_config {
     std::uint32_t max_frame_size = 1024 * 1024;
     std::uint32_t handshake_timeout_seconds = 10;
     // 0 = disabled: no application-level timeout on an authenticated
-    // session, per the project's choice (BRIEF.md 9). Only TCP keepalive
-    // reclaims a connection whose peer has genuinely vanished.
+    // session, per the project's choice. Only TCP keepalive reclaims a
+    // connection whose peer has genuinely vanished.
     std::uint32_t idle_timeout_seconds = 0;
     std::uint32_t requests_per_minute_per_address = 240;
     std::uint32_t requests_per_minute_per_identity = 600;

@@ -1,4 +1,4 @@
--- Hypercom -- schema initial (BRIEF.md 8).
+-- Hypercom -- schema initial.
 --
 -- Propriete du collaborateur : ce fichier evolue par ajout de nouvelles
 -- migrations, jamais par modification retroactive. Le serveur applique ce qui
@@ -67,8 +67,8 @@ CREATE TABLE profiles (
 );
 
 -- status : 0 demande, 1 acceptee, 2 bloquee. Le blocage est memorise ici mais
--- n'est PAS applique par le serveur : le filtrage reel vit dans le client
--- (BRIEF.md 2, anti-spam). Le serveur n'arbitre rien.
+-- n'est PAS applique par le serveur : le filtrage reel vit dans le client.
+-- Le serveur n'arbitre rien.
 CREATE TABLE friends (
     user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     friend_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

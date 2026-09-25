@@ -1,4 +1,4 @@
-# Applique la discipline de compilation exigee par BRIEF.md 10.
+# Applique la discipline de compilation exigee par la norme du projet.
 #
 #   -Wall -Wextra -Werror -fstack-protector-strong -D_FORTIFY_SOURCE=2
 #   -fPIE -pie -Wl,-z,relro,-z,now
@@ -21,7 +21,7 @@ function(hypercom_apply_strict_options target)
         target_link_options(${target} PRIVATE
             /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA /guard:cf)
     else()
-        # Jeu impose par BRIEF.md 10, non negociable.
+        # Jeu impose par la norme du projet, non negociable.
         target_compile_options(${target} PRIVATE
             -Wall -Wextra -Werror -fstack-protector-strong)
         if(HYPERCOM_PEDANTIC)

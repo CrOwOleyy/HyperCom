@@ -21,7 +21,7 @@ struct report_row {
 };
 
 // One repository per entity (rule O3). Records reports, never interprets
-// them: it's an intake channel, not an arbiter (BRIEF.md 13).
+// them: it's an intake channel, not an arbiter.
 class report_repository {
 public:
     explicit report_repository(database_handle &database);

@@ -5,7 +5,7 @@
 
 namespace hypercom::server {
 
-// Receiving a report (BRIEF.md 13). The server records it, it doesn't judge
+// Receiving a report. The server records it, it doesn't judge
 // anything -- no automatic action follows, it's the admin who reads the
 // queue via `reports` on the local socket.
 //

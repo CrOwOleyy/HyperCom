@@ -137,7 +137,7 @@ void server_runtime::accept_pending_connections(tcp_listener const &listener,
         // clearnet, redact_peer_address already applies the policy from
         // hypercom.conf -- writing the entry here is what makes that policy
         // actually effective instead of a setting that's never used for
-        // anything (BRIEF.md 13).
+        // anything.
         if (is_clearnet) {
             logger_.write_entry(
                 util::log_level::info,

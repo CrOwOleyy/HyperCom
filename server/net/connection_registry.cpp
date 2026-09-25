@@ -60,8 +60,8 @@ collect_expired_descriptors(connection_registry const &registry,
         bool const handshaking = session.phase != session_phase::authenticated;
         // idle_timeout_seconds == 0 means disabled: an authenticated
         // session stays open for as long as the peer is there, only TCP
-        // keepalive reclaims a truly dead connection (BRIEF.md 9, "no
-        // application-level timeout"). The handshake, on the other hand,
+        // keepalive reclaims a truly dead connection -- there is no
+        // application-level timeout. The handshake, on the other hand,
         // stays bounded: a connection that never finishes its Noise
         // handshake is the cheapest possible attack.
         if (!handshaking && limits.idle_timeout_seconds == 0) {

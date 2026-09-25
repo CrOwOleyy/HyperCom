@@ -1,4 +1,4 @@
-# Cibles de build dediees ASAN / UBSAN / TSAN exigees par BRIEF.md 10.
+# Cibles de build dediees ASAN / UBSAN / TSAN exigees par la norme du projet.
 #
 # Utilisation :
 #   cmake -B build-asan -DHYPERCOM_SANITIZER=address,undefined
