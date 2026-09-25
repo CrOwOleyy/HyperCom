@@ -67,9 +67,3 @@ run/
 hypercom_servers.dat
 hypercom_master.key
 imgui.ini
-
-# Pilotage du travail avec un assistant (audit, plan, instructions) --
-# utile en local, hors de propos pour un contributeur qui clone le depot.
-CLAUDE.md
-PLAN.md
-SPEC.md
