@@ -1,22 +1,23 @@
--- Unicite des pseudos insensible a la casse.
+-- Case-insensitive handle uniqueness.
 --
--- Le probleme corrige : la contrainte UNIQUE d'origine utilise la collation
--- BINARY de SQLite, donc "alice", "Alice" et "ALICE" etaient trois comptes
--- distincts, avec trois cles differentes et des noms visuellement identiques.
--- Sur un reseau sans moderation, personne n'est la pour arbitrer une
--- usurpation : il faut donc qu'elle soit impossible, pas arbitrable.
+-- The bug being fixed: the original UNIQUE constraint uses SQLite's
+-- BINARY collation, so "alice", "Alice" and "ALICE" were three distinct
+-- accounts, with three different keys and visually identical names. On a
+-- network with no moderation, nobody is there to arbitrate an
+-- impersonation: it has to be impossible, not arbitrable.
 --
--- NOCASE ne replie que l'ASCII A-Z, ce qui suffit exactement ici :
--- validate_handle n'accepte deja que de l'ASCII restreint, precisement pour
--- fermer la porte aux homoglyphes Unicode.
+-- NOCASE only folds ASCII A-Z, which is exactly enough here:
+-- validate_handle already only accepts restricted ASCII, precisely to
+-- close the door on Unicode homoglyphs.
 --
--- La casse choisie a l'inscription reste affichee telle quelle -- "Alice"
--- s'affiche avec sa majuscule. Seule la REinscription d'une variante devient
--- impossible.
+-- The casing chosen at registration is still displayed as-is -- "Alice"
+-- displays with its capital letter. Only RE-registering a different
+-- variant becomes impossible.
 --
--- ATTENTION, cette migration ECHOUE si la base contient deja des collisions.
--- C'est voulu : renommer le compte de quelqu'un en silence serait pire que de
--- refuser de demarrer. Le serveur s'arrete alors avec le message d'erreur de
--- sqlite, et l'administrateur tranche lui-meme -- voir docs/ADMIN.md.
+-- WARNING, this migration FAILS if the database already contains
+-- collisions. That's intentional: silently renaming someone's account
+-- would be worse than refusing to start. The server then stops with
+-- SQLite's error message, and the administrator decides -- see
+-- docs/ADMIN.md.
 
 CREATE UNIQUE INDEX idx_users_handle_nocase ON users(handle COLLATE NOCASE);

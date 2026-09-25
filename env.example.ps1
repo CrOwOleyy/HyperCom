@@ -16,8 +16,8 @@ function global:hserver {
     & $bin hypercom.conf @args
 }
 
-Write-Host "Environnement Hypercom (Windows Natif) chargé !" -ForegroundColor Green
-Write-Host "Commandes disponibles dans votre terminal PowerShell :" -ForegroundColor Yellow
-Write-Host "  hserver  -> Lancer le serveur natif Windows"
-Write-Host "  hcli     -> Lancer les commandes CLI"
-Write-Host "  hgui     -> Lancer l'interface graphique ImGui native Windows"
+Write-Host "Hypercom environment (native Windows) loaded!" -ForegroundColor Green
+Write-Host "Commands available in your PowerShell terminal:" -ForegroundColor Yellow
+Write-Host "  hserver  -> Launch the native Windows server"
+Write-Host "  hcli     -> Run CLI commands"
+Write-Host "  hgui     -> Launch the native Windows ImGui graphical interface"

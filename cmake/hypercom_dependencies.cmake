@@ -1,21 +1,21 @@
-# Resolution des trois seules dependances autorisees par la norme du projet :
-# libsodium, SQLite et Dear ImGui.
+# Resolution of the only three dependencies allowed by the project's
+# norm: libsodium, SQLite and Dear ImGui.
 #
-# Trois sources possibles, dans cet ordre de priorite :
-#   1. third_party/<nom>          (vendorise, mode recommande pour la prod)
-#   2. paquets systeme            (pkg-config ou find_package)
-#   3. echec explicite avec la commande exacte a lancer
+# Three possible sources, in this priority order:
+#   1. third_party/<name>         (vendored, recommended for production)
+#   2. system packages            (pkg-config or find_package)
+#   3. explicit failure with the exact command to run
 #
-# Aucune recuperation reseau n'est declenchee par CMake : le telechargement est
-# une action deliberee, faite via scripts/fetch_third_party.sh.
+# No network fetch is ever triggered by CMake: downloading is a
+# deliberate action, done through scripts/fetch_third_party.sh.
 
 set(HYPERCOM_THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/third_party")
 
 function(hypercom_fail_missing_dependency name hint)
     message(FATAL_ERROR
-        "hypercom: dependance '${name}' introuvable.\n"
-        "  Option 1 (vendorise) : ./scripts/fetch_third_party.sh\n"
-        "  Option 2 (systeme)   : ${hint}")
+        "hypercom: dependency '${name}' not found.\n"
+        "  Option 1 (vendored): ./scripts/fetch_third_party.sh\n"
+        "  Option 2 (system)  : ${hint}")
 endfunction()
 
 function(hypercom_require_libsodium)
@@ -37,7 +37,7 @@ function(hypercom_require_libsodium)
             if(WIN32)
                 target_compile_definitions(hypercom_sodium INTERFACE SODIUM_STATIC)
             endif()
-            message(STATUS "hypercom: libsodium vendorise -> third_party/libsodium")
+            message(STATUS "hypercom: vendored libsodium -> third_party/libsodium")
             return()
         endif()
     endif()
@@ -46,7 +46,7 @@ function(hypercom_require_libsodium)
         pkg_check_modules(SODIUM QUIET IMPORTED_TARGET libsodium)
         if(SODIUM_FOUND)
             target_link_libraries(hypercom_sodium INTERFACE PkgConfig::SODIUM)
-            message(STATUS "hypercom: libsodium systeme -> ${SODIUM_VERSION}")
+            message(STATUS "hypercom: system libsodium -> ${SODIUM_VERSION}")
             return()
         endif()
     endif()
@@ -58,7 +58,7 @@ function(hypercom_require_sqlite3)
     if(TARGET hypercom::sqlite3)
         return()
     endif()
-    # Mode privilegie : amalgamation compilee dans le binaire.
+    # Preferred mode: amalgamation compiled into the binary.
     if(EXISTS "${HYPERCOM_THIRD_PARTY_DIR}/sqlite3/sqlite3.c")
         add_library(hypercom_sqlite3 STATIC
             "${HYPERCOM_THIRD_PARTY_DIR}/sqlite3/sqlite3.c")
@@ -78,7 +78,7 @@ function(hypercom_require_sqlite3)
             SQLITE_DEFAULT_FOREIGN_KEYS=1)
         hypercom_silence_third_party(hypercom_sqlite3)
         add_library(hypercom::sqlite3 ALIAS hypercom_sqlite3)
-        message(STATUS "hypercom: sqlite3 amalgame -> third_party/sqlite3")
+        message(STATUS "hypercom: amalgamated sqlite3 -> third_party/sqlite3")
         return()
     endif()
     find_package(SQLite3 QUIET)
@@ -86,27 +86,28 @@ function(hypercom_require_sqlite3)
         add_library(hypercom_sqlite3 INTERFACE)
         target_link_libraries(hypercom_sqlite3 INTERFACE SQLite::SQLite3)
         add_library(hypercom::sqlite3 ALIAS hypercom_sqlite3)
-        message(STATUS "hypercom: sqlite3 systeme -> ${SQLite3_VERSION}")
+        message(STATUS "hypercom: system sqlite3 -> ${SQLite3_VERSION}")
         return()
     endif()
     hypercom_fail_missing_dependency("sqlite3"
         "apt install libsqlite3-dev")
 endfunction()
 
-# miniaudio : lecture du theme d'accueil, client graphique uniquement.
+# miniaudio: welcome theme playback, graphical client only.
 #
-# QUATRIEME DEPENDANCE, hors des trois autorisees par la norme du projet.
-# Justification : sortir un MP3 sur une carte son demande soit une
-# bibliotheque, soit un decodeur maison doublé de deux backends plateforme
-# (WASAPI, ALSA). miniaudio tient en un seul en-tete du domaine public, ne
-# touche que hypercom_client, et son absence ne casse rien -- le client se
-# construit alors avec audio_player_silent.cpp et l'intro se joue sans son.
+# FOURTH DEPENDENCY, outside the three allowed by the project's norm.
+# Justification: getting an MP3 out to a sound card requires either a
+# library, or a homegrown decoder paired with two platform backends
+# (WASAPI, ALSA). miniaudio fits in a single public-domain header, only
+# touches hypercom_client, and its absence breaks nothing -- the client
+# then builds with audio_player_silent.cpp and the intro plays without
+# sound.
 function(hypercom_try_miniaudio out_found)
     set(miniaudio_header "${HYPERCOM_THIRD_PARTY_DIR}/miniaudio/miniaudio.h")
     if(NOT EXISTS "${miniaudio_header}")
         message(STATUS
-            "hypercom: audio desactive -- third_party/miniaudio absent. "
-            "L'interface fonctionne, l'intro se joue sans musique.")
+            "hypercom: audio disabled -- third_party/miniaudio missing. "
+            "The interface works, the intro plays without music.")
         set(${out_found} FALSE PARENT_SCOPE)
         return()
     endif()
@@ -126,30 +127,31 @@ function(hypercom_try_miniaudio out_found)
     set(${out_found} TRUE PARENT_SCOPE)
 endfunction()
 
-# ImGui est optionnel : son absence desactive seulement le client graphique,
-# elle ne doit jamais casser la construction du serveur ni du client CLI.
+# ImGui is optional: its absence only disables the graphical client, it
+# must never break building the server or the CLI client.
 #
-# TENSION AVEC LA NORME DU PROJET, signalee explicitement :
-# Dear ImGui ne dessine rien tout seul, il exige un backend plateforme/rendu.
+# TENSION WITH THE PROJECT'S NORM, explicitly flagged:
+# Dear ImGui doesn't draw anything on its own, it requires a
+# platform/rendering backend.
 #
-# Choix retenu : glfw3 + OpenGL 3, sur Windows COMME sur Linux.
+# Choice made: glfw3 + OpenGL 3, on Windows JUST AS on Linux.
 #
-# L'alternative etait un backend par plateforme (Win32/DX11 d'un cote,
-# GLFW/OpenGL de l'autre), ce qui n'aurait ajoute aucune dependance sous
-# Windows. Elle a ete ecartee : deux backends, ce sont deux chemins
-# d'initialisation, deux boucles d'evenements et deux fois plus de code a
-# auditer, pour une interface qui affiche du texte dans des panneaux.
+# The alternative was a per-platform backend (Win32/DX11 on one side,
+# GLFW/OpenGL on the other), which wouldn't have added any dependency on
+# Windows. It was ruled out: two backends means two initialization
+# paths, two event loops, and twice the code to audit, for an interface
+# that displays text in panels.
 #
-# glfw3 est donc la seule dependance hors des trois autorisees par le brief.
-# Elle ne concerne QUE le client graphique : ni le serveur, ni le client CLI,
-# ni la bibliotheque commune n'en dependent, et leur build reste intact si elle
-# est absente.
+# glfw3 is therefore the only dependency outside the three allowed by
+# the project's norm. It concerns ONLY the graphical client: neither the
+# server, the CLI client, nor the common library depend on it, and their
+# build stays intact if it's absent.
 #   Linux   : apt install libglfw3-dev
-#   Windows : vcpkg install glfw3, ou binaires officiels glfw.org
+#   Windows : vcpkg install glfw3, or official binaries from glfw.org
 function(hypercom_try_imgui out_found)
     set(imgui_root "${HYPERCOM_THIRD_PARTY_DIR}/imgui")
     if(NOT EXISTS "${imgui_root}/imgui.cpp")
-        message(STATUS "hypercom: client graphique ignore -- third_party/imgui absent")
+        message(STATUS "hypercom: graphical client skipped -- third_party/imgui missing")
         set(${out_found} FALSE PARENT_SCOPE)
         return()
     endif()
@@ -189,8 +191,8 @@ function(hypercom_try_imgui out_found)
     endif()
     if(NOT glfw3_FOUND AND NOT GLFW3_FOUND)
         message(STATUS
-            "hypercom: client graphique ignore -- glfw3 absent. "
-            "Le serveur et le client CLI restent construits.")
+            "hypercom: graphical client skipped -- glfw3 missing. "
+            "The server and the CLI client still get built.")
         set(${out_found} FALSE PARENT_SCOPE)
         return()
     endif()

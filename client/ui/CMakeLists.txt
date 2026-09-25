@@ -1,6 +1,6 @@
-# Client graphique. Construit uniquement si Dear ImGui est vendorise ET si
-# glfw3 est disponible : son absence n'empeche jamais le serveur ni le client
-# CLI d'etre construits.
+# Graphical client. Only built if Dear ImGui is vendored AND glfw3 is
+# available: its absence never prevents the server or the CLI client
+# from being built.
 
 hypercom_try_miniaudio(HYPERCOM_AUDIO_AVAILABLE)
 
@@ -29,8 +29,8 @@ add_executable(hypercom_client
     ui_social_actions.cpp
     "${CMAKE_SOURCE_DIR}/client/cli/cli_options.cpp")
 
-# Une seule des deux implementations d'audio_player est compilee. gui_main n'a
-# donc aucun #ifdef a porter : il appelle la meme API dans les deux cas.
+# Only one of the two audio_player implementations gets compiled. So
+# gui_main has no #ifdef to carry: it calls the same API either way.
 if(HYPERCOM_AUDIO_AVAILABLE)
     target_sources(hypercom_client PRIVATE audio_player.cpp)
     target_link_libraries(hypercom_client PRIVATE hypercom::miniaudio)
@@ -46,22 +46,22 @@ hypercom_apply_executable_hardening(hypercom_client)
 hypercom_apply_sanitizers(hypercom_client)
 
 if(WIN32)
-    # Sous-systeme Windows : pas de console derriere la fenetre. En contrepartie
-    # stdout et stderr n'aboutissent nulle part, d'ou report_startup_failure()
-    # qui passe par une boite de dialogue pour les erreurs de demarrage.
+    # Windows subsystem: no console behind the window. In exchange,
+    # stdout and stderr go nowhere, hence report_startup_failure()
+    # routing startup errors through a dialog box instead.
     set_target_properties(hypercom_client PROPERTIES
         WIN32_EXECUTABLE TRUE
         LINK_FLAGS "/ENTRY:mainCRTStartup"
     )
 endif()
 
-# Le theme d'accueil doit se trouver a cote du binaire. TARGET_FILE_DIR gere
-# aussi les generateurs multi-configuration de MSVC, ou l'executable atterrit
-# dans un sous-repertoire Debug/ ou RelWithDebInfo/.
+# The welcome theme has to sit next to the binary. TARGET_FILE_DIR also
+# handles MSVC's multi-configuration generators, where the executable
+# lands in a Debug/ or RelWithDebInfo/ subdirectory.
 if(EXISTS "${CMAKE_SOURCE_DIR}/menu.mp3")
     add_custom_command(TARGET hypercom_client POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_SOURCE_DIR}/menu.mp3"
             "$<TARGET_FILE_DIR:hypercom_client>/menu.mp3"
-        COMMENT "copie de menu.mp3 a cote du client")
+        COMMENT "copying menu.mp3 next to the client")
 endif()

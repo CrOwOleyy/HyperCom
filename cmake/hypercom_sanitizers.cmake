@@ -1,22 +1,23 @@
-# Cibles de build dediees ASAN / UBSAN / TSAN exigees par la norme du projet.
+# Dedicated ASAN / UBSAN / TSAN build targets required by the project's
+# norm.
 #
-# Utilisation :
+# Usage:
 #   cmake -B build-asan -DHYPERCOM_SANITIZER=address,undefined
 #   cmake -B build-tsan -DHYPERCOM_SANITIZER=thread
 #
-# ASAN et TSAN sont mutuellement exclusifs : la configuration echoue plutot que
-# de produire un binaire silencieusement inutilisable.
+# ASAN and TSAN are mutually exclusive: configuration fails rather than
+# producing a silently unusable binary.
 
 set(HYPERCOM_SANITIZER "" CACHE STRING
-    "Sanitizers actifs : address, undefined, thread, ou une liste separee par des virgules")
+    "Active sanitizers: address, undefined, thread, or a comma-separated list")
 
 function(hypercom_validate_sanitizer_choice choice)
     string(FIND "${choice}" "thread" thread_position)
     string(FIND "${choice}" "address" address_position)
     if(NOT thread_position EQUAL -1 AND NOT address_position EQUAL -1)
         message(FATAL_ERROR
-            "hypercom: -fsanitize=thread et -fsanitize=address sont "
-            "incompatibles. Utiliser deux repertoires de build distincts.")
+            "hypercom: -fsanitize=thread and -fsanitize=address are "
+            "incompatible. Use two separate build directories.")
     endif()
 endfunction()
 
@@ -26,8 +27,8 @@ function(hypercom_apply_sanitizers target)
     endif()
     if(MSVC)
         message(WARNING
-            "hypercom: seul address est disponible sous MSVC, "
-            "HYPERCOM_SANITIZER=${HYPERCOM_SANITIZER} partiellement ignore.")
+            "hypercom: only address is available under MSVC, "
+            "HYPERCOM_SANITIZER=${HYPERCOM_SANITIZER} partially ignored.")
         target_compile_options(${target} PRIVATE /fsanitize=address)
         return()
     endif()
@@ -40,5 +41,5 @@ function(hypercom_apply_sanitizers target)
 endfunction()
 
 if(NOT HYPERCOM_SANITIZER STREQUAL "")
-    message(STATUS "hypercom: sanitizers actifs -> ${HYPERCOM_SANITIZER}")
+    message(STATUS "hypercom: active sanitizers -> ${HYPERCOM_SANITIZER}")
 endif()

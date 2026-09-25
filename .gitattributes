@@ -1,8 +1,8 @@
-# Règle G6 : fins de ligne UNIX (\n) sur tout le dépôt, sans exception.
-# Cette directive prime sur core.autocrlf, y compris sous Windows.
+# Rule G6: UNIX line endings (\n) across the whole repo, no exceptions.
+# This directive takes priority over core.autocrlf, even on Windows.
 * text=auto eol=lf
 
-# Fichiers binaires : aucune conversion de fin de ligne.
+# Binary files: no line ending conversion.
 *.png   binary
 *.jpg   binary
 *.ico   binary

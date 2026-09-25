@@ -1,7 +1,7 @@
-# Trois bibliotheques plutot qu'une seule, pour une raison precise :
-# hypercom_protocol ne lie PAS libsodium. C'est ce qui permet de fuzzer le
-# parseur en isolation complete et de le compiler partout, y
-# compris la ou aucune dependance n'est installee.
+# Three libraries rather than one, for a precise reason: hypercom_protocol
+# does NOT link libsodium. That's what makes it possible to fuzz the
+# parser in complete isolation and to compile it anywhere, including
+# where no dependency is installed.
 
 add_library(hypercom_util STATIC
     util/hex_codec.cpp
@@ -73,7 +73,7 @@ target_link_libraries(hypercom_crypto PUBLIC hypercom::sodium)
 hypercom_apply_strict_options(hypercom_crypto)
 hypercom_apply_sanitizers(hypercom_crypto)
 
-# Facade pour les consommateurs qui veulent tout.
+# Facade for consumers who want everything.
 add_library(hypercom_common INTERFACE)
 target_link_libraries(hypercom_common INTERFACE
     hypercom_util hypercom_protocol hypercom_crypto)

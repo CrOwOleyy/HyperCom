@@ -1,12 +1,13 @@
 #Requires -Version 5.1
 <#
-    Equivalent Windows de scripts/fetch_third_party.sh.
+    Windows equivalent of scripts/fetch_third_party.sh.
 
-    Meme modele de confiance : aucune empreinte n'est codee en dur. Le script
-    refuse d'installer une archive absente de third_party/checksums.txt, affiche
-    l'empreinte calculee et l'URL officielle ou la verifier, puis s'arrete.
+    Same trust model: no checksum is hardcoded. The script refuses to
+    install an archive absent from third_party/checksums.txt, prints
+    the computed checksum and the official URL to verify it against,
+    then stops.
 
-    usage :
+    usage:
       powershell -ExecutionPolicy Bypass -File scripts\fetch_third_party.ps1 all
 #>
 param(
@@ -47,32 +48,32 @@ function Assert-PinnedSha256([string] $Key, [string] $Path, [string] $VerifyUrl)
     $expected = Get-PinnedSha256 $Key
     if (-not $expected) {
         throw @"
-aucune empreinte enregistree pour '$Key'.
+no checksum recorded for '$Key'.
 
-  empreinte calculee : $actual
+  computed checksum: $actual
 
-  1. comparer cette valeur a celle publiee sur :
+  1. compare this value against the one published at:
        $VerifyUrl
-  2. si elle correspond, enregistrer la ligne suivante dans
-     third_party\checksums.txt puis relancer :
+  2. if it matches, record the following line in
+     third_party\checksums.txt then re-run:
 
        $Key  $actual
 
-  Tant que cette verification n'est pas faite, l'archive n'est pas installee.
+  Until this check is done, the archive isn't installed.
 "@
     }
     if ($actual -ne $expected.ToLower()) {
         Remove-Item $Path -Force
-        throw "EMPREINTE INVALIDE pour '$Key' -- archive supprimee. attendue=$expected obtenue=$actual"
+        throw "INVALID CHECKSUM for '$Key' -- archive deleted. expected=$expected got=$actual"
     }
-    Write-Step "empreinte verifiee : $Key"
+    Write-Step "checksum verified: $Key"
 }
 
 function Get-VerifiedArchive([string] $Url, [string] $Path, [string] $Key, [string] $VerifyUrl) {
     if (Test-Path $Path) {
-        Write-Step "archive deja presente : $(Split-Path -Leaf $Path)"
+        Write-Step "archive already present: $(Split-Path -Leaf $Path)"
     } else {
-        Write-Step "telechargement de $Url"
+        Write-Step "downloading $Url"
         Invoke-WebRequest -Uri $Url -OutFile $Path -UseBasicParsing
     }
     Assert-PinnedSha256 $Key $Path $VerifyUrl
@@ -81,7 +82,7 @@ function Get-VerifiedArchive([string] $Url, [string] $Path, [string] $Key, [stri
 function Install-Libsodium {
     $prefix = Join-Path $VendorDir 'libsodium'
     if (Test-Path (Join-Path $prefix 'include\sodium.h')) {
-        Write-Step 'libsodium deja installe'; return
+        Write-Step 'libsodium already installed'; return
     }
     $name    = "libsodium-$SodiumVersion-stable-msvc.zip"
     $archive = Join-Path $WorkDir $name
@@ -93,19 +94,19 @@ function Install-Libsodium {
     $lib = Get-ChildItem -Path $extract -Recurse -Filter 'libsodium.lib' |
         Where-Object { $_.FullName -match 'x64\\Release\\v14.*\\static' } |
         Select-Object -First 1
-    if (-not $lib) { throw "libsodium.lib x64/Release introuvable dans l'archive" }
+    if (-not $lib) { throw "libsodium.lib x64/Release not found in the archive" }
     New-Item -ItemType Directory -Force -Path (Join-Path $prefix 'lib') | Out-Null
     Copy-Item $lib.FullName (Join-Path $prefix 'lib\libsodium.lib') -Force
     $include = Get-ChildItem -Path $extract -Recurse -Directory -Filter 'include' |
         Select-Object -First 1
     Copy-Item $include.FullName $prefix -Recurse -Force
-    Write-Step 'libsodium installe dans third_party\libsodium'
+    Write-Step 'libsodium installed into third_party\libsodium'
 }
 
 function Install-Sqlite3 {
     $prefix = Join-Path $VendorDir 'sqlite3'
     if (Test-Path (Join-Path $prefix 'sqlite3.c')) {
-        Write-Step 'sqlite3 deja present'; return
+        Write-Step 'sqlite3 already present'; return
     }
     $name    = "$SqliteStem.zip"
     $archive = Join-Path $WorkDir $name
@@ -118,13 +119,13 @@ function Install-Sqlite3 {
     foreach ($file in @('sqlite3.c', 'sqlite3.h', 'sqlite3ext.h')) {
         Copy-Item (Join-Path $extract "$SqliteStem\$file") $prefix -Force
     }
-    Write-Step 'amalgamation sqlite3 installee dans third_party\sqlite3'
+    Write-Step 'sqlite3 amalgamation installed into third_party\sqlite3'
 }
 
 function Install-Imgui {
     $prefix = Join-Path $VendorDir 'imgui'
     if (Test-Path (Join-Path $prefix 'imgui.cpp')) {
-        Write-Step 'imgui deja present'; return
+        Write-Step 'imgui already present'; return
     }
     $name    = "imgui-$ImguiVersion.zip"
     $archive = Join-Path $WorkDir $name
@@ -136,13 +137,13 @@ function Install-Imgui {
     $inner = Get-ChildItem -Path $extract -Directory | Select-Object -First 1
     New-Item -ItemType Directory -Force -Path $prefix | Out-Null
     Copy-Item (Join-Path $inner.FullName '*') $prefix -Recurse -Force
-    Write-Step "dear imgui $ImguiVersion installe dans third_party\imgui"
+    Write-Step "dear imgui $ImguiVersion installed into third_party\imgui"
 }
 
 function Install-Glfw {
     $prefix = Join-Path $VendorDir 'glfw'
     if (Test-Path (Join-Path $prefix 'include\GLFW\glfw3.h')) {
-        Write-Step 'glfw deja present'; return
+        Write-Step 'glfw already present'; return
     }
     $name    = "glfw-3.4.bin.WIN64.zip"
     $archive = Join-Path $WorkDir $name
@@ -154,7 +155,7 @@ function Install-Glfw {
     $inner = Get-ChildItem -Path $extract -Directory | Select-Object -First 1
     New-Item -ItemType Directory -Force -Path $prefix | Out-Null
     Copy-Item (Join-Path $inner.FullName '*') $prefix -Recurse -Force
-    Write-Step "glfw 3.4 installe dans third_party\glfw"
+    Write-Step "glfw 3.4 installed into third_party\glfw"
 }
 
 New-Item -ItemType Directory -Force -Path $WorkDir | Out-Null
@@ -165,4 +166,4 @@ switch ($Target) {
     'glfw'      { Install-Glfw }
     'all'       { Install-Libsodium; Install-Sqlite3; Install-Imgui; Install-Glfw }
 }
-Write-Step 'termine'
+Write-Step 'done'

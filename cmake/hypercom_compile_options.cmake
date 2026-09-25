@@ -1,17 +1,17 @@
-# Applique la discipline de compilation exigee par la norme du projet.
+# Applies the compilation discipline required by the project's norm.
 #
 #   -Wall -Wextra -Werror -fstack-protector-strong -D_FORTIFY_SOURCE=2
 #   -fPIE -pie -Wl,-z,relro,-z,now
 #
-# L'equivalent MSVC est fourni pour le client Windows : /W4 /WX /GS /guard:cf,
-# plus les protections de l'editeur de liens (ASLR, DEP, entropie haute).
+# The MSVC equivalent is provided for the Windows client: /W4 /WX /GS
+# /guard:cf, plus the linker protections (ASLR, DEP, high entropy).
 
-# HYPERCOM_PEDANTIC ajoute un second cercle d'avertissements (-Wconversion,
-# -Wold-style-cast, -Wshadow...). Il est separe du jeu impose par le brief pour
-# une raison pratique : combine a -Werror, il transforme le moindre durcissement
-# de compilateur en build casse. Il est fait pour tourner en integration, pas
-# pour bloquer un developpeur qui change de version de GCC.
-option(HYPERCOM_PEDANTIC "Avertissements etendus, au-dela du jeu impose" OFF)
+# HYPERCOM_PEDANTIC adds a second circle of warnings (-Wconversion,
+# -Wold-style-cast, -Wshadow...). It's kept separate from the mandatory
+# set for a practical reason: combined with -Werror, it turns the
+# slightest compiler upgrade into a broken build. It's meant to run in
+# integration, not to block a developer switching GCC versions.
+option(HYPERCOM_PEDANTIC "Extended warnings, beyond the mandatory set" OFF)
 
 function(hypercom_apply_strict_options target)
     if(MSVC)
@@ -21,7 +21,7 @@ function(hypercom_apply_strict_options target)
         target_link_options(${target} PRIVATE
             /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA /guard:cf)
     else()
-        # Jeu impose par la norme du projet, non negociable.
+        # Set required by the project's norm, non-negotiable.
         target_compile_options(${target} PRIVATE
             -Wall -Wextra -Werror -fstack-protector-strong)
         if(HYPERCOM_PEDANTIC)
@@ -30,8 +30,8 @@ function(hypercom_apply_strict_options target)
                 -Wnon-virtual-dtor -Wold-style-cast -Woverloaded-virtual
                 -Wdouble-promotion -Wformat=2 -Wundef)
         endif()
-        # _FORTIFY_SOURCE exige une optimisation active : l'activer en Debug
-        # ne ferait que produire un avertissement du preprocesseur.
+        # _FORTIFY_SOURCE requires optimization to be active: enabling it
+        # in Debug would only produce a preprocessor warning.
         target_compile_definitions(${target} PRIVATE
             $<$<NOT:$<CONFIG:Debug>>:_FORTIFY_SOURCE=2>)
         if(NOT APPLE)
@@ -41,7 +41,7 @@ function(hypercom_apply_strict_options target)
     endif()
 endfunction()
 
-# Les executables sont en plus lies en PIE (ASLR complet).
+# Executables are additionally linked as PIE (full ASLR).
 function(hypercom_apply_executable_hardening target)
     hypercom_apply_strict_options(${target})
     if(NOT MSVC)
@@ -50,8 +50,8 @@ function(hypercom_apply_executable_hardening target)
     endif()
 endfunction()
 
-# Le code tiers (sqlite3, imgui) ne passe pas -Werror : il n'est pas sous notre
-# controle et sa norme n'est pas la notre.
+# Third-party code (sqlite3, imgui) doesn't get -Werror: it's not under
+# our control and its norm isn't ours.
 function(hypercom_silence_third_party target)
     if(MSVC)
         target_compile_options(${target} PRIVATE /W0)

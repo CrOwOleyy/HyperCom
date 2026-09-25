@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Script de packaging AppImage sous Linux
+# AppImage packaging script for Linux
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
@@ -16,15 +16,15 @@ mkdir -p "${APPDIR}/usr/share/applications"
 mkdir -p "${APPDIR}/usr/share/icons/hicolor/256x256/apps"
 mkdir -p "${PKG_DIR}"
 
-# 1. Compilation des binaires
+# 1. Build the binaries
 cmake -S "${ROOT_DIR}" -B "${BUILD_DIR}" -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build "${BUILD_DIR}" -j --target hypercom_client hypercom_cli
 
-# 2. Copie des binaires dans AppDir
+# 2. Copy the binaries into AppDir
 cp "${BUILD_DIR}/bin/hypercom_client" "${APPDIR}/usr/bin/"
 cp "${BUILD_DIR}/bin/hypercom_cli" "${APPDIR}/usr/bin/"
 
-# 3. Fichier .desktop pour AppImage
+# 3. .desktop file for AppImage
 cat <<'EOF' > "${APPDIR}/hypercom.desktop"
 [Desktop Entry]
 Name=Hypercom
@@ -32,15 +32,15 @@ Exec=hypercom_client
 Icon=hypercom
 Type=Application
 Categories=Network;InstantMessaging;
-Comment=Reseau social chiffre de bout en bout
+Comment=End-to-end encrypted social network
 EOF
 
-# 4. Icone fictive/SVG minimale si absente
+# 4. Placeholder/minimal SVG icon if absent
 if [ ! -f "${APPDIR}/hypercom.png" ]; then
     touch "${APPDIR}/hypercom.png"
 fi
 
-# 5. AppRun script autonome
+# 5. Standalone AppRun script
 cat <<'EOF' > "${APPDIR}/AppRun"
 #!/bin/sh
 HERE="$(dirname "$(readlink -f "$0")")"
@@ -50,11 +50,11 @@ exec "${HERE}/usr/bin/hypercom_client" "$@"
 EOF
 chmod +x "${APPDIR}/AppRun"
 
-# 6. Generation AppImage via appimagetool si installe
+# 6. Generate the AppImage via appimagetool if installed
 if command -v appimagetool >/dev/null 2>&1; then
     appimagetool "${APPDIR}" "${PKG_DIR}/Hypercom-x86_64.AppImage"
-    echo "=== AppImage generee dans : ${PKG_DIR}/Hypercom-x86_64.AppImage ==="
+    echo "=== AppImage generated at: ${PKG_DIR}/Hypercom-x86_64.AppImage ==="
 else
-    echo "=== Structure AppDir preparee sous : ${APPDIR} ==="
-    echo "(Pour produire le fichier .AppImage binaire final, installez 'appimagetool')"
+    echo "=== AppDir structure prepared at: ${APPDIR} ==="
+    echo "(To produce the final .AppImage binary, install 'appimagetool')"
 fi

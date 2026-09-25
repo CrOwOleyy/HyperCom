@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(hypercom
     VERSION 1.0.0
-    DESCRIPTION "Reseau social non modere, chiffre de bout en bout"
+    DESCRIPTION "Unmoderated, end-to-end encrypted social network"
     LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -22,10 +22,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-option(HYPERCOM_BUILD_SERVER "Construire le serveur (Linux uniquement)" ON)
-option(HYPERCOM_BUILD_GUI    "Construire le client graphique ImGui"     ON)
-option(HYPERCOM_BUILD_TESTS  "Construire les tests unitaires"           ON)
-option(HYPERCOM_BUILD_FUZZ   "Construire les harnais libFuzzer"         OFF)
+option(HYPERCOM_BUILD_SERVER "Build the server (Linux only)"       ON)
+option(HYPERCOM_BUILD_GUI    "Build the ImGui graphical client"    ON)
+option(HYPERCOM_BUILD_TESTS  "Build the unit tests"                ON)
+option(HYPERCOM_BUILD_FUZZ   "Build the libFuzzer harnesses"       OFF)
 
 include(hypercom_compile_options)
 include(hypercom_sanitizers)
@@ -61,7 +61,7 @@ endif()
 
 set(CPACK_PACKAGE_NAME "hypercom")
 set(CPACK_PACKAGE_VENDOR "Hypercom")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Reseau social chiffre de bout en bout")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "End-to-end encrypted social network")
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
@@ -79,4 +79,4 @@ endif()
 
 include(CPack)
 
-message(STATUS "hypercom: configuration ${CMAKE_BUILD_TYPE} pour ${CMAKE_SYSTEM_NAME}")
+message(STATUS "hypercom: ${CMAKE_BUILD_TYPE} configuration for ${CMAKE_SYSTEM_NAME}")

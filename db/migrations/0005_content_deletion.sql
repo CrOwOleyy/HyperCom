@@ -1,26 +1,26 @@
--- Suppression de son propre contenu par son auteur.
+-- Deletion of one's own content by its author.
 --
--- Le reseau n'a aucune moderation : personne ne peut effacer le contenu de
--- quelqu'un d'autre, ni un utilisateur, ni un administrateur. En revanche
--- chacun reste maitre de ce qu'il a lui-meme publie -- c'est la seule
--- suppression que le protocole autorise, et elle est verifiee cote serveur
--- par un WHERE author_id qui rend l'usurpation impossible plutot
--- qu'arbitrable.
+-- The network has no moderation: nobody can erase someone else's
+-- content, neither a user nor an administrator. Everyone does stay in
+-- control of what they themselves published, though -- that's the only
+-- deletion the protocol allows, and it's checked server-side by a WHERE
+-- author_id that makes impersonation impossible rather than merely
+-- arbitrable.
 --
--- Pourquoi une colonne et pas un DELETE : la ligne doit survivre pour que
--- l'arborescence des commentaires tienne. Effacer un commentaire au milieu
--- d'un fil emporterait toutes les reponses qui s'y rattachent
--- (ON DELETE CASCADE), donc le contenu d'autres personnes -- exactement ce
--- que le projet interdit.
+-- Why a column and not a DELETE: the row has to survive for the comment
+-- tree to hold together. Deleting a comment in the middle of a thread
+-- would take every reply attached to it down with it (ON DELETE
+-- CASCADE), meaning other people's content -- exactly what the project
+-- forbids.
 --
--- Le texte lui-meme est reellement efface a la suppression (title et body mis
--- a la chaine vide par le serveur), pas seulement masque a l'affichage. Un
--- masquage cote client laisserait le contenu dans la base et dans chaque
--- sauvegarde, ce qui ne serait pas une suppression.
+-- The text itself is genuinely erased on deletion (title and body set to
+-- an empty string by the server), not just hidden from display. Hiding
+-- it client-side would leave the content in the database and in every
+-- backup, which wouldn't be a deletion.
 --
--- deleted_at porte la date plutot qu'un simple booleen : meme cout de
--- stockage, et l'information est utile a l'administrateur qui inspecte la
--- base. NULL signifie "visible".
+-- deleted_at carries the date rather than a plain boolean: same storage
+-- cost, and the information is useful to an administrator inspecting the
+-- database. NULL means "visible".
 
 ALTER TABLE posts ADD COLUMN deleted_at INTEGER;
 ALTER TABLE comments ADD COLUMN deleted_at INTEGER;
