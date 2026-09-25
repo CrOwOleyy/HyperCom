@@ -16,8 +16,8 @@ struct user_row {
     std::int64_t id = 0;
     proto::wire_public_key pubkey{};
     std::string handle;
-    // Reserved for action on a report (BRIEF.md 13): a banned account can
-    // no longer authenticate, which leaves its past content untouched --
+    // Reserved for action on a report: a banned account can no longer
+    // authenticate, which leaves its past content untouched --
     // banning and deleting remain two distinct, deliberate actions.
     bool banned = false;
 };

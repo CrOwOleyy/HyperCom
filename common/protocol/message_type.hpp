@@ -66,8 +66,8 @@ enum class message_type : std::uint8_t {
     blob_locate_request = 0x61,
     blob_peers_response = 0x62,
 
-    // Reporting -- 0x7*. An intake channel, not a moderation tool
-    // (BRIEF.md 13): the server records the report, it judges nothing.
+    // Reporting -- 0x7*. An intake channel, not a moderation tool: the
+    // server records the report, it judges nothing.
     // A DM is never reported by its content, which stays unreadable --
     // only the sender's account can be, via report_account_request.
     report_post_request = 0x70,

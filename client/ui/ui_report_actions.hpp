@@ -8,7 +8,7 @@
 
 namespace hypercom::client {
 
-// Reporting (BRIEF.md 13). No reason entered from the GUI -- just
+// Reporting. No reason entered from the GUI -- just
 // report, quickly. The CLI (report-post/report-account) remains
 // available for anyone who wants to attach an explanation.
 

@@ -8,7 +8,7 @@
 namespace hypercom::crypto {
 
 // A user's identity IS this key pair. There is no email, no phone number,
-// and no server-side password (BRIEF.md 2).
+// and no server-side password.
 //
 // Accepted trade-off in v1: lose the key, lose the account. No recovery
 // procedure exists, and that is exactly what guarantees no administrator

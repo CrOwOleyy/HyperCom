@@ -54,8 +54,8 @@ void check_limits(limits_config const &limits,
             "descripteur");
     }
     // idle_timeout_seconds == 0 is valid and means disabled: the protocol
-    // deliberately has no application-level timeout (BRIEF.md 9), only TCP
-    // keepalive reclaims an authenticated session whose peer has vanished.
+    // deliberately has no application-level timeout, only TCP keepalive
+    // reclaims an authenticated session whose peer has vanished.
 }
 
 } // namespace
@@ -86,8 +86,7 @@ bool validate_config(server_config const &config,
             "reglage pour revenir au comportement non surveille.");
         // One year, not an arbitrary value: it's the legal floor (art.
         // L.34-1 CPCE, art. 6-II LCEN, decree of 2025-10-21). Below that,
-        // logging IPs only gives the appearance of compliance (BRIEF.md
-        // 13).
+        // logging IPs only gives the appearance of compliance.
         constexpr std::uint32_t LEGAL_RETENTION_MINIMUM_DAYS = 365;
         if (config.logging.retention_days < LEGAL_RETENTION_MINIMUM_DAYS) {
             warnings.emplace_back(

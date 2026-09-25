@@ -24,8 +24,8 @@ public:
                                    std::string_view handle,
                                    std::int64_t &out_id);
 
-    // Reserved for action on a report (BRIEF.md 13). Revokes
-    // authentication, doesn't touch any content already published.
+    // Reserved for action on a report. Revokes authentication, doesn't
+    // touch any content already published.
     [[nodiscard]] bool set_banned(std::int64_t user_id, bool banned);
 
     // There is deliberately NO update_last_seen: recording the last

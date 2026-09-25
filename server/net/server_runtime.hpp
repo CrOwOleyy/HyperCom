@@ -39,7 +39,7 @@ private:
 
     // is_clearnet identifies the listener behind the call: it's what
     // guarantees an onion connection is never logged, even if
-    // log_peer_addresses is on -- see BRIEF.md 13.
+    // log_peer_addresses is on.
     void accept_pending_connections(tcp_listener const &listener,
                                     bool is_clearnet);
 

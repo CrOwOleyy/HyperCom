@@ -1,5 +1,5 @@
 ---
-# Norme Hypercom — voir BRIEF.md §11.
+# Norme de code Hypercom.
 # Encode mécaniquement les règles L4, G7 et G8.
 # La règle L6 (aucune ligne vide dans un corps de fonction) n'est PAS exprimable
 # ici : clang-format ne sait pas distinguer l'intérieur d'une fonction du reste

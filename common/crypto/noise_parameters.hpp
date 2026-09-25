@@ -7,7 +7,7 @@
 
 namespace hypercom::crypto {
 
-// Noise suite chosen as a replacement for TLS (BRIEF.md 5).
+// Noise suite chosen as a replacement for TLS.
 //
 //   Noise_NK_25519_ChaChaPoly_SHA256
 //

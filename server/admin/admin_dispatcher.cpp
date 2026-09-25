@@ -20,7 +20,7 @@ namespace {
            "  motd set \"texte\"           publie une annonce\n"
            "  motd clear                 desactive l'annonce\n"
            "  backup <chemin>            sauvegarde a chaud de la base\n"
-           "  reports [list]             signalements en attente (BRIEF.md 13)\n"
+           "  reports [list]             signalements en attente\n"
            "  reports clear <id>         classe un signalement\n"
            "  reports delete-post <id>   supprime le post signale\n"
            "  ban <cle_hex>              revoque l'authentification d'un compte\n"

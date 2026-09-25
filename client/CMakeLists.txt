@@ -23,7 +23,7 @@ hypercom_apply_strict_options(hypercom_client_core)
 hypercom_apply_sanitizers(hypercom_client_core)
 
 # Client en ligne de commande : sert a valider le protocole et la crypto sans
-# dependre du rendu (BRIEF.md 14, question 3).
+# dependre du rendu.
 add_executable(hypercom_cli
     cli/cli_content_commands.cpp
     cli/cli_content_delete_commands.cpp

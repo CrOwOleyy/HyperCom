@@ -1,6 +1,6 @@
 # Trois bibliotheques plutot qu'une seule, pour une raison precise :
 # hypercom_protocol ne lie PAS libsodium. C'est ce qui permet de fuzzer le
-# parseur en isolation complete (BRIEF.md 10) et de le compiler partout, y
+# parseur en isolation complete et de le compiler partout, y
 # compris la ou aucune dependance n'est installee.
 
 add_library(hypercom_util STATIC

@@ -20,7 +20,7 @@ constexpr std::uint32_t MAX_SKIPPED_MESSAGE_KEYS = 1000;
 //
 // Concrete consequence: someone who seizes the machine today and obtains
 // ck_n can NOT read back messages 0..n-1. This is the symmetric forward
-// secrecy promised by BRIEF.md 6.
+// secrecy the ratchet is meant to provide.
 //
 // Known v1 limitation: the full Diffie-Hellman ratchet, which would also
 // protect FUTURE messages after a compromise, is coming in v2. The envelope

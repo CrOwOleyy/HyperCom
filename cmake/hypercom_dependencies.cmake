@@ -1,4 +1,4 @@
-# Resolution des trois seules dependances autorisees par BRIEF.md 15 :
+# Resolution des trois seules dependances autorisees par la norme du projet :
 # libsodium, SQLite et Dear ImGui.
 #
 # Trois sources possibles, dans cet ordre de priorite :
@@ -58,7 +58,7 @@ function(hypercom_require_sqlite3)
     if(TARGET hypercom::sqlite3)
         return()
     endif()
-    # Mode privilegie par BRIEF.md 2 : amalgamation compilee dans le binaire.
+    # Mode privilegie : amalgamation compilee dans le binaire.
     if(EXISTS "${HYPERCOM_THIRD_PARTY_DIR}/sqlite3/sqlite3.c")
         add_library(hypercom_sqlite3 STATIC
             "${HYPERCOM_THIRD_PARTY_DIR}/sqlite3/sqlite3.c")
@@ -95,7 +95,7 @@ endfunction()
 
 # miniaudio : lecture du theme d'accueil, client graphique uniquement.
 #
-# QUATRIEME DEPENDANCE, hors des trois autorisees par BRIEF.md 15.
+# QUATRIEME DEPENDANCE, hors des trois autorisees par la norme du projet.
 # Justification : sortir un MP3 sur une carte son demande soit une
 # bibliotheque, soit un decodeur maison doublé de deux backends plateforme
 # (WASAPI, ALSA). miniaudio tient en un seul en-tete du domaine public, ne
@@ -129,7 +129,7 @@ endfunction()
 # ImGui est optionnel : son absence desactive seulement le client graphique,
 # elle ne doit jamais casser la construction du serveur ni du client CLI.
 #
-# TENSION AVEC BRIEF.md 15, signalee explicitement :
+# TENSION AVEC LA NORME DU PROJET, signalee explicitement :
 # Dear ImGui ne dessine rien tout seul, il exige un backend plateforme/rendu.
 #
 # Choix retenu : glfw3 + OpenGL 3, sur Windows COMME sur Linux.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Recupere les dependances de BRIEF.md 15 dans third_party/.
+# Recupere les dependances autorisees dans third_party/.
 #
 # Le telechargement est volontairement une action explicite : CMake ne va
 # jamais chercher quoi que ce soit sur le reseau tout seul.

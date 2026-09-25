@@ -15,8 +15,8 @@ namespace hypercom::server {
 // through a permission a client could exercise. That's the door the project
 // exists to keep closed to the network.
 //
-// The only exception, laid out in BRIEF.md 13, lives elsewhere: the
-// `reports delete-post` admin command, on the local Unix socket -- never
+// The only exception lives elsewhere: the `reports delete-post` admin
+// command, on the local Unix socket -- never
 // reachable from the network, reserved for responding to a legal report.
 // post_repository::admin_delete_post() is only ever called from there, never
 // from a handler that reads a client message.
