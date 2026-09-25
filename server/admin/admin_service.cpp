@@ -49,8 +49,8 @@ constexpr int SEND_FLAGS = 0;
                                 bool &has_remaining)
 {
     while (!buffer.empty()) {
-        auto const sent = ::send(descriptor, buffer.data(),
-                                 static_cast<int>(buffer.size()), SEND_FLAGS);
+        auto const sent = ::send(descriptor, buffer.data(), buffer.size(),
+                                 SEND_FLAGS);
         if (sent > 0) {
             buffer.erase(0, static_cast<std::size_t>(sent));
             continue;

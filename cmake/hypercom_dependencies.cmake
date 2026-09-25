@@ -25,7 +25,7 @@ function(hypercom_require_libsodium)
     add_library(hypercom_sodium INTERFACE)
     add_library(hypercom::sodium ALIAS hypercom_sodium)
     if(EXISTS "${HYPERCOM_THIRD_PARTY_DIR}/libsodium/include/sodium.h")
-        target_include_directories(hypercom_sodium INTERFACE
+        target_include_directories(hypercom_sodium SYSTEM INTERFACE
             "${HYPERCOM_THIRD_PARTY_DIR}/libsodium/include")
         find_library(HYPERCOM_SODIUM_LIBRARY
             NAMES sodium libsodium
@@ -62,7 +62,11 @@ function(hypercom_require_sqlite3)
     if(EXISTS "${HYPERCOM_THIRD_PARTY_DIR}/sqlite3/sqlite3.c")
         add_library(hypercom_sqlite3 STATIC
             "${HYPERCOM_THIRD_PARTY_DIR}/sqlite3/sqlite3.c")
-        target_include_directories(hypercom_sqlite3 PUBLIC
+        # SYSTEM: sqlite3.h itself uses an old-style cast internally. Marking
+        # the include path as a system header suppresses our warning flags
+        # for it specifically, in every file that includes it -- silencing
+        # hypercom_sqlite3's own compile only covers sqlite3.c, not callers.
+        target_include_directories(hypercom_sqlite3 SYSTEM PUBLIC
             "${HYPERCOM_THIRD_PARTY_DIR}/sqlite3")
         target_compile_definitions(hypercom_sqlite3 PUBLIC
             SQLITE_THREADSAFE=1
@@ -109,7 +113,7 @@ function(hypercom_try_miniaudio out_found)
     if(NOT TARGET hypercom::miniaudio)
         add_library(hypercom_miniaudio STATIC
             "${CMAKE_SOURCE_DIR}/client/ui/miniaudio_implementation.c")
-        target_include_directories(hypercom_miniaudio PUBLIC
+        target_include_directories(hypercom_miniaudio SYSTEM PUBLIC
             "${HYPERCOM_THIRD_PARTY_DIR}/miniaudio")
         hypercom_silence_third_party(hypercom_miniaudio)
         if(UNIX AND NOT APPLE)
@@ -168,7 +172,7 @@ function(hypercom_try_imgui out_found)
         if(HYPERCOM_GLFW_LIBRARY)
             if(NOT TARGET hypercom_glfw)
                 add_library(hypercom_glfw INTERFACE)
-                target_include_directories(hypercom_glfw INTERFACE "${HYPERCOM_THIRD_PARTY_DIR}/glfw/include")
+                target_include_directories(hypercom_glfw SYSTEM INTERFACE "${HYPERCOM_THIRD_PARTY_DIR}/glfw/include")
                 target_link_libraries(hypercom_glfw INTERFACE "${HYPERCOM_GLFW_LIBRARY}")
             endif()
             set(glfw3_FOUND TRUE)
@@ -195,7 +199,7 @@ function(hypercom_try_imgui out_found)
         "${imgui_root}/backends/imgui_impl_glfw.cpp"
         "${imgui_root}/backends/imgui_impl_opengl3.cpp")
     add_library(hypercom_imgui STATIC ${imgui_sources})
-    target_include_directories(hypercom_imgui PUBLIC
+    target_include_directories(hypercom_imgui SYSTEM PUBLIC
         "${imgui_root}" "${imgui_root}/backends")
     if(TARGET hypercom_glfw)
         target_link_libraries(hypercom_imgui PUBLIC hypercom_glfw OpenGL::GL)

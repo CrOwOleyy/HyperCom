@@ -144,7 +144,7 @@ bool tcp_client_socket::connect_to_host(std::string const &host,
                         int
 #endif
                         >(attempt),
-                    entry->ai_addr, static_cast<int>(entry->ai_addrlen)) == 0) {
+                    entry->ai_addr, entry->ai_addrlen) == 0) {
             handle_ = attempt;
             apply_receive_timeout(handle_);
             apply_keepalive(handle_);
