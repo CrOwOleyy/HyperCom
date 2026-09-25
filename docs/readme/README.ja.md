@@ -143,3 +143,10 @@ ctest --test-dir build/windows -C RelWithDebInfo --output-on-failure
 
 テストスイートの詳細、サニタイザー付きビルド、クライアントの起動
 演出については [COMMANDS.md](../../COMMANDS.md) を参照。
+
+## 現在の状態
+
+これはプロトタイプだ――バグがあることは織り込み済みで、まだ荒削り
+な部分も残っている。何か見つけたら issue を立てるか、すでに修正が
+あるなら pull request を送ってほしい。それ以外の用件は
+[leyy@pepepak.fr](mailto:leyy@pepepak.fr) まで。

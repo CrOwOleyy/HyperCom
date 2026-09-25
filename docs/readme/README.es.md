@@ -141,3 +141,10 @@ ctest --test-dir build/windows -C RelWithDebInfo --output-on-failure
 
 Detalle de las suites, compilaciones con sanitizers y la secuencia de
 bienvenida del cliente: ver [COMMANDS.md](../../COMMANDS.md).
+
+## Estado
+
+Esto es un prototipo: hay que esperar errores, y algunas partes todavía
+están un poco en bruto. ¿Encontraste uno? Abre un issue, o manda un
+pull request si ya tienes una solución. Para cualquier otra cosa,
+escribe a [leyy@pepepak.fr](mailto:leyy@pepepak.fr).

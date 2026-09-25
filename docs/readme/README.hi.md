@@ -141,3 +141,10 @@ ctest --test-dir build/windows -C RelWithDebInfo --output-on-failure
 
 टेस्ट सुइट्स का विवरण, sanitizer के साथ बिल्ड, और क्लाइंट की वेलकम
 सीक्वेंस: देखें [COMMANDS.md](../../COMMANDS.md)।
+
+## स्थिति
+
+यह एक प्रोटोटाइप है: बग्स मिलना तय है, और कुछ हिस्से अभी भी थोड़े
+कच्चे हैं। कोई बग मिला? एक issue खोलें, या अगर आपके पास पहले से
+फ़िक्स है तो pull request भेजें। बाकी किसी भी बात के लिए,
+[leyy@pepepak.fr](mailto:leyy@pepepak.fr) पर संपर्क करें।
