@@ -1,18 +1,18 @@
--- Suppression du traceur de presence.
+-- Removal of the presence tracker.
 --
--- users.last_seen etait ecrit a CHAQUE authentification et servi a N'IMPORTE
--- QUEL utilisateur par profile_get. Concretement, n'importe qui pouvait
--- interroger le profil de quelqu'un toutes les trente secondes et reconstituer
--- ses horaires de connexion, ses habitudes et ses absences.
+-- users.last_seen was written on EVERY authentication and served to ANY
+-- user by profile_get. Concretely, anyone could query someone's profile
+-- every thirty seconds and reconstruct their connection times, habits,
+-- and absences.
 --
--- C'est exactement ce que le projet existe pour rendre impossible, et ce
--- n'etait meme pas reserve a un administrateur : c'etait une fonctionnalite
--- offerte a tout le monde.
+-- This is exactly what the project exists to make impossible, and it
+-- wasn't even restricted to an administrator: it was a feature offered
+-- to everyone.
 --
--- La colonne disparait plutot que d'etre masquee a l'affichage : ce qui n'est
--- pas ecrit ne peut pas fuiter, ni etre saisi avec le disque.
+-- The column disappears rather than being hidden from display: what
+-- isn't written can't leak, nor be seized with the disk.
 --
--- Consequence : plus aucun moyen de savoir si quelqu'un est en ligne, ni quand
--- il l'a ete. C'est le comportement recherche, pas un effet de bord.
+-- Consequence: no way left to know whether someone is online, or when
+-- they last were. That's the intended behavior, not a side effect.
 
 ALTER TABLE users DROP COLUMN last_seen;

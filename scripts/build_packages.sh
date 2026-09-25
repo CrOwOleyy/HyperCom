@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Script de packaging automatique sous Linux (DEB + TAR.GZ)
+# Automatic Linux packaging script (DEB + TAR.GZ)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 BUILD_DIR="${ROOT_DIR}/build/linux"
 PKG_DIR="${BUILD_DIR}/packages"
 
-echo "=== [Hypercom] Packaging Linux ==="
-echo "Dossier de build : ${BUILD_DIR}"
+echo "=== [Hypercom] Linux Packaging ==="
+echo "Build directory: ${BUILD_DIR}"
 
 mkdir -p "${BUILD_DIR}"
 mkdir -p "${PKG_DIR}"
@@ -23,5 +23,5 @@ cpack -G "DEB;TGZ"
 
 mv -f hypercom-*.deb hypercom-*.tar.gz "${PKG_DIR}/" 2>/dev/null || true
 
-echo "=== [Hypercom] Paquets generes dans : ${PKG_DIR} ==="
+echo "=== [Hypercom] Packages generated in: ${PKG_DIR} ==="
 ls -lh "${PKG_DIR}"

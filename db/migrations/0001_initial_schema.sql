@@ -1,14 +1,15 @@
--- Hypercom -- schema initial.
+-- Hypercom -- initial schema.
 --
--- Propriete du collaborateur : ce fichier evolue par ajout de nouvelles
--- migrations, jamais par modification retroactive. Le serveur applique ce qui
--- manque au demarrage, sans recompilation.
+-- Owned by the collaborator: this file evolves by adding new migrations,
+-- never by editing one retroactively. The server applies whatever is
+-- missing on startup, without recompiling.
 --
--- Deux principes tenus partout :
---   1. Les contraintes sont dans la base, pas seulement dans le C++. Un bug
---      applicatif ne doit pas pouvoir produire une ligne incoherente.
---   2. Les tailles cryptographiques sont verifiees par CHECK. Une cle de 31
---      octets en base est une base corrompue, et on veut le savoir a l'ecriture.
+-- Two principles held throughout:
+--   1. Constraints live in the database, not just in C++. An application
+--      bug shouldn't be able to produce an inconsistent row.
+--   2. Cryptographic sizes are enforced with CHECK. A 31-byte key in the
+--      database means a corrupted database, and that should be caught at
+--      write time.
 
 CREATE TABLE users (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,9 +19,9 @@ CREATE TABLE users (
     last_seen  INTEGER NOT NULL DEFAULT 0
 );
 
--- Une seule prekey courante par utilisateur en v1 : la republier remplace
--- l'ancienne. Le serveur ne fait que la servir, il ne peut pas la forger --
--- la signature est verifiable par le destinataire contre la cle d'identite.
+-- A single current prekey per user in v1: republishing replaces the
+-- previous one. The server only serves it, it can't forge it -- the
+-- signature is verifiable by the recipient against the identity key.
 CREATE TABLE prekeys (
     user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     prekey     BLOB    NOT NULL CHECK (length(prekey) = 32),
@@ -46,9 +47,9 @@ CREATE TABLE posts (
     created_at INTEGER NOT NULL
 );
 
--- parent_comment_id NULL = reponse directe au post. L'arborescence se lit avec
--- WITH RECURSIVE ; depth est calculee par la requete, jamais stockee, pour
--- qu'un deplacement de sous-arbre ne puisse pas la desynchroniser.
+-- parent_comment_id NULL = direct reply to the post. The tree is read with
+-- WITH RECURSIVE; depth is computed by the query, never stored, so that
+-- moving a subtree can never desynchronize it.
 CREATE TABLE comments (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
     post_id           INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
@@ -66,9 +67,9 @@ CREATE TABLE profiles (
     banner_ref   TEXT NOT NULL DEFAULT ''
 );
 
--- status : 0 demande, 1 acceptee, 2 bloquee. Le blocage est memorise ici mais
--- n'est PAS applique par le serveur : le filtrage reel vit dans le client.
--- Le serveur n'arbitre rien.
+-- status: 0 requested, 1 accepted, 2 blocked. Blocking is recorded here but
+-- is NOT enforced by the server: real filtering lives in the client. The
+-- server arbitrates nothing.
 CREATE TABLE friends (
     user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     friend_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -85,10 +86,10 @@ CREATE TABLE top8 (
     PRIMARY KEY (user_id, slot)
 );
 
--- Le serveur ne peut PAS ouvrir ciphertext. Il n'a aucune cle permettant de le
--- faire, et il ne stocke rien d'autre du message : ni objet, ni longueur du
--- clair, ni type. sender_pubkey est une cle brute et non une cle etrangere,
--- pour qu'un expediteur supprime n'efface pas les messages deja recus.
+-- The server CANNOT open ciphertext. It has no key that would let it, and
+-- it stores nothing else about the message: no object, no plaintext
+-- length, no type. sender_pubkey is a raw key rather than a foreign key,
+-- so that a deleted sender doesn't erase messages already received.
 CREATE TABLE dm_envelopes (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     recipient_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -98,8 +99,8 @@ CREATE TABLE dm_envelopes (
     delivered     INTEGER NOT NULL DEFAULT 0
 );
 
--- Registre seul en v1 : aucun octet de media n'est heberge. Le transfert P2P
--- de la v2 se branchera dessus sans changer le format des posts.
+-- Registry only in v1: no media byte is hosted. The v2 P2P transfer will
+-- plug into this without changing the post format.
 CREATE TABLE blobs (
     hash      BLOB PRIMARY KEY CHECK (length(hash) = 32),
     size      INTEGER NOT NULL,

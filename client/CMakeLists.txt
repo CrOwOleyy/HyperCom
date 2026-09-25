@@ -1,6 +1,6 @@
-# Coeur du client, partage par le client CLI et le client graphique.
-# Aucune dependance a ImGui ici : le coeur doit rester testable et compilable
-# meme la ou aucune bibliotheque graphique n'est installee.
+# Client core, shared by the CLI client and the graphical client.
+# No dependency on ImGui here: the core has to stay testable and
+# compilable even where no graphics library is installed.
 add_library(hypercom_client_core STATIC
     cli/invite_link.cpp
     dm/dm_courier.cpp
@@ -22,8 +22,8 @@ endif()
 hypercom_apply_strict_options(hypercom_client_core)
 hypercom_apply_sanitizers(hypercom_client_core)
 
-# Client en ligne de commande : sert a valider le protocole et la crypto sans
-# dependre du rendu.
+# Command-line client: used to validate the protocol and the crypto
+# without depending on rendering.
 add_executable(hypercom_cli
     cli/cli_content_commands.cpp
     cli/cli_content_delete_commands.cpp

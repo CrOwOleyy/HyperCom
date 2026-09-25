@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# Demonstration locale de bout en bout.
+# End-to-end local demonstration.
 #
-# Monte un serveur jetable dans un repertoire temporaire, cree deux comptes,
-# et exerce les trois blocs du perimetre v1 : forums, profils/amis, et messages
-# prives chiffres. Tout est detruit en sortant -- rien ne touche votre vraie
-# base ni vos vraies cles.
+# Spins up a throwaway server in a temporary directory, creates two
+# accounts, and exercises the three blocks of the v1 scope: forums,
+# profiles/friends, and encrypted private messages. Everything gets
+# destroyed on exit -- nothing touches your real database or your real
+# keys.
 #
-#   ./scripts/local_demo.sh                 utilise build/
+#   ./scripts/local_demo.sh                 uses build/
 #   HYPERCOM_BUILD_DIR=build-asan ./scripts/local_demo.sh
 #
-# Sert autant de test de non-regression que de decouverte du projet.
+# Serves as both a regression test and a way to explore the project.
 
 set -euo pipefail
 
@@ -18,8 +19,8 @@ BIN="$ROOT/${HYPERCOM_BUILD_DIR:-build}/bin"
 PORT="${HYPERCOM_DEMO_PORT:-7817}"
 
 if [ ! -x "$BIN/hypercom_server" ]; then
-    echo "binaires introuvables dans $BIN" >&2
-    echo "construire d'abord :  cmake -S . -B build && cmake --build build -j" >&2
+    echo "binaries not found in $BIN" >&2
+    echo "build first:  cmake -S . -B build && cmake --build build -j" >&2
     exit 1
 fi
 
@@ -68,18 +69,18 @@ server_key   = keys/server_static.key
 admin_socket = run/hypercom-admin.sock
 EOF
 
-echo "=== 0. demarrage du serveur sur 127.0.0.1:$PORT ==="
+echo "=== 0. starting the server on 127.0.0.1:$PORT ==="
 "$BIN/hypercom_server" hypercom.conf > server.log 2>&1 &
 SERVER_PID=$!
 sleep 2
 
 SERVER_KEY="$(grep -oE '[0-9a-f]{64}' server.log | head -1)"
 if [ -z "$SERVER_KEY" ]; then
-    echo "le serveur n'a pas demarre :" >&2
+    echo "the server didn't start:" >&2
     cat server.log >&2
     exit 1
 fi
-echo "cle publique du serveur : $SERVER_KEY"
+echo "server public key: $SERVER_KEY"
 
 alice() {
     HYPERCOM_PASSPHRASE='passphrase-alice' "$BIN/hypercom_cli" \
@@ -93,51 +94,51 @@ bob() {
 }
 
 echo
-echo "=== 1. creation des comptes ==="
+echo "=== 1. creating accounts ==="
 alice register alice
 bob register bob
 
 echo
-echo "=== 2. forums, posts, commentaires imbriques ==="
-alice forum-create cryptographie "Tout ce qui chiffre"
+echo "=== 2. forums, posts, nested comments ==="
+alice forum-create cryptography "Everything that encrypts"
 alice forum-list
-alice post 1 "Noise plutot que TLS" "Pas de X.509, pas d autorite de certification."
+alice post 1 "Noise instead of TLS" "No X.509, no certificate authority."
 alice posts 1
-bob comment 1 0 "D accord, la surface d attaque est bien plus petite."
-alice comment 1 1 "Et une dependance de moins a patcher."
+bob comment 1 0 "Agreed, the attack surface is a lot smaller."
+alice comment 1 1 "And one less dependency to patch."
 alice thread 1
 
 echo
-echo "=== 3. profils et amis ==="
-alice profile-set "Alice" "Je casse des protocoles."
+echo "=== 3. profiles and friends ==="
+alice profile-set "Alice" "I break protocols."
 alice profile-get "$(alice whoami | grep -oE '[0-9a-f]{64}' | head -1)"
 bob friend-add "$(alice whoami | grep -oE '[0-9a-f]{64}' | head -1)"
 bob friends
 
 echo
-echo "=== 4. messages prives chiffres de bout en bout ==="
+echo "=== 4. end-to-end encrypted private messages ==="
 bob prekey-publish
 ALICE_KEY="$(alice whoami | grep -oE '[0-9a-f]{64}' | head -1)"
 BOB_KEY="$(bob whoami | grep -oE '[0-9a-f]{64}' | head -1)"
 alice prekey-publish
-alice dm-send "$BOB_KEY" "Ce message, le serveur ne peut pas le lire."
+alice dm-send "$BOB_KEY" "The server can't read this message."
 bob dm-fetch
 
 echo
-echo "=== 5. ce que le serveur a reellement en base ==="
+echo "=== 5. what the server actually holds in its database ==="
 if command -v sqlite3 >/dev/null; then
-    echo "-- contenu brut d une enveloppe privee :"
+    echo "-- raw content of a private envelope:"
     sqlite3 hypercom.db \
         "SELECT id, hex(substr(ciphertext,1,24)) || '...' FROM dm_envelopes;"
-    echo "-- aucune adresse IP nulle part dans le journal :"
+    echo "-- no IP address anywhere in the log:"
     grep -ciE '([0-9]{1,3}\.){3}[0-9]{1,3}' server.log || echo "0"
 else
-    echo "sqlite3 absent, inspection directe ignoree"
+    echo "sqlite3 missing, direct inspection skipped"
 fi
 
 echo
-echo "=== journal du serveur ==="
+echo "=== server log ==="
 cat server.log
 
 echo
-echo "=== SUCCES : les trois blocs de la v1 fonctionnent ==="
+echo "=== SUCCESS: all three v1 blocks work ==="

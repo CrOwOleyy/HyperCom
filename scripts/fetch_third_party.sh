@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Recupere les dependances autorisees dans third_party/.
+# Fetches the allowed dependencies into third_party/.
 #
-# Le telechargement est volontairement une action explicite : CMake ne va
-# jamais chercher quoi que ce soit sur le reseau tout seul.
+# Downloading is deliberately an explicit action: CMake never reaches
+# out to the network on its own.
 #
-# Modele de confiance, a lire avant d'utiliser ce script :
-#   Aucune empreinte n'est codee en dur ici. Ce script REFUSE d'installer une
-#   archive dont l'empreinte n'est pas deja enregistree dans
-#   third_party/checksums.txt. Au premier passage il affiche l'empreinte
-#   calculee et l'URL officielle ou la verifier, puis s'arrete. C'est a un
-#   humain de comparer, une fois, et d'enregistrer la valeur. Toutes les
-#   executions suivantes sont alors protegees.
+# Trust model, read before using this script:
+#   No checksum is hardcoded here. This script REFUSES to install an
+#   archive whose checksum isn't already recorded in
+#   third_party/checksums.txt. On the first pass it prints the computed
+#   checksum and the official URL to verify it against, then stops. A
+#   human has to compare it, once, and record the value. Every run
+#   after that is then protected.
 #
-#   usage : ./scripts/fetch_third_party.sh [libsodium|sqlite3|imgui|all]
+#   usage: ./scripts/fetch_third_party.sh [libsodium|sqlite3|imgui|all]
 
 set -euo pipefail
 
@@ -21,8 +21,8 @@ readonly VENDOR_DIR="${ROOT_DIR}/third_party"
 readonly WORK_DIR="${VENDOR_DIR}/.download"
 readonly CHECKSUM_FILE="${VENDOR_DIR}/checksums.txt"
 
-# Versions par defaut, surchargeables par variable d'environnement. Toute
-# modification impose de re-verifier l'empreinte correspondante.
+# Default versions, overridable through an environment variable. Any
+# change requires re-verifying the corresponding checksum.
 readonly SODIUM_VERSION="${HYPERCOM_SODIUM_VERSION:-1.0.20}"
 readonly SQLITE_YEAR="${HYPERCOM_SQLITE_YEAR:-2024}"
 readonly SQLITE_STEM="${HYPERCOM_SQLITE_STEM:-sqlite-amalgamation-3470000}"
@@ -33,7 +33,7 @@ log() {
 }
 
 fail() {
-    printf '\033[0;31m[third_party] echec :\033[0m %s\n' "$*" >&2
+    printf '\033[0;31m[third_party] error:\033[0m %s\n' "$*" >&2
     exit 1
 }
 
@@ -43,43 +43,43 @@ lookup_expected_sha256() {
     awk -v k="${key}" '$1 == k { print $2 }' "${CHECKSUM_FILE}" | head -n1
 }
 
-# Refuse toute archive non verifiee. C'est le seul point de confiance du
-# script : il est deliberement bloquant.
+# Refuses any unverified archive. This is the script's only point of
+# trust: it's deliberately blocking.
 verify_against_pinned_sha256() {
     local key="$1" file="$2" verify_url="$3" expected actual
     actual="$(sha256sum "${file}" | cut -d' ' -f1)"
     expected="$(lookup_expected_sha256 "${key}")"
     if [ -z "${expected}" ]; then
-        fail "aucune empreinte enregistree pour '${key}'.
+        fail "no checksum recorded for '${key}'.
 
-  empreinte calculee : ${actual}
+  computed checksum: ${actual}
 
-  1. comparer cette valeur a celle publiee sur :
+  1. compare this value against the one published at:
        ${verify_url}
-  2. si elle correspond, enregistrer la ligne suivante dans
-     third_party/checksums.txt puis relancer :
+  2. if it matches, record the following line in
+     third_party/checksums.txt then re-run:
 
        ${key}  ${actual}
 
-  Tant que cette verification n'est pas faite, l'archive n'est pas installee."
+  Until this check is done, the archive isn't installed."
     fi
     if [ "${actual}" != "${expected}" ]; then
         rm -f "${file}"
-        fail "EMPREINTE INVALIDE pour '${key}' -- archive supprimee.
-  attendue : ${expected}
-  obtenue  : ${actual}
-Ne pas reessayer sans avoir compris pourquoi. Soit la version amont a change,
-soit l'archive a ete alteree en transit."
+        fail "INVALID CHECKSUM for '${key}' -- archive deleted.
+  expected: ${expected}
+  got     : ${actual}
+Do not retry without understanding why. Either the upstream version
+changed, or the archive was tampered with in transit."
     fi
-    log "empreinte verifiee : ${key}"
+    log "checksum verified: ${key}"
 }
 
 download_archive() {
     local url="$1" target="$2" key="$3" verify_url="$4"
     if [ -f "${target}" ]; then
-        log "archive deja presente : $(basename "${target}")"
+        log "archive already present: $(basename "${target}")"
     else
-        log "telechargement de ${url}"
+        log "downloading ${url}"
         curl --fail --location --proto '=https' --tlsv1.2 \
             --silent --show-error --output "${target}" "${url}"
     fi
@@ -89,15 +89,15 @@ download_archive() {
 fetch_libsodium() {
     local prefix="${VENDOR_DIR}/libsodium"
     if [ -f "${prefix}/include/sodium.h" ]; then
-        log "libsodium deja installe"
+        log "libsodium already installed"
         return
     fi
     local archive="${WORK_DIR}/libsodium-${SODIUM_VERSION}.tar.gz"
     download_archive \
         "https://download.libsodium.org/libsodium/releases/libsodium-${SODIUM_VERSION}.tar.gz" \
         "${archive}" "libsodium-${SODIUM_VERSION}.tar.gz" \
-        "https://download.libsodium.org/libsodium/releases/ (fichier .sig / minisign)"
-    log "compilation de libsodium ${SODIUM_VERSION}, comptez quelques minutes"
+        "https://download.libsodium.org/libsodium/releases/ (.sig / minisign file)"
+    log "compiling libsodium ${SODIUM_VERSION}, this takes a few minutes"
     rm -rf "${WORK_DIR}/libsodium-src"
     mkdir -p "${WORK_DIR}/libsodium-src"
     tar -xzf "${archive}" -C "${WORK_DIR}/libsodium-src" --strip-components=1
@@ -107,33 +107,33 @@ fetch_libsodium() {
         make -j"$(nproc)" >/dev/null
         make install >/dev/null
     )
-    log "libsodium installe dans third_party/libsodium"
+    log "libsodium installed into third_party/libsodium"
 }
 
 fetch_sqlite3() {
     local prefix="${VENDOR_DIR}/sqlite3"
     if [ -f "${prefix}/sqlite3.c" ]; then
-        log "sqlite3 deja present"
+        log "sqlite3 already present"
         return
     fi
     local archive="${WORK_DIR}/${SQLITE_STEM}.zip"
     download_archive \
         "https://www.sqlite.org/${SQLITE_YEAR}/${SQLITE_STEM}.zip" \
         "${archive}" "${SQLITE_STEM}.zip" \
-        "https://www.sqlite.org/download.html (colonne SHA3-256/SHA-256)"
+        "https://www.sqlite.org/download.html (SHA3-256/SHA-256 column)"
     rm -rf "${WORK_DIR}/sqlite-src"
     unzip -q "${archive}" -d "${WORK_DIR}/sqlite-src"
     mkdir -p "${prefix}"
     local source_dir="${WORK_DIR}/sqlite-src/${SQLITE_STEM}"
     cp "${source_dir}/sqlite3.c" "${source_dir}/sqlite3.h" \
         "${source_dir}/sqlite3ext.h" "${prefix}/"
-    log "amalgamation sqlite3 installee dans third_party/sqlite3"
+    log "sqlite3 amalgamation installed into third_party/sqlite3"
 }
 
 fetch_imgui() {
     local prefix="${VENDOR_DIR}/imgui"
     if [ -f "${prefix}/imgui.cpp" ]; then
-        log "imgui deja present"
+        log "imgui already present"
         return
     fi
     local archive="${WORK_DIR}/imgui-${IMGUI_VERSION}.tar.gz"
@@ -143,21 +143,21 @@ fetch_imgui() {
         "https://github.com/ocornut/imgui/releases/tag/${IMGUI_VERSION}"
     mkdir -p "${prefix}"
     tar -xzf "${archive}" -C "${prefix}" --strip-components=1
-    log "dear imgui ${IMGUI_VERSION} installe dans third_party/imgui"
+    log "dear imgui ${IMGUI_VERSION} installed into third_party/imgui"
 }
 
 main() {
-    command -v curl >/dev/null || fail "curl est requis"
-    command -v sha256sum >/dev/null || fail "sha256sum est requis"
+    command -v curl >/dev/null || fail "curl is required"
+    command -v sha256sum >/dev/null || fail "sha256sum is required"
     mkdir -p "${WORK_DIR}"
     case "${1:-all}" in
         libsodium) fetch_libsodium ;;
         sqlite3)   fetch_sqlite3 ;;
         imgui)     fetch_imgui ;;
         all)       fetch_libsodium; fetch_sqlite3; fetch_imgui ;;
-        *)         fail "cible inconnue : $1 (libsodium|sqlite3|imgui|all)" ;;
+        *)         fail "unknown target: $1 (libsodium|sqlite3|imgui|all)" ;;
     esac
-    log "termine"
+    log "done"
 }
 
 main "$@"

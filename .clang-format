@@ -1,9 +1,9 @@
 ---
-# Norme de code Hypercom.
-# Encode mécaniquement les règles L4, G7 et G8.
-# La règle L6 (aucune ligne vide dans un corps de fonction) n'est PAS exprimable
-# ici : clang-format ne sait pas distinguer l'intérieur d'une fonction du reste
-# du fichier. Elle se vérifie à la relecture.
+# Hypercom coding norm.
+# Mechanically encodes rules L4, G7 and G8.
+# Rule L6 (no blank line inside a function body) is NOT expressible
+# here: clang-format can't tell the inside of a function apart from
+# the rest of the file. It's checked at review time.
 Language: Cpp
 BasedOnStyle: LLVM
 Standard: c++20
@@ -14,10 +14,10 @@ TabWidth: 4
 UseTab: Never
 AccessModifierOffset: -4
 
-# --- Règle L4 : position des accolades -------------------------------------
-# Définition de fonction  -> accolade ouvrante seule sur sa ligne.
-# Tout le reste           -> accolade ouvrante en fin de ligne.
-# else / catch / while du do -> sur la ligne de l'accolade fermante.
+# --- Rule L4: brace placement -----------------------------------------------
+# Function definition -> opening brace alone on its own line.
+# Everything else     -> opening brace at the end of the line.
+# else / catch / do's while -> on the closing brace's line.
 BreakBeforeBraces: Custom
 BraceWrapping:
   AfterFunction: true
@@ -38,12 +38,12 @@ BraceWrapping:
   SplitEmptyRecord: false
   SplitEmptyNamespace: false
 
-# --- Règles G7 / G8 / L6 : espaces et lignes vides --------------------------
+# --- Rules G7 / G8 / L6: spaces and blank lines ------------------------------
 MaxEmptyLinesToKeep: 1
 KeepEmptyLinesAtTheStartOfBlocks: false
 EmptyLineBeforeAccessModifier: LogicalBlock
 
-# --- Règle F4 : rien ne doit masquer la longueur réelle d'une fonction ------
+# --- Rule F4: nothing should hide a function's real length ------------------
 AllowShortFunctionsOnASingleLine: None
 AllowShortBlocksOnASingleLine: Never
 AllowShortIfStatementsOnASingleLine: Never
@@ -51,12 +51,12 @@ AllowShortLoopsOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortLambdasOnASingleLine: All
 
-# --- Pointeurs et références ------------------------------------------------
+# --- Pointers and references -------------------------------------------------
 DerivePointerAlignment: false
 PointerAlignment: Right
 ReferenceAlignment: Right
 
-# --- Divers -----------------------------------------------------------------
+# --- Misc ----------------------------------------------------------------
 IndentCaseLabels: true
 NamespaceIndentation: None
 FixNamespaceComments: true

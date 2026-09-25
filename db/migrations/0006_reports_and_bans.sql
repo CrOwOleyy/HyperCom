@@ -1,9 +1,9 @@
--- Signalement et bannissement.
+-- Reporting and banning.
 --
--- Deux obligations legales distinctes du contenu chiffre : un dispositif de
--- signalement (LCEN art. 6-I-7) et la capacite d'agir une fois informe. Aucune
--- des deux ne donne acces au contenu d'un DM -- un DM se signale par le
--- compte, jamais par un post_id qui n'existe pas pour lui.
+-- Two legal obligations distinct from the encrypted content: a reporting
+-- mechanism (LCEN art. 6-I-7) and the ability to act once informed.
+-- Neither one grants access to a DM's content -- a DM is reported by
+-- account, never by a post_id that doesn't exist for it.
 
 ALTER TABLE users ADD COLUMN banned INTEGER NOT NULL DEFAULT 0
     CHECK (banned IN (0, 1));
