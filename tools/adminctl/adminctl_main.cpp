@@ -92,7 +92,7 @@ void print_usage()
     std::size_t offset = 0;
     while (offset < payload.size()) {
         auto const sent = ::send(handle, payload.data() + offset,
-                                 static_cast<int>(payload.size() - offset), 0);
+                                 payload.size() - offset, 0);
         if (sent <= 0) {
             return false;
         }
