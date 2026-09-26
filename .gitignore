@@ -1,5 +1,5 @@
 build/
-build-wsl/
+build-*/
 mastodon/
 out/
 cmake-build-*/
