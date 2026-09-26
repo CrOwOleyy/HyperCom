@@ -31,3 +31,29 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    # Reports only for now: first pass, kept non-blocking until the
+    # backlog of pre-existing findings is triaged.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsodium-dev libsqlite3-dev libglfw3-dev \
+            clang-tidy cppcheck
+
+      - name: Fetch vendored ImGui
+        run: ./scripts/fetch_third_party.sh imgui
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+
+      - name: clang-tidy
+        run: ./scripts/run_clang_tidy.sh build
+
+      - name: cppcheck
+        run: ./scripts/run_cppcheck.sh build
