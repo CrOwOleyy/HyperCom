@@ -2,9 +2,11 @@
 
 #include "common/crypto/x25519_exchange.hpp"
 
+#include <cerrno>
+#include <fcntl.h>
 #include <filesystem>
 #include <fstream>
-#include <sys/stat.h>
+#include <unistd.h>
 
 namespace hypercom::server {
 namespace {
@@ -24,6 +26,28 @@ namespace {
     return input.gcount() == static_cast<std::streamsize>(out.size());
 }
 
+[[nodiscard]] bool write_all(int descriptor, std::uint8_t const *data,
+                             std::size_t size)
+{
+    std::size_t written = 0;
+    while (written < size) {
+        ssize_t const result =
+            ::write(descriptor, data + written, size - written);
+        if (result < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return false;
+        }
+        written += static_cast<std::size_t>(result);
+    }
+    return true;
+}
+
+// Opens the file at 0600 right from creation instead of chmod'ing it
+// afterward. The server only builds on Linux, so a single POSIX path
+// is enough here (see client/keystore/identity_store.cpp for the same
+// fix with the Windows branch it also needs).
 [[nodiscard]] bool write_secret_file(std::string const &path,
                                      crypto::x25519_secret_key const &secret,
                                      std::string &error_out)
@@ -33,25 +57,18 @@ namespace {
     if (target.has_parent_path()) {
         std::filesystem::create_directories(target.parent_path(), failure);
     }
-    std::ofstream output{path, std::ios::binary | std::ios::trunc};
-    if (!output) {
+    int const descriptor = ::open(path.c_str(), O_CREAT | O_TRUNC | O_WRONLY,
+                                  0600);
+    if (descriptor < 0) {
         error_out = "ecriture impossible : " + path;
         return false;
     }
-    output.write(reinterpret_cast<char const *>(secret.data()),
-                 static_cast<std::streamsize>(secret.size()));
-    output.close();
-#if defined(_WIN32)
-    std::filesystem::permissions(target,
-                                 std::filesystem::perms::owner_read |
-                                     std::filesystem::perms::owner_write,
-                                 failure);
-#else
-    if (::chmod(path.c_str(), S_IRUSR | S_IWUSR) != 0) {
-        error_out = "chmod 0600 impossible sur " + path;
+    bool const ok = write_all(descriptor, secret.data(), secret.size());
+    ::close(descriptor);
+    if (!ok) {
+        error_out = "ecriture incomplete : " + path;
         return false;
     }
-#endif
     return true;
 }
 
