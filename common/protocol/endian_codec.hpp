@@ -16,7 +16,7 @@ template <typename T>
                                       T &out)
 {
     static_assert(std::is_unsigned_v<T>,
-                  "le protocole ne transporte que des entiers non signes");
+                  "the protocol only carries unsigned integers");
     if (source.size() < sizeof(T)) {
         return false;
     }
@@ -33,7 +33,7 @@ template <typename T>
 [[nodiscard]] bool store_little_endian(T value, std::span<std::uint8_t> target)
 {
     static_assert(std::is_unsigned_v<T>,
-                  "le protocole ne transporte que des entiers non signes");
+                  "the protocol only carries unsigned integers");
     if (target.size() < sizeof(T)) {
         return false;
     }
