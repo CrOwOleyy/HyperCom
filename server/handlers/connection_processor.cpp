@@ -25,7 +25,9 @@ constexpr std::size_t MAX_NOISE_MESSAGE_SIZE =
     }
     std::vector<std::uint8_t> wire;
     proto::append_length_prefixed_message(reply, wire);
-    context.connection.socket.queue_bytes(wire);
+    if (!context.connection.socket.queue_bytes(wire)) {
+        return false;
+    }
     context.connection.session.phase = session_phase::awaiting_hello;
     return true;
 }
