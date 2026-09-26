@@ -24,7 +24,11 @@ public:
     // EPOLLOUT.
     [[nodiscard]] bool flush_pending_writes(bool &has_remaining);
 
-    void queue_bytes(std::span<std::uint8_t const> data);
+    // Fails once queuing data would cross MAX_PENDING_OUTPUT: past that
+    // point a peer isn't reading fast enough to trust with more, and the
+    // caller must close the connection rather than silently drop bytes
+    // out of an otherwise-correct stream.
+    [[nodiscard]] bool queue_bytes(std::span<std::uint8_t const> data);
 
     [[nodiscard]] int get_descriptor() const;
 

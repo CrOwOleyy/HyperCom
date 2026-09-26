@@ -19,8 +19,7 @@ bool send_raw_message(client_connection &connection, proto::message_type type,
     }
     std::vector<std::uint8_t> wire;
     proto::append_length_prefixed_message(sealed, wire);
-    connection.socket.queue_bytes(wire);
-    return true;
+    return connection.socket.queue_bytes(wire);
 }
 
 bool send_status_ok(client_connection &connection, std::uint64_t reference_id)

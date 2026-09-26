@@ -104,13 +104,13 @@ bool connection_socket::flush_pending_writes(bool &has_remaining)
     return true;
 }
 
-void connection_socket::queue_bytes(std::span<std::uint8_t const> data)
+bool connection_socket::queue_bytes(std::span<std::uint8_t const> data)
 {
     if (pending_output_.size() + data.size() > MAX_PENDING_OUTPUT) {
-        pending_output_.clear();
-        return;
+        return false;
     }
     pending_output_.insert(pending_output_.end(), data.begin(), data.end());
+    return true;
 }
 
 int connection_socket::get_descriptor() const
