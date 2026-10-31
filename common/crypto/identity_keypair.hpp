@@ -11,10 +11,10 @@ namespace hypercom::crypto {
 // and no server-side password.
 //
 // Accepted trade-off in v1: lose the key, lose the account. No recovery
-// procedure exists, and that is exactly what guarantees no administrator
-// can impersonate one. A 12-word recovery phrase is planned for v2;
-// derive_from_seed is already in place to support it without changing the
-// storage format.
+// procedure exists for a key on its own, and that is exactly what guarantees
+// no administrator can impersonate one. Per-server identities derive from
+// the master seed, which has a 12-word recovery phrase (see
+// recovery_phrase.hpp).
 class identity_keypair {
 public:
     [[nodiscard]] static bool generate_random(identity_keypair &out);

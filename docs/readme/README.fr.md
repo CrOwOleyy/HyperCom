@@ -17,6 +17,43 @@ les pièces s'assemblent), [docs/ADMIN.md](../ADMIN.md) (exploitation serveur),
 l'est pas), [SECURITY.md](../../SECURITY.md) (signaler une faille),
 [COMMANDS.md](../../COMMANDS.md) (référence complète des commandes).
 
+## Ce qui le distingue
+
+Des serveurs de communauté libres et gratuits existent déjà (Matrix,
+Revolt, Mattermost…). La différence de HyperCom, c'est ce que le serveur
+apprend sur vous :
+
+- **Une identité différente sur chaque serveur.** Chaque serveur reçoit sa
+  propre paire de clés, sans lien visible avec les autres : deux
+  administrateurs ne peuvent pas savoir qu'ils hébergent la même personne.
+  Sur Matrix ou Revolt, votre compte est le même partout.
+- **Des messages privés que le serveur ne lit pas et ne date pas.** Les DM
+  sont chiffrés de bout en bout et leur horodatage est dans le chiffré : le
+  serveur sait qui écrit à qui, jamais quand. Les posts de forum et les
+  profils sont du contenu public, lisible par le serveur.
+- **Ni TLS, ni autorité de certification.** Une poignée de main Noise sur
+  libsodium, avec la clé du serveur épinglée par le client.
+- **Un serveur assez petit pour être audité.** Une boucle `epoll`, aucun
+  mutex, un fichier SQLite.
+- **Chacun peut posséder son serveur.** Un binaire, un fichier de config,
+  une base SQLite.
+- **Fonctionne sur Tor.** Avec le listener `[onion]`, l'administrateur ne
+  voit jamais l'adresse IP des membres.
+- **Aucune adresse IP conservée par défaut.** `log_peer_addresses` est
+  désactivé.
+
+HyperCom ne fédère pas : une communauté, un serveur. Voir
+[docs/THREAT_MODEL.md](../THREAT_MODEL.md) pour ce qui n'est *pas* protégé.
+
+**Récupération :** l'identité maîtresse a une phrase de 12 mots, affichée une
+seule fois à la création ; `hypercom_cli seed-restore` la reconstruit sur une
+nouvelle machine.
+
+**Prévu, dans cet ordre :** la forward secrecy pour les DM ; les pièces
+jointes (images, fichiers) ; un audit indépendant du handshake. Rien de
+tout cela n'existe encore.
+
+
 ## Prérequis
 
 - CMake ≥ 3.20, compilateur C++20 (MSVC sur Windows, GCC/Clang sur Linux)

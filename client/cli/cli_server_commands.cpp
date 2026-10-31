@@ -1,10 +1,13 @@
 #include "client/cli/cli_server_commands.hpp"
 
 #include "client/cli/invite_link.hpp"
+#include "client/keystore/master_seed_store.hpp"
 #include "client/keystore/server_registry.hpp"
+#include "common/crypto/secure_memory.hpp"
 #include "common/util/hex_codec.hpp"
 
 #include <algorithm>
+#include <cstdlib>
 #include <iostream>
 
 namespace hypercom::client {
@@ -49,7 +52,50 @@ namespace {
 bool is_registry_command(std::string_view command)
 {
     return command == "server-add" || command == "server-list" ||
-           command == "server-import";
+           command == "server-import" || command == "seed-restore";
+}
+
+void print_recovery_phrase(std::string const &phrase)
+{
+    std::cout << "\nPHRASE DE RECUPERATION (12 mots) -- a noter "
+                 "MAINTENANT :\n\n"
+              << "    " << phrase << "\n\n"
+              << "Elle ne sera plus jamais affichee. Avec elle, on retrouve "
+                 "toutes vos identites\nsur tous les serveurs ; sans elle, "
+                 "perdre hypercom_master.key les perd toutes.\nNe la "
+                 "partagez avec personne : qui la connait EST vous.\n\n";
+}
+
+bool run_seed_restore(cli_options const &options, std::string &error_out)
+{
+    std::string phrase;
+    char const *const from_environment =
+        std::getenv("HYPERCOM_RECOVERY_PHRASE");
+    if (from_environment != nullptr) {
+        phrase = from_environment;
+    } else {
+        std::cout << "phrase de recuperation (12 mots) : " << std::flush;
+        if (!std::getline(std::cin, phrase)) {
+            error_out = "phrase de recuperation requise";
+            return false;
+        }
+    }
+    std::string passphrase;
+    if (!read_passphrase(passphrase, error_out)) {
+        return false;
+    }
+    master_seed_store seeds{options.master_seed_path};
+    crypto::ed25519_seed seed{};
+    bool const restored =
+        seeds.restore_seed(passphrase, phrase, seed, error_out);
+    crypto::wipe_bytes(seed);
+    crypto::wipe_bytes(
+        {reinterpret_cast<std::uint8_t *>(phrase.data()), phrase.size()});
+    if (restored) {
+        std::cout << "graine restauree dans " << options.master_seed_path
+                  << " : les identites de vos serveurs sont retrouvees.\n";
+    }
+    return restored;
 }
 
 bool run_server_add(cli_options const &options,

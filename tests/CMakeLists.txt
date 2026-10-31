@@ -30,6 +30,11 @@ hypercom_add_test(message_roundtrip_social_test)
 hypercom_add_test(multi_server_identity_test)
 target_link_libraries(multi_server_identity_test PRIVATE hypercom_client_core)
 
+# Recovery phrase: BIP-39 vectors, wordlist integrity, and rebuilding the
+# master seed on a "new machine" through the keystore.
+hypercom_add_test(recovery_phrase_test)
+target_link_libraries(recovery_phrase_test PRIVATE hypercom_client_core)
+
 # Fuzzing corpus replay: reuses the libFuzzer entry point without
 # libFuzzer, so known edge cases also run under gcc.
 hypercom_add_test(fuzz_corpus_replay_test

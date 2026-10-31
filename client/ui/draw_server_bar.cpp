@@ -1,6 +1,7 @@
 #include "client/ui/draw_server_bar.hpp"
 
 #include "client/ui/aero_theme.hpp"
+#include "common/crypto/secure_memory.hpp"
 #include "client/ui/i18n.hpp"
 #include "client/ui/server_actions.hpp"
 
@@ -96,6 +97,47 @@ bool draw_trust_warning(app_state &app, server_slot_list &slots, float scale)
     ImGui::Spacing();
     if (ImGui::Button(tr("trust_accept", app.current_lang))) {
         acknowledge_slot_trust(app, slots, app.active_slot);
+    }
+    ImGui::End();
+    return true;
+}
+
+bool draw_recovery_phrase_notice(app_state &app, float scale)
+{
+    if (app.pending_recovery_phrase.empty()) {
+        return false;
+    }
+    bool const french = app.current_lang == language::french;
+    ImGuiViewport const *const viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always,
+                            ImVec2{0.5f, 0.5f});
+    ImGui::SetNextWindowSize(ImVec2{560.0f * scale, 0.0f});
+    ImGui::Begin("##phrase_recuperation", nullptr,
+                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+    draw_section_heading(french ? "Phrase de recuperation"
+                                : "Recovery phrase");
+    ImGui::TextWrapped(
+        "%s", french ? "Notez ces 12 mots sur papier, dans l'ordre. Ils "
+                       "ne seront plus jamais affiches. Avec eux, vous "
+                       "retrouvez toutes vos identites sur tous les "
+                       "serveurs ; sans eux, perdre le fichier de graine "
+                       "les perd toutes. Ne les partagez avec personne."
+                     : "Write these 12 words down on paper, in order. They "
+                       "will never be shown again. With them you recover "
+                       "every identity on every server; without them, "
+                       "losing the seed file loses them all. Share them "
+                       "with nobody.");
+    ImGui::Spacing();
+    ImGui::PushStyleColor(ImGuiCol_Text, AERO_INK);
+    ImGui::TextWrapped("%s", app.pending_recovery_phrase.c_str());
+    ImGui::PopStyleColor();
+    ImGui::Spacing();
+    if (ImGui::Button(french ? "J'ai note ma phrase" : "I wrote it down")) {
+        crypto::wipe_bytes({reinterpret_cast<std::uint8_t *>(
+                                app.pending_recovery_phrase.data()),
+                            app.pending_recovery_phrase.size()});
+        app.pending_recovery_phrase.clear();
     }
     ImGui::End();
     return true;

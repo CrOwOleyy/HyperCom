@@ -102,9 +102,17 @@ rotation.
 
 ### 3.4 Lost key = lost account
 
-No recourse, permanently. This is the price of having no authority:
-nobody can reset an account, so nobody can steal one that way either. A
-12-word recovery phrase is planned for v2.
+Nobody can reset an account, so nobody can steal one that way either:
+that is the price of having no authority. What exists instead is a
+**12-word recovery phrase** (BIP-39 encoding) shown once, when the master
+seed is created. It regenerates the master seed -- and with it every
+identity on every server -- through `seed-restore`. Whoever holds the
+phrase *is* you, so it must be written down offline and never shared.
+
+Limits: seeds created before this feature were drawn from 32 random bytes
+and cannot be expressed as words; they stay unrecoverable without their
+file. Identities imported with `server-import` are independent keys and
+are not covered by the phrase either.
 
 ### 3.5 Homegrown Noise implementation
 

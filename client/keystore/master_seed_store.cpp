@@ -2,6 +2,7 @@
 
 #include "client/keystore/sealed_file.hpp"
 #include "common/crypto/keystore_envelope.hpp"
+#include "common/crypto/recovery_phrase.hpp"
 #include "common/crypto/secure_memory.hpp"
 #include "common/crypto/sodium_runtime.hpp"
 
@@ -20,9 +21,9 @@ bool master_seed_store::has_stored_seed() const
     return std::filesystem::is_regular_file(path_, failure);
 }
 
-bool master_seed_store::create_seed(std::string_view passphrase,
-                                    crypto::ed25519_seed &out,
-                                    std::string &error_out)
+bool master_seed_store::seal_to_disk(std::string_view passphrase,
+                                     crypto::ed25519_seed const &seed,
+                                     std::string &error_out)
 {
     if (has_stored_seed()) {
         error_out = "une graine existe deja dans " + path_ +
@@ -34,19 +35,62 @@ bool master_seed_store::create_seed(std::string_view passphrase,
         error_out = "passphrase vide";
         return false;
     }
-    crypto::fill_random_bytes(out);
     std::vector<std::uint8_t> sealed;
-    if (!crypto::seal_blob(passphrase, out, sealed)) {
-        crypto::wipe_bytes(out);
+    if (!crypto::seal_blob(passphrase, seed, sealed)) {
         error_out = "scellement de la graine impossible";
         return false;
     }
     bool const written = write_sealed_file(path_, sealed, error_out);
     crypto::wipe_bytes(sealed);
-    if (!written) {
+    return written;
+}
+
+bool master_seed_store::create_seed(std::string_view passphrase,
+                                    crypto::ed25519_seed &out,
+                                    std::string &phrase_out,
+                                    std::string &error_out)
+{
+    crypto::recovery_entropy entropy{};
+    crypto::generate_recovery_entropy(entropy);
+    std::string phrase;
+    bool ready = crypto::derive_master_seed(entropy, out) &&
+                 crypto::entropy_to_phrase(entropy, phrase);
+    crypto::wipe_bytes(entropy);
+    if (!ready) {
+        error_out = "derivation de la graine impossible";
+    } else if (!seal_to_disk(passphrase, out, error_out)) {
+        ready = false;
+    }
+    if (ready) {
+        phrase_out = std::move(phrase);
+    } else {
         crypto::wipe_bytes(out);
     }
-    return written;
+    return ready;
+}
+
+bool master_seed_store::restore_seed(std::string_view passphrase,
+                                     std::string_view phrase,
+                                     crypto::ed25519_seed &out,
+                                     std::string &error_out)
+{
+    crypto::recovery_entropy entropy{};
+    if (!crypto::phrase_to_entropy(phrase, entropy)) {
+        error_out = "phrase de recuperation invalide : 12 mots attendus, "
+                    "verifier l'orthographe et l'ordre";
+        return false;
+    }
+    bool ready = crypto::derive_master_seed(entropy, out);
+    crypto::wipe_bytes(entropy);
+    if (!ready) {
+        error_out = "derivation de la graine impossible";
+    } else if (!seal_to_disk(passphrase, out, error_out)) {
+        ready = false;
+    }
+    if (!ready) {
+        crypto::wipe_bytes(out);
+    }
+    return ready;
 }
 
 bool master_seed_store::unlock_seed(std::string_view passphrase,

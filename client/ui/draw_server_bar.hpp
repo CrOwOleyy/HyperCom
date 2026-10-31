@@ -18,4 +18,9 @@ void draw_server_bar(app_state &app, server_slot_list &slots, float width);
 [[nodiscard]] bool draw_trust_warning(app_state &app, server_slot_list &slots,
                                       float scale);
 
+// Blocking notice shown once, right after a master seed is created:
+// displays the 12 recovery words until the user confirms having written
+// them down. Returns true while it occupies the screen.
+[[nodiscard]] bool draw_recovery_phrase_notice(app_state &app, float scale);
+
 } // namespace hypercom::client

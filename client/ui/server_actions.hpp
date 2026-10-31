@@ -11,7 +11,7 @@ namespace hypercom::client {
 // Builds a slot from a registry entry: resolves its identity (derived
 // from the seed, or loaded from an imported file) and prepares the
 // connection, without opening it yet.
-[[nodiscard]] bool build_slot(server_entry const &entry, app_state const &app,
+[[nodiscard]] bool build_slot(server_entry const &entry, app_state &app,
                               std::unique_ptr<server_slot> &out,
                               std::string &error_out);
 

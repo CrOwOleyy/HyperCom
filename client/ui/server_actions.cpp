@@ -14,7 +14,7 @@ namespace hypercom::client {
 namespace {
 
 [[nodiscard]] bool resolve_identity(server_entry const &entry,
-                                    app_state const &app,
+                                    app_state &app,
                                     crypto::identity_keypair &out,
                                     std::string &error_out)
 {
@@ -24,9 +24,12 @@ namespace {
     }
     master_seed_store seeds{app.master_seed_path};
     crypto::ed25519_seed seed{};
-    bool ready = seeds.has_stored_seed()
-                     ? seeds.unlock_seed(app.passphrase, seed, error_out)
-                     : seeds.create_seed(app.passphrase, seed, error_out);
+    bool const is_new_seed = !seeds.has_stored_seed();
+    bool ready = is_new_seed
+                     ? seeds.create_seed(app.passphrase, seed,
+                                         app.pending_recovery_phrase,
+                                         error_out)
+                     : seeds.unlock_seed(app.passphrase, seed, error_out);
     if (ready) {
         ready = derive_server_identity(seed, entry.server_key, out);
         if (!ready) {
@@ -59,7 +62,7 @@ void report(app_state &app, std::string message, bool is_error)
 
 } // namespace
 
-bool build_slot(server_entry const &entry, app_state const &app,
+bool build_slot(server_entry const &entry, app_state &app,
                 std::unique_ptr<server_slot> &out, std::string &error_out)
 {
     auto slot = std::make_unique<server_slot>();
