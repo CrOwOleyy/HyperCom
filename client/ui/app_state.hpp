@@ -28,6 +28,11 @@ struct app_state {
     // rewritten when a server is added or a warning is acknowledged.
     // It never leaves this process and is never written to disk.
     std::string passphrase;
+    // The 12 recovery words of a master seed that was just created. Set by
+    // build_slot, cleared (and wiped) once the user confirms having
+    // written them down. This is the only time they exist: the seed
+    // cannot be turned back into words.
+    std::string pending_recovery_phrase;
     std::string registry_path;
     std::string master_seed_path;
 };

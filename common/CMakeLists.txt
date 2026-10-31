@@ -64,6 +64,8 @@ add_library(hypercom_crypto STATIC
     crypto/noise_payload_codec.cpp
     crypto/noise_symmetric_state.cpp
     crypto/noise_transport.cpp
+    crypto/recovery_phrase.cpp
+    crypto/recovery_wordlist.cpp
     crypto/secure_memory.cpp
     crypto/signature_verifier.cpp
     crypto/sodium_runtime.cpp

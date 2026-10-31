@@ -230,7 +230,9 @@ void draw_application_frame(client::app_state &app,
     }
     ImGui::EndChild();
     ImGui::End();
-    static_cast<void>(client::draw_trust_warning(app, slots, scale));
+    if (!client::draw_recovery_phrase_notice(app, scale)) {
+        static_cast<void>(client::draw_trust_warning(app, slots, scale));
+    }
 }
 
 // A hardcoded 1280x800 window occupies a quarter of a 4K screen. So we

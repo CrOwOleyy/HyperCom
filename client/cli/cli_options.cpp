@@ -147,7 +147,9 @@ void print_cli_usage()
            "Commandes de registre (aucune connexion) :\n"
            "  server-add <hypercom://hote:port#cle> [nom]\n"
            "  server-list\n"
-           "  server-import <nom> <chemin_identite>\n\n"
+           "  server-import <nom> <chemin_identite>\n"
+           "  seed-restore           recree la graine depuis les 12 mots\n"
+           "                          (HYPERCOM_RECOVERY_PHRASE ou demandes)\n\n"
            "Commandes :\n"
            "  register <pseudo>\n"
            "  whoami\n"
@@ -259,6 +261,7 @@ bool parse_cli_options(int argc, char **argv, cli_options &out,
     // the registry.
     if (require_server_key && out.server_label.empty() &&
         !out.command.starts_with("server-") &&
+        out.command != "seed-restore" &&
         out.server_key_hex.size() != 64) {
         error_out = "--server-key est requis : 64 caracteres hexadecimaux, "
                     "affiches par le serveur a son demarrage. Sinon, --server "

@@ -91,9 +91,15 @@ using namespace hypercom;
     }
     client::master_seed_store seeds{options.master_seed_path};
     crypto::ed25519_seed seed{};
-    bool ready = seeds.has_stored_seed()
-                     ? seeds.unlock_seed(passphrase, seed, error_out)
-                     : seeds.create_seed(passphrase, seed, error_out);
+    std::string recovery_phrase;
+    bool const is_new_seed = !seeds.has_stored_seed();
+    bool ready = is_new_seed
+                     ? seeds.create_seed(passphrase, seed, recovery_phrase,
+                                         error_out)
+                     : seeds.unlock_seed(passphrase, seed, error_out);
+    if (ready && is_new_seed) {
+        client::print_recovery_phrase(recovery_phrase);
+    }
     if (ready) {
         ready = client::derive_server_identity(seed, entry.server_key, out);
         if (!ready) {
@@ -244,6 +250,8 @@ int main(int argc, char **argv)
                 ? client::run_server_add(options, options.arguments, failure)
             : options.command == "server-list"
                 ? client::run_server_list(options, failure)
+            : options.command == "seed-restore"
+                ? client::run_seed_restore(options, failure)
                 : client::run_server_import(options, options.arguments,
                                             failure);
         if (!done) {
