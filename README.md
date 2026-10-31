@@ -17,6 +17,40 @@ together), [docs/ADMIN.md](docs/ADMIN.md) (running a server),
 isn't), [SECURITY.md](SECURITY.md) (reporting a vulnerability),
 [COMMANDS.md](COMMANDS.md) (full command reference).
 
+## What makes it different
+
+Free and open source, community-run servers already exist (Matrix,
+Revolt, Mattermost…). HyperCom's difference is what the server learns
+about you:
+
+- **A different identity on every server.** Each server gets its own key
+  pair, with no visible link between them, so two administrators cannot
+  tell they host the same person. On Matrix or Revolt your account is the
+  same everywhere.
+- **Private messages the server can't read, and can't date.** DMs are
+  end-to-end encrypted, and their timestamp lives inside the ciphertext:
+  the server only knows who wrote to whom, never when. Forum posts and
+  profiles are public content and are readable by the server.
+- **No TLS, no certificate authority.** A Noise handshake on libsodium,
+  with the server's key pinned by the client.
+- **A server small enough to audit.** One `epoll` loop, no mutex, one
+  SQLite file.
+- **Anyone can own a server.** One binary, one config file, one SQLite
+  database.
+- **Works over Tor.** With the `[onion]` listener, the administrator never
+  sees members' IP addresses.
+- **No IP address kept by default.** `log_peer_addresses` is off.
+
+HyperCom does not federate: one community, one server. See
+[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) for what is *not* protected.
+
+**Recovery:** the master identity has a 12-word recovery phrase, shown once
+at creation; `hypercom_cli seed-restore` rebuilds it on a new machine.
+
+**Planned, in this order:** forward secrecy for DMs; attachments (images,
+files); an independent audit of the handshake. None of these exist yet.
+
+
 ## Requirements
 
 - CMake ≥ 3.20, a C++20 compiler (MSVC on Windows, GCC/Clang on Linux)
